@@ -161,6 +161,16 @@ private struct CollapsedActivity: View {
 private struct HomeTab: View {
     @ObservedObject var nowPlaying: NowPlayingController
 
+    private var emptyMessage: String {
+        if let browser = nowPlaying.browserNeedingJavaScript {
+            return "\(browser)의 메뉴 보기(또는 개발자) › 'Apple Events의 JavaScript 허용'을 켜면 브라우저 재생도 표시됩니다"
+        }
+        if nowPlaying.needsAutomationPermission {
+            return "시스템 설정 › 개인정보 보호 및 보안 › 자동화에서 NotchApp을 허용하세요"
+        }
+        return "Music, Spotify 또는 브라우저에서 재생하면 여기에 표시됩니다"
+    }
+
     var body: some View {
         if let track = nowPlaying.track {
             HStack(spacing: 18) {
@@ -206,9 +216,7 @@ private struct HomeTab: View {
                 .frame(width: 104, height: 104)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("재생 중인 음악 없음").font(.system(size: 15, weight: .semibold))
-                    Text(nowPlaying.needsAutomationPermission
-                         ? "시스템 설정 › 개인정보 보호 및 보안 › 자동화에서 NotchApp을 허용하세요"
-                         : "Music 또는 Spotify에서 재생하면 여기에 표시됩니다")
+                    Text(emptyMessage)
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.5))
                 }

@@ -84,11 +84,21 @@ final class NowPlayingController: ObservableObject {
     }
     @Published private(set) var tint: Color = .white
     @Published private(set) var needsAutomationPermission = false
+    /// Name of a browser that refused to run JavaScript from Apple Events.
+    @Published private(set) var browserNeedingJavaScript: String?
 
     private let sources: [ScriptSource] = [.music, .spotify]
     private let queue = DispatchQueue(label: "notchapp.nowplaying")
     private var timer: Timer?
     private var artworkIdentity: String?
+    private var browserHit: BrowserMedia.Hit?
+
+    private struct PollResult {
+        var candidates: [NowPlayingTrack] = []
+        var browserHits: [String: BrowserMedia.Hit] = [:]
+        var denied = false
+        var javaScriptDisabledIn: String?
+    }
 
     func start() {
         if CommandLine.arguments.contains("--demo-track") {
@@ -102,11 +112,19 @@ final class NowPlayingController: ObservableObject {
     }
 
     func send(_ command: NowPlayingCommand) {
-        guard let bundleID = track?.sourceBundleID,
-              let source = sources.first(where: { $0.bundleID == bundleID }) else { return }
-        let script = source.command(command)
+        guard let bundleID = track?.sourceBundleID else { return }
+        let work: () -> Void
+        if let source = sources.first(where: { $0.bundleID == bundleID }) {
+            let script = source.command(command)
+            work = { _ = Self.run(script) }
+        } else if let hit = browserHit, hit.track.sourceBundleID == bundleID,
+                  let browser = BrowserMedia.all.first(where: { $0.bundleID == bundleID }) {
+            work = { browser.send(command, at: hit.location) }
+        } else {
+            return
+        }
         queue.async { [weak self] in
-            _ = Self.run(script)
+            work()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self?.poll()
             }
@@ -114,29 +132,46 @@ final class NowPlayingController: ObservableObject {
     }
 
     private func poll() {
-        let running = sources.filter {
-            !NSRunningApplication.runningApplications(withBundleIdentifier: $0.bundleID).isEmpty
-        }
+        let isRunning = { (id: String) in !NSRunningApplication.runningApplications(withBundleIdentifier: id).isEmpty }
+        let apps = sources.filter { isRunning($0.bundleID) }
+        let browsers = BrowserMedia.all.filter { isRunning($0.bundleID) }
         queue.async { [weak self] in
-            var candidates: [NowPlayingTrack] = []
-            var denied = false
-            for source in running {
+            var result = PollResult()
+            for source in apps {
                 switch Self.run(source.stateScript) {
-                case .success(let result):
-                    if let track = Self.parse(result, source: source) { candidates.append(track) }
+                case .success(let descriptor):
+                    if let track = Self.parse(descriptor, source: source) { result.candidates.append(track) }
                 case .failure(let error):
-                    if error.code == -1743 { denied = true }
+                    if error.code == -1743 { result.denied = true }
                 }
             }
-            let best = candidates.first(where: \.isPlaying) ?? candidates.first
+            for browser in browsers {
+                switch browser.scan() {
+                case .success(let hit?):
+                    result.candidates.append(hit.track)
+                    result.browserHits[browser.bundleID] = hit
+                case .success(nil):
+                    break
+                case .failure(.notAuthorized):
+                    result.denied = true
+                case .failure(.javaScriptDisabled):
+                    result.javaScriptDisabledIn = FileManager.default.displayName(
+                        atPath: NSWorkspace.shared.urlForApplication(withBundleIdentifier: browser.bundleID)?.path ?? browser.bundleID)
+                case .failure(.other):
+                    break
+                }
+            }
             DispatchQueue.main.async {
-                self?.apply(best, denied: denied)
+                self?.apply(result)
             }
         }
     }
 
-    private func apply(_ newTrack: NowPlayingTrack?, denied: Bool) {
-        needsAutomationPermission = denied && newTrack == nil
+    private func apply(_ result: PollResult) {
+        let newTrack = result.candidates.first(where: \.isPlaying) ?? result.candidates.first
+        browserHit = newTrack.flatMap { result.browserHits[$0.sourceBundleID] }
+        needsAutomationPermission = result.denied && newTrack == nil
+        browserNeedingJavaScript = newTrack == nil ? result.javaScriptDisabledIn : nil
         if track != newTrack { track = newTrack }
         guard let newTrack else {
             artwork = nil
@@ -151,8 +186,15 @@ final class NowPlayingController: ObservableObject {
     }
 
     private func loadArtwork(for track: NowPlayingTrack) {
-        guard let source = sources.first(where: { $0.bundleID == track.sourceBundleID }) else { return }
         let identity = track.identity
+        if let url = browserHit?.artworkURL {
+            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+                guard let data, let image = NSImage(data: data) else { return }
+                DispatchQueue.main.async { self?.setArtwork(image, for: identity) }
+            }.resume()
+            return
+        }
+        guard let source = sources.first(where: { $0.bundleID == track.sourceBundleID }) else { return }
         queue.async { [weak self] in
             guard case .success(let result) = Self.run(source.artworkScript) else { return }
             if source.artworkIsURL {
