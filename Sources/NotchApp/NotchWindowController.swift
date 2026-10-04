@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 final class NotchPanel: NSPanel {
@@ -28,11 +29,12 @@ final class NotchWindowController {
     private var monitors: [Any] = []
     private var collapseWork: DispatchWorkItem?
     private var screenObserver: NSObjectProtocol?
+    private var pillWidthObserver: AnyCancellable?
 
     init() {
         let screen = NotchGeometry.pickScreen()!
-        let geometry = NotchGeometry(screen: screen)
-        model = NotchViewModel(geometry: geometry)
+        let geometry = NotchGeometry(screen: screen, pillWidth: AppSettings.shared.pillWidth)
+        model = NotchViewModel(geometry: geometry, settings: .shared)
         panel = NotchPanel(frame: geometry.panelFrame)
 
         let hosting = NSHostingView(rootView: NotchView(model: model))
@@ -58,11 +60,17 @@ final class NotchWindowController {
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.relayout() }
         }
+        pillWidthObserver = model.settings.$pillWidth
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                DispatchQueue.main.async { self?.relayout() }
+            }
     }
 
     private func relayout() {
         guard let screen = NotchGeometry.pickScreen() else { return }
-        model.geometry = NotchGeometry(screen: screen)
+        model.geometry = NotchGeometry(screen: screen, pillWidth: model.settings.pillWidth)
         panel.setFrame(model.geometry.panelFrame, display: true)
     }
 
@@ -84,7 +92,7 @@ final class NotchWindowController {
     private func pointerMoved() {
         let point = NSEvent.mouseLocation
         let collapsedRect = model.geometry.shapeRect(size: model.collapsedSize)
-        let expandedRect = model.geometry.shapeRect(size: NotchGeometry.expandedSize)
+        let expandedRect = model.geometry.shapeRect(size: model.expandedSize)
 
         if model.isExpanded {
             let inside = expandedRect.insetBy(dx: -6, dy: -6).contains(point)

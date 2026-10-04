@@ -24,14 +24,23 @@ final class DebugSnapshotter {
         signal(SIGUSR1, SIG_IGN)
         let source = DispatchSource.makeSignalSource(signal: SIGUSR1, queue: .main)
         source.setEventHandler { [weak self] in
-            MainActor.assumeIsolated { self?.capture(label: "manual") }
+            MainActor.assumeIsolated {
+                self?.capture(label: "manual")
+                self?.captureOtherWindows()
+            }
         }
         source.resume()
         signalSource = source
     }
 
-    private func capture(label: String) {
-        guard let view, let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+    private func captureOtherWindows() {
+        for window in NSApp.windows where window.isVisible && window.contentView !== view {
+            if let content = window.contentView { capture(label: "window", of: content) }
+        }
+    }
+
+    private func capture(label: String, of target: NSView? = nil) {
+        guard let view = target ?? view, let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
         view.cacheDisplay(in: view.bounds, to: rep)
         counter += 1
         let url = directory.appendingPathComponent(String(format: "%02d-%@.png", counter, label))

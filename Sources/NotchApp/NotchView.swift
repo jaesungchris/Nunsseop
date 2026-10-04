@@ -39,7 +39,7 @@ struct NotchView: View {
                     .padding(.bottom, 16)
                     .transition(.opacity.combined(with: .scale(scale: 0.94, anchor: .top)))
                 } else if model.showsLiveActivity {
-                    CollapsedActivity(nowPlaying: nowPlaying, height: notchHeight)
+                    CollapsedActivity(nowPlaying: nowPlaying, height: notchHeight, earWidth: model.earWidth)
                         .padding(.horizontal, topRadius + 3)
                         .transition(.opacity)
                 }
@@ -49,6 +49,7 @@ struct NotchView: View {
             .contentShape(shape)
             .onTapGesture { model.expand() }
             .contextMenu {
+                Button("설정…") { SettingsWindowController.shared.show() }
                 Button("NotchApp 종료") { NSApp.terminate(nil) }
             }
             .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
@@ -95,6 +96,15 @@ private struct HeaderBar: View {
                     .foregroundStyle(.white.opacity(0.45))
             }
             Spacer()
+            Button { SettingsWindowController.shared.show() } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .frame(width: 26, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("설정")
             Button { NSApp.terminate(nil) } label: {
                 Image(systemName: "power")
                     .font(.system(size: 11, weight: .semibold))
@@ -143,14 +153,16 @@ private struct TabButton: View {
 private struct CollapsedActivity: View {
     @ObservedObject var nowPlaying: NowPlayingController
     let height: CGFloat
+    let earWidth: CGFloat
 
     var body: some View {
+        let art = min(height - 10, earWidth - 4)
         HStack {
-            ArtworkView(image: nowPlaying.artwork, cornerRadius: 5)
-                .frame(width: height - 10, height: height - 10)
+            ArtworkView(image: nowPlaying.artwork, cornerRadius: art > 16 ? 5 : 3)
+                .frame(width: art, height: art)
             Spacer()
             SpectrumBars(isPlaying: nowPlaying.track?.isPlaying == true, tint: nowPlaying.tint)
-                .frame(width: height - 12, height: height - 16)
+                .frame(width: art - 2, height: max(8, art - 6))
         }
         .frame(height: height)
     }
