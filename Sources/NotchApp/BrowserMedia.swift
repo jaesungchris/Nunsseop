@@ -42,7 +42,7 @@ struct BrowserMedia {
     private static let mediaHosts = [
         "music.youtube.com", "youtube.com", "youtu.be", "open.spotify.com", "soundcloud.com",
         "music.apple.com", "tidal.com", "deezer.com", "bandcamp.com", "twitch.tv", "vimeo.com",
-        "netflix.com", "music.amazon", "pandora.com", "vibe.naver.com", "melon.com",
+        "netflix.com", "music.amazon.com","pandora.com", "vibe.naver.com", "melon.com",
         "genie.co.kr", "music-flo.com", "music.bugs.co.kr", "chzzk.naver.com", "laftel.net",
     ]
 
@@ -96,34 +96,27 @@ struct BrowserMedia {
         }
     }
 
-    private var scanScript: String {
-        let hosts = Self.mediaHosts.map { "\"\($0)\"" }.joined(separator: ", ")
-        return """
+    private var tabURLsScript: String {
+        """
         tell application id "\(bundleID)"
-            set hosts to {\(hosts)}
+            set out to {}
             repeat with w from 1 to count of windows
-                set urls to URL of every tab of window w
-                repeat with t from 1 to count of urls
-                    set u to item t of urls
-                    if u is not missing value then
-                        repeat with h in hosts
-                            if u contains h then
-                                set r to \(execute(Self.stateJS, window: "w", tab: "t"))
-                                if r is not missing value and r is not "" then return {r, w, t}
-                                exit repeat
-                            end if
-                        end repeat
-                    end if
-                end repeat
+                set end of out to URL of every tab of window w
             end repeat
-            return {}
+            return out
         end tell
         """
     }
 
-    func scan() -> Result<Hit?, Failure> {
+    static func isMediaSite(_ string: String) -> Bool {
+        guard let url = URL(string: string), url.scheme == "https",
+              let host = url.host?.lowercased() else { return false }
+        return mediaHosts.contains { host == $0 || host.hasSuffix("." + $0) }
+    }
+
+    private static func run(_ source: String) -> Result<NSAppleEventDescriptor, Failure> {
         var errorInfo: NSDictionary?
-        guard let script = NSAppleScript(source: scanScript) else { return .failure(.other) }
+        guard let script = NSAppleScript(source: source) else { return .failure(.other) }
         let result = script.executeAndReturnError(&errorInfo)
         if let errorInfo {
             let code = errorInfo[NSAppleScript.errorNumber] as? Int ?? 0
@@ -132,11 +125,43 @@ struct BrowserMedia {
             if message.localizedCaseInsensitiveContains("javascript") { return .failure(.javaScriptDisabled) }
             return .failure(.other)
         }
-        guard result.numberOfItems == 3,
-              let json = result.atIndex(1)?.stringValue?.data(using: .utf8),
-              let info = try? JSONSerialization.jsonObject(with: json) as? [String: Any],
-              let window = result.atIndex(2)?.int32Value,
-              let tab = result.atIndex(3)?.int32Value else { return .success(nil) }
+        return .success(result)
+    }
+
+    func scan() -> Result<Hit?, Failure> {
+        let windows: NSAppleEventDescriptor
+        switch Self.run(tabURLsScript) {
+        case .success(let d): windows = d
+        case .failure(let f): return .failure(f)
+        }
+        var locations: [Location] = []
+        for w in 0..<max(0, windows.numberOfItems) {
+            guard let tabs = windows.atIndex(w + 1) else { continue }
+            for t in 0..<max(0, tabs.numberOfItems) {
+                if let url = tabs.atIndex(t + 1)?.stringValue, Self.isMediaSite(url) {
+                    locations.append(Location(window: w + 1, tab: t + 1))
+                }
+            }
+        }
+        for location in locations {
+            let source = """
+            tell application id "\(bundleID)"
+                return \(execute(Self.stateJS, window: "\(location.window)", tab: "\(location.tab)"))
+            end tell
+            """
+            switch Self.run(source) {
+            case .success(let d):
+                if let hit = makeHit(d.stringValue, location: location) { return .success(hit) }
+            case .failure(let f):
+                return .failure(f)
+            }
+        }
+        return .success(nil)
+    }
+
+    private func makeHit(_ jsonString: String?, location: Location) -> Hit? {
+        guard let json = jsonString?.data(using: .utf8),
+              let info = try? JSONSerialization.jsonObject(with: json) as? [String: Any] else { return nil }
 
         let track = NowPlayingTrack(
             title: info["title"] as? String ?? "",
@@ -148,9 +173,8 @@ struct BrowserMedia {
             sourceBundleID: bundleID,
             fetchedAt: Date()
         )
-        let artworkURL = (info["art"] as? String).flatMap { $0.isEmpty ? nil : URL(string: $0) }
-        return .success(Hit(track: track, artworkURL: artworkURL,
-                            location: Location(window: Int(window), tab: Int(tab))))
+        let artworkURL = (info["art"] as? String).flatMap(URL.init(string:))
+        return Hit(track: track, artworkURL: artworkURL, location: location)
     }
 
     func send(_ command: NowPlayingCommand, at location: Location) {

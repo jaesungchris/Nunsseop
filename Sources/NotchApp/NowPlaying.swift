@@ -187,7 +187,8 @@ final class NowPlayingController: ObservableObject {
 
     private func loadArtwork(for track: NowPlayingTrack) {
         let identity = track.identity
-        if let url = browserHit?.artworkURL {
+        if let hit = browserHit {
+            guard let url = hit.artworkURL, url.scheme == "https" else { return }
             URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
                 guard let data, let image = NSImage(data: data) else { return }
                 DispatchQueue.main.async { self?.setArtwork(image, for: identity) }
@@ -198,7 +199,8 @@ final class NowPlayingController: ObservableObject {
         queue.async { [weak self] in
             guard case .success(let result) = Self.run(source.artworkScript) else { return }
             if source.artworkIsURL {
-                guard let string = result.stringValue, let url = URL(string: string) else { return }
+                guard let string = result.stringValue, let url = URL(string: string),
+                      url.scheme == "https" else { return }
                 URLSession.shared.dataTask(with: url) { data, _, _ in
                     guard let data, let image = NSImage(data: data) else { return }
                     DispatchQueue.main.async { self?.setArtwork(image, for: identity) }
