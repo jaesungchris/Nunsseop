@@ -46,6 +46,17 @@ struct SettingsView: View {
                     Text(error).font(.caption).foregroundStyle(.red)
                 }
             }
+            Section("Display") {
+                Picker("Show on", selection: $settings.displayName) {
+                    Text("Automatic (built-in display first)").tag("")
+                    ForEach(NSScreen.screens.map(\.localizedName), id: \.self) { name in
+                        Text(name).tag(name)
+                    }
+                    if !settings.displayName.isEmpty && !NSScreen.screens.contains(where: { $0.localizedName == settings.displayName }) {
+                        Text(settings.displayName).tag(settings.displayName)
+                    }
+                }
+            }
             Section("Size") {
                 SliderRow(title: "Expanded width", value: $settings.expandedWidth,
                           range: AppSettings.expandedWidthRange, unit: "pt")

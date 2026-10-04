@@ -41,7 +41,7 @@ final class NotchWindowController {
     private var pillWidthObserver: AnyCancellable?
 
     init() {
-        let geometry = NotchGeometry.pickScreen().map { NotchGeometry(screen: $0, pillWidth: AppSettings.shared.pillWidth) }
+        let geometry = NotchGeometry.pickScreen(preferredName: AppSettings.shared.displayName).map { NotchGeometry(screen: $0, pillWidth: AppSettings.shared.pillWidth) }
             ?? NotchGeometry(fallbackWidth: AppSettings.shared.pillWidth)
         model = NotchViewModel(geometry: geometry, settings: .shared)
         panel = NotchPanel(frame: geometry.panelFrame)
@@ -74,16 +74,16 @@ final class NotchWindowController {
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.relayout() }
         }
-        pillWidthObserver = model.settings.$pillWidth
-            .dropFirst()
-            .removeDuplicates()
+        pillWidthObserver = model.settings.$pillWidth.map { _ in () }
+            .merge(with: model.settings.$displayName.map { _ in () })
+            .dropFirst(2)
             .sink { [weak self] _ in
                 DispatchQueue.main.async { self?.relayout() }
             }
     }
 
     private func relayout() {
-        guard let screen = NotchGeometry.pickScreen() else { return }
+        guard let screen = NotchGeometry.pickScreen(preferredName: model.settings.displayName) else { return }
         model.geometry = NotchGeometry(screen: screen, pillWidth: model.settings.pillWidth)
         panel.setFrame(model.geometry.panelFrame, display: true)
     }

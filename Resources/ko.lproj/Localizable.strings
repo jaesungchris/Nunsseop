@@ -92,3 +92,8 @@
 "Show the Mirror tab" = "미러 탭 표시";
 "Camera" = "카메라";
 "System default" = "시스템 기본값";
+
+/* Display */
+"Display" = "화면";
+"Show on" = "표시할 화면";
+"Automatic (built-in display first)" = "자동 (내장 디스플레이 우선)";

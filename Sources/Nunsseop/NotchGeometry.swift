@@ -5,9 +5,13 @@ struct NotchGeometry: Equatable {
     var collapsedSize: CGSize
     var hasNotch: Bool
 
-    /// Prefers the built-in display with a camera housing; otherwise the main screen.
-    static func pickScreen() -> NSScreen? {
-        NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main ?? NSScreen.screens.first
+    /// The display named in settings if it is connected; otherwise the built-in display
+    /// with a camera housing, then the main screen.
+    static func pickScreen(preferredName: String = "") -> NSScreen? {
+        if !preferredName.isEmpty, let match = NSScreen.screens.first(where: { $0.localizedName == preferredName }) {
+            return match
+        }
+        return NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main ?? NSScreen.screens.first
     }
 
     /// Used only when no screen is attached at launch; the next screen change relayouts.
