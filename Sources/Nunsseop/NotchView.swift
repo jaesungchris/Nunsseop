@@ -365,7 +365,8 @@ private struct TabButton: View {
                             .foregroundStyle(.black)
                             .padding(.horizontal, 3)
                             .background(Capsule().fill(.white))
-                            .offset(x: 2, y: -2)
+                            // Kept inside the button: the tab row scrolls and clips anything outside it.
+                            .offset(x: 1, y: 0)
                     }
                 }
                 .contentShape(Rectangle())
