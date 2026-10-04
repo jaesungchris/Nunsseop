@@ -257,12 +257,18 @@ final class NowPlayingController: ObservableObject {
         return URLSession(configuration: configuration)
     }()
 
-    /// Artwork URLs can come from web pages, so only public HTTPS hosts are fetched.
+    /// Image hosts of the services the fallback sources read. Artwork URLs can come
+    /// from web pages, so nothing else is fetched.
+    nonisolated private static let artworkHosts = [
+        "ytimg.com", "ggpht.com", "googleusercontent.com", "scdn.co", "spotifycdn.com",
+        "sndcdn.com", "mzstatic.com", "tidal.com", "dzcdn.net", "bcbits.com", "jtvnw.net",
+        "vimeocdn.com", "nflxext.com", "nflximg.net", "media-amazon.com", "ssl-images-amazon.com",
+        "pandora.com", "pstatic.net", "melon.co.kr", "genie.co.kr", "music-flo.com", "bugs.co.kr",
+    ]
+
     nonisolated static func isAllowedArtworkURL(_ url: URL) -> Bool {
-        guard url.scheme == "https", let host = url.host?.lowercased(), !host.isEmpty else { return false }
-        if host == "localhost" || host.hasSuffix(".local") || host.hasSuffix(".localhost") { return false }
-        if host.contains(":") || host.allSatisfy({ $0.isNumber || $0 == "." }) { return false }
-        return true
+        guard url.scheme == "https", let host = url.host?.lowercased() else { return false }
+        return artworkHosts.contains { host == $0 || host.hasSuffix("." + $0) }
     }
 
     private func setArtwork(_ image: NSImage, for identity: String) {

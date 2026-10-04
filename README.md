@@ -62,7 +62,7 @@ This relies on private API and on how macOS treats Apple-signed binaries, so a f
 
 ## Privacy
 
-Nunsseop has no network features of its own. It only downloads artwork images over HTTPS when a browser page provides an artwork URL, and it does not collect or send any data.
+Nunsseop has no network features of its own. When the MediaRemote helper is unavailable it downloads artwork images over HTTPS from the image servers of known music and video services, and it does not collect or send any data.
 
 ## Credits
 
