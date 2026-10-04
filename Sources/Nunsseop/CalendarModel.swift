@@ -23,7 +23,11 @@ final class CalendarModel: ObservableObject {
 
     private let store = EKEventStore()
     private var observer: NSObjectProtocol?
+    #if DEBUG
     private let isDemo = CommandLine.arguments.contains("--demo-track")
+    #else
+    private let isDemo = false
+    #endif
 
     init() {
         switch EKEventStore.authorizationStatus(for: .event) {
@@ -57,9 +61,9 @@ final class CalendarModel: ObservableObject {
         let day = selectedDay
         func at(_ h: Int, _ m: Int) -> Date { Calendar.current.date(bySettingHour: h, minute: m, second: 0, of: day)! }
         items = [
-            CalendarItem(id: "a", title: "팀 스탠드업", start: at(10, 0), end: at(10, 15), isAllDay: false, color: .blue),
-            CalendarItem(id: "b", title: "점심 약속", start: at(12, 30), end: at(13, 30), isAllDay: false, color: .orange),
-            CalendarItem(id: "c", title: "러닝 5km", start: at(19, 0), end: at(19, 40), isAllDay: false, color: .green),
+            CalendarItem(id: "a", title: "Team standup", start: at(10, 0), end: at(10, 15), isAllDay: false, color: .blue),
+            CalendarItem(id: "b", title: "Lunch", start: at(12, 30), end: at(13, 30), isAllDay: false, color: .orange),
+            CalendarItem(id: "c", title: "5 km run", start: at(19, 0), end: at(19, 40), isAllDay: false, color: .green),
         ]
     }
 

@@ -2,16 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "NotchApp",
+    name: "Nunsseop",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "NotchApp", targets: ["NotchApp"]),
+        .executable(name: "Nunsseop", targets: ["Nunsseop"]),
         .library(name: "NowPlayingHelper", type: .dynamic, targets: ["NowPlayingHelper"]),
     ],
     targets: [
         .executableTarget(
-            name: "NotchApp",
-            path: "Sources/NotchApp"
+            name: "Nunsseop",
+            path: "Sources/Nunsseop"
         ),
         // Loaded into /usr/bin/perl at runtime; see Resources/nowplaying.pl.
         .target(

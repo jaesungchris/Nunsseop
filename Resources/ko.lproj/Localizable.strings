@@ -1,0 +1,68 @@
+/* Settings */
+"Nunsseop Settings" = "Nunsseop 설정";
+"General" = "일반";
+"Open Nunsseop at login" = "로그인 시 Nunsseop 실행";
+"Allow Nunsseop in System Settings › General › Login Items." = "시스템 설정 › 일반 › 로그인 항목에서 Nunsseop을 허용해야 합니다.";
+"Move the app to /Applications before turning this on. Current location: %@" = "앱을 /Applications로 옮긴 뒤 켜는 것을 권장합니다. 지금 위치: %@";
+"Size" = "크기";
+"Expanded width" = "펼친 너비";
+"Expanded height" = "펼친 높이";
+"Collapsed width on screens without a notch" = "노치 없는 화면의 접힌 너비";
+"Compact artwork and visualizer while playing" = "재생 중 접힌 노치 양옆을 작게";
+"Reset sizes" = "크기 기본값으로";
+"Behavior" = "동작";
+"Delay before opening on hover" = "마우스를 올린 뒤 펼치기까지";
+"sec" = "초";
+"Home" = "홈";
+"Show calendar on the Home tab" = "홈 탭에 캘린더 표시";
+"System HUD" = "시스템 HUD";
+"Show volume changes in the notch" = "볼륨이 바뀌면 노치에 표시";
+"Replace the system volume and brightness HUD" = "볼륨·밝기 키를 가로채 기본 HUD 대신 노치만 표시";
+"Allow Nunsseop in System Settings › Privacy & Security › Accessibility, then relaunch Nunsseop." = "시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 Nunsseop을 허용한 뒤 Nunsseop을 다시 실행하세요.";
+"The built-in display is off, so brightness keys stay with the system." = "내장 디스플레이가 꺼져 있어 밝기 키는 시스템이 처리합니다.";
+"Show battery level in the header" = "헤더에 배터리 잔량 표시";
+"Show when power is connected or disconnected" = "전원 연결·해제 시 노치에 표시";
+"Show headphone battery when they connect" = "헤드폰 연결 시 배터리 표시";
+"Sneak Peek" = "미리보기";
+"Show the title under the notch when the track or play state changes" = "곡이나 재생 상태가 바뀌면 노치 아래에 제목 표시";
+"Always show while something is playing" = "재생 정보가 있으면 항상 표시";
+"Duration" = "표시 시간";
+
+/* Notch */
+"Settings…" = "설정…";
+"Settings" = "설정";
+"Quit Nunsseop" = "Nunsseop 종료";
+"Nothing playing" = "재생 중인 음악 없음";
+"Play something in any app or browser and it shows up here" = "앱이나 브라우저에서 재생하면 여기에 표시됩니다";
+"Allow Nunsseop in System Settings › Privacy & Security › Automation" = "시스템 설정 › 개인정보 보호 및 보안 › 자동화에서 Nunsseop을 허용하세요";
+"Relaunch Dia with JavaScript allowed" = "Dia 다시 실행 (JavaScript 허용)";
+"Quits Dia and opens it again with %@. Dia restores its tabs." = "Dia를 종료한 뒤 %@ 옵션으로 다시 엽니다. 탭은 Dia가 복원합니다.";
+"In Safari › Settings › Advanced, turn on “Show features for web developers”, then turn on “Allow JavaScript from Apple Events” in the Developer tab" = "Safari › 설정 › 고급에서 '웹 개발자를 위한 기능 보기'를 켠 뒤, 설정의 개발자 탭에서 'Apple 이벤트에서 JavaScript 허용'을 켜세요";
+"Dia has no menu for this; it must be relaunched with its JavaScript option" = "Dia는 메뉴로 켤 수 없고, JavaScript 허용 옵션을 붙여 다시 실행해야 합니다";
+"In %@, turn on View › Developer › Allow JavaScript from Apple Events" = "%@의 메뉴 막대 › 보기 › 개발자 › 'Apple Events의 자바스크립트 허용'을 켜세요";
+
+/* Shelf */
+"Drop files here" = "파일을 여기로 끌어다 놓으세요";
+"Clear Shelf" = "선반 비우기";
+"Show in Finder" = "Finder에서 보기";
+"Remove from Shelf" = "선반에서 제거";
+
+/* HUD */
+"Left" = "왼쪽";
+"Right" = "오른쪽";
+"Case" = "케이스";
+"Battery" = "배터리";
+
+/* Calendar */
+"Calendar access is off" = "캘린더 접근이 꺼져 있습니다";
+"Allow calendar access to see your events" = "일정을 보려면 캘린더 접근을 허용하세요";
+"Open System Settings" = "시스템 설정 열기";
+"Allow Access" = "접근 허용";
+"No events" = "일정 없음";
+"All day" = "종일";
+
+/* Dia relaunch */
+"Relaunch Dia?" = "Dia를 다시 실행할까요?";
+"Dia will quit and reopen with JavaScript from AppleScript allowed. Downloads, uploads or unsent forms in Dia may be lost. While it runs this way, any app you have allowed to control Dia can run JavaScript in its tabs." = "Dia를 종료한 뒤 AppleScript의 JavaScript 실행을 허용한 상태로 다시 엽니다. Dia에서 진행 중인 다운로드·업로드나 보내지 않은 입력은 사라질 수 있습니다. 이 상태로 실행되는 동안에는 Dia 제어를 허용한 다른 앱도 Dia 탭에서 JavaScript를 실행할 수 있습니다.";
+"Relaunch" = "다시 실행";
+"Cancel" = "취소";

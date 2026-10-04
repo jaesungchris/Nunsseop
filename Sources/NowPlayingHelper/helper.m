@@ -11,6 +11,7 @@ typedef void (*GetClientFn)(dispatch_queue_t, void (^)(id));
 typedef NSString *(*ClientStringFn)(id);
 
 static void emit(NSDictionary *obj) {
+    if (![NSJSONSerialization isValidJSONObject:obj]) return;
     NSData *data = [NSJSONSerialization dataWithJSONObject:obj options:0 error:nil];
     if (!data) return;
     fwrite(data.bytes, 1, data.length, stdout);
@@ -27,7 +28,7 @@ static int commandCode(const char *line) {
     return -1;
 }
 
-void notchapp_nowplaying_run(void *perl, void *cv) {
+void nunsseop_nowplaying_run(void *perl, void *cv) {
     void *mr = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_NOW);
     if (!mr) { emit(@{@"error": @"MediaRemote not found"}); return; }
     GetInfoFn getInfo = (GetInfoFn)dlsym(mr, "MRMediaRemoteGetNowPlayingInfo");
@@ -47,7 +48,7 @@ void notchapp_nowplaying_run(void *perl, void *cv) {
         exit(0);
     });
 
-    dispatch_queue_t queue = dispatch_queue_create("notchapp.nowplaying", DISPATCH_QUEUE_SERIAL);
+    dispatch_queue_t queue = dispatch_queue_create("nunsseop.nowplaying", DISPATCH_QUEUE_SERIAL);
     __block NSString *lastSignature = nil;
 
     void (^poll)(void) = ^{
@@ -73,9 +74,9 @@ void notchapp_nowplaying_run(void *perl, void *cv) {
                 if (title) out[@"title"] = title;
                 if (artist) out[@"artist"] = artist;
                 if (album) out[@"album"] = album;
-                if (duration) out[@"duration"] = duration;
-                if (elapsed) out[@"elapsed"] = elapsed;
-                if (rate) out[@"rate"] = rate;
+                if (duration && isfinite(duration.doubleValue)) out[@"duration"] = duration;
+                if (elapsed && isfinite(elapsed.doubleValue)) out[@"elapsed"] = elapsed;
+                if (rate && isfinite(rate.doubleValue)) out[@"rate"] = rate;
                 if (timestamp) out[@"timestamp"] = @(timestamp.timeIntervalSince1970);
                 if (bundleID) out[@"bundleID"] = bundleID;
                 if (info) out[@"active"] = @YES;

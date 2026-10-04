@@ -15,6 +15,7 @@ final class MediaRemoteBridge {
 
     private var process: Process?
     private var input: FileHandle?
+    private var output: FileHandle?
     private var buffer = Data()
     private var restarts = 0
 
@@ -27,6 +28,7 @@ final class MediaRemoteBridge {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
         process.arguments = [script.path, library.path]
+        process.environment = ["PATH": "/usr/bin:/bin"]
         let output = Pipe()
         let input = Pipe()
         process.standardOutput = output
@@ -34,6 +36,10 @@ final class MediaRemoteBridge {
         process.standardError = FileHandle.nullDevice
         output.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
+            if data.isEmpty {
+                handle.readabilityHandler = nil
+                return
+            }
             DispatchQueue.main.async { self?.receive(data) }
         }
         process.terminationHandler = { [weak self] _ in
@@ -47,6 +53,7 @@ final class MediaRemoteBridge {
         }
         self.process = process
         self.input = input.fileHandleForWriting
+        self.output = output.fileHandleForReading
     }
 
     func send(_ command: NowPlayingCommand) {
@@ -60,8 +67,11 @@ final class MediaRemoteBridge {
     }
 
     private func helperExited() {
+        output?.readabilityHandler = nil
         process = nil
         input = nil
+        output = nil
+        buffer.removeAll()
         onUnavailable?()
         restarts += 1
         guard restarts <= 3 else { return }

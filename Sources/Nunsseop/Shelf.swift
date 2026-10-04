@@ -21,7 +21,7 @@ final class ShelfStore: ObservableObject {
 
     nonisolated static var defaultStoreURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent("NotchApp/shelf.json")
+        return base.appendingPathComponent("Nunsseop/shelf.json")
     }
 
     func add(_ urls: [URL]) {
@@ -62,7 +62,7 @@ final class ShelfStore: ObservableObject {
                                                     withIntermediateDirectories: true)
             try JSONEncoder().encode(bookmarks).write(to: storeURL, options: .atomic)
         } catch {
-            NSLog("NotchApp: failed to save shelf: \(error)")
+            NSLog("Nunsseop: failed to save shelf: \(error)")
         }
     }
 }

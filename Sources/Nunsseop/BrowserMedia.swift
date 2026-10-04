@@ -25,6 +25,8 @@ struct BrowserMedia {
     struct Location: Equatable {
         let window: Int
         let tab: Int
+        /// The tab's URL when it was scanned; scripts only run if the tab still shows it.
+        let url: String
     }
 
     struct Hit {
@@ -97,14 +99,41 @@ struct BrowserMedia {
         }
     }
 
+    /// Private (incognito) windows report no tabs, so their titles never reach the notch.
     private var tabURLsScript: String {
-        """
+        let privateCheck = dialect == .chromium
+            ? "try\n                if mode of window w is \"incognito\" then set isPrivate to true\n            end try"
+            : ""
+        return """
         tell application id "\(bundleID)"
             set out to {}
             repeat with w from 1 to count of windows
-                set end of out to URL of every tab of window w
+                set isPrivate to false
+                \(privateCheck)
+                if isPrivate then
+                    set end of out to {}
+                else
+                    set end of out to URL of every tab of window w
+                end if
             end repeat
             return out
+        end tell
+        """
+    }
+
+    private static func appleScriptLiteral(_ string: String) -> String {
+        "\"" + string.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
+    }
+
+    /// Runs `js` only if the tab at `location` still shows the URL it had when scanned.
+    private func guardedScript(_ js: String, at location: Location) -> String {
+        let w = "\(location.window)", t = "\(location.tab)"
+        return """
+        tell application id "\(bundleID)"
+            if (count of windows) < \(w) then return ""
+            if (count of tabs of window \(w)) < \(t) then return ""
+            if URL of tab \(t) of window \(w) is not \(Self.appleScriptLiteral(location.url)) then return ""
+            return \(execute(js, window: w, tab: t))
         end tell
         """
     }
@@ -140,19 +169,16 @@ struct BrowserMedia {
             guard let tabs = windows.atIndex(w + 1) else { continue }
             for t in 0..<max(0, tabs.numberOfItems) {
                 if let url = tabs.atIndex(t + 1)?.stringValue, Self.isMediaSite(url) {
-                    locations.append(Location(window: w + 1, tab: t + 1))
+                    locations.append(Location(window: w + 1, tab: t + 1, url: url))
                 }
             }
         }
         for location in locations {
-            let source = """
-            tell application id "\(bundleID)"
-                return \(execute(Self.stateJS, window: "\(location.window)", tab: "\(location.tab)"))
-            end tell
-            """
-            switch Self.run(source) {
+            switch Self.run(guardedScript(Self.stateJS, at: location)) {
             case .success(let d):
                 if let hit = makeHit(d.stringValue, location: location) { return .success(hit) }
+            case .failure(.other):
+                continue
             case .failure(let f):
                 return .failure(f)
             }
@@ -190,11 +216,11 @@ struct BrowserMedia {
     static func enableHint(for bundleID: String) -> String {
         switch bundleID {
         case "com.apple.Safari":
-            return "Safari › 설정 › 고급에서 '웹 개발자를 위한 기능 보기'를 켠 뒤, 설정의 개발자 탭에서 'Apple 이벤트에서 JavaScript 허용'을 켜세요"
+            return String(localized: "In Safari › Settings › Advanced, turn on “Show features for web developers”, then turn on “Allow JavaScript from Apple Events” in the Developer tab")
         case diaBundleID:
-            return "Dia는 메뉴로 켤 수 없고, JavaScript 허용 옵션을 붙여 다시 실행해야 합니다"
+            return String(localized: "Dia has no menu for this; it must be relaunched with its JavaScript option")
         default:
-            return "\(displayName(of: bundleID))의 메뉴 막대 › 보기 › 개발자 › 'Apple Events의 자바스크립트 허용'을 켜세요"
+            return String(localized: "In \(displayName(of: bundleID)), turn on View › Developer › Allow JavaScript from Apple Events")
         }
     }
 
@@ -204,6 +230,13 @@ struct BrowserMedia {
     static func relaunchDiaWithJavaScript() {
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: diaBundleID).first,
               let url = app.bundleURL else { return }
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Relaunch Dia?")
+        alert.informativeText = String(localized: "Dia will quit and reopen with JavaScript from AppleScript allowed. Downloads, uploads or unsent forms in Dia may be lost. While it runs this way, any app you have allowed to control Dia can run JavaScript in its tabs.")
+        alert.addButton(withTitle: String(localized: "Relaunch"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        NSApp.activate(ignoringOtherApps: true)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
         app.terminate()
         func reopen(attempt: Int) {
             if !app.isTerminated && attempt < 50 {
@@ -218,12 +251,6 @@ struct BrowserMedia {
     }
 
     func send(_ command: NowPlayingCommand, at location: Location) {
-        let source = """
-        tell application id "\(bundleID)"
-            \(execute(Self.commandJS(command), window: "\(location.window)", tab: "\(location.tab)"))
-        end tell
-        """
-        var errorInfo: NSDictionary?
-        NSAppleScript(source: source)?.executeAndReturnError(&errorInfo)
+        _ = Self.run(guardedScript(Self.commandJS(command), at: location))
     }
 }

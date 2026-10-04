@@ -15,7 +15,7 @@ struct ShelfView: View {
             if shelf.items.isEmpty {
                 VStack(spacing: 4) {
                     Image(systemName: "tray.and.arrow.down").font(.system(size: 18))
-                    Text("파일을 여기로 끌어다 놓으세요").font(.system(size: 11))
+                    Text("Drop files here").font(.system(size: 11))
                 }
                 .foregroundStyle(.white.opacity(0.55))
             } else {
@@ -31,9 +31,9 @@ struct ShelfView: View {
         }
         .contextMenu {
             if !shelf.items.isEmpty {
-                Button("선반 비우기") { shelf.removeAll() }
+                Button("Clear Shelf") { shelf.removeAll() }
             }
-            Button("NotchApp 종료") { NSApp.terminate(nil) }
+            Button("Quit Nunsseop") { NSApp.terminate(nil) }
         }
     }
 }
@@ -69,8 +69,8 @@ private struct ShelfTile: View {
         .onHover { hovering = $0 }
         .onDrag { NSItemProvider(contentsOf: item.url) ?? NSItemProvider() }
         .contextMenu {
-            Button("Finder에서 보기") { NSWorkspace.shared.activateFileViewerSelecting([item.url]) }
-            Button("선반에서 제거", action: onRemove)
+            Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([item.url]) }
+            Button("Remove from Shelf", action: onRemove)
         }
         .help(item.url.path)
     }

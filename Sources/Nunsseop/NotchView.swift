@@ -70,8 +70,8 @@ struct NotchView: View {
             .contentShape(shape)
             .onTapGesture { model.expand() }
             .contextMenu {
-                Button("설정…") { SettingsWindowController.shared.show() }
-                Button("NotchApp 종료") { NSApp.terminate(nil) }
+                Button("Settings…") { SettingsWindowController.shared.show() }
+                Button("Quit Nunsseop") { NSApp.terminate(nil) }
             }
             .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
                 model.shelf.handleDrop(providers)
@@ -130,7 +130,7 @@ private struct HeaderBar: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("설정")
+            .help("Settings")
             Button { NSApp.terminate(nil) } label: {
                 Image(systemName: "power")
                     .font(.system(size: 11, weight: .semibold))
@@ -139,7 +139,7 @@ private struct HeaderBar: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("NotchApp 종료")
+            .help("Quit Nunsseop")
         }
         .frame(height: max(height, 24))
     }
@@ -324,9 +324,9 @@ private struct HomeTab: View {
             return BrowserMedia.enableHint(for: browser)
         }
         if nowPlaying.needsAutomationPermission {
-            return "시스템 설정 › 개인정보 보호 및 보안 › 자동화에서 NotchApp을 허용하세요"
+            return String(localized: "Allow Nunsseop in System Settings › Privacy & Security › Automation")
         }
-        return "Music, Spotify 또는 브라우저에서 재생하면 여기에 표시됩니다"
+        return String(localized: "Play something in any app or browser and it shows up here")
     }
 
     var body: some View {
@@ -373,18 +373,18 @@ private struct HomeTab: View {
                 }
                 .frame(width: 104, height: 104)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("재생 중인 음악 없음").font(.system(size: 15, weight: .semibold))
+                    Text("Nothing playing").font(.system(size: 15, weight: .semibold))
                     Text(emptyMessage)
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.5))
                     if nowPlaying.browserNeedingJavaScript == BrowserMedia.diaBundleID {
-                        Button("Dia 다시 실행 (JavaScript 허용)") { BrowserMedia.relaunchDiaWithJavaScript() }
+                        Button("Relaunch Dia with JavaScript allowed") { BrowserMedia.relaunchDiaWithJavaScript() }
                             .buttonStyle(.plain)
                             .font(.system(size: 11, weight: .semibold))
                             .padding(.horizontal, 10).padding(.vertical, 4)
                             .background(Capsule().fill(.white.opacity(0.15)))
                             .padding(.top, 2)
-                            .help("Dia를 종료한 뒤 \(BrowserMedia.diaJavaScriptFlag) 옵션으로 다시 엽니다. 탭은 Dia가 복원합니다.")
+                            .help("Quits Dia and opens it again with \(BrowserMedia.diaJavaScriptFlag). Dia restores its tabs.")
                     }
                 }
             }
@@ -447,7 +447,8 @@ private struct ProgressRow: View {
     }
 
     static func format(_ seconds: Double) -> String {
-        let s = Int(seconds.rounded(.down))
+        guard seconds.isFinite else { return "0:00" }
+        let s = Int(max(0, seconds).rounded(.down))
         return String(format: "%d:%02d", s / 60, s % 60)
     }
 }

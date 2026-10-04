@@ -45,6 +45,13 @@ final class SystemAudio {
         return value
     }
 
+    /// HDMI/DisplayPort outputs and some USB DACs have no software volume.
+    var canSetVolume: Bool {
+        guard AudioObjectHasProperty(device, &Self.volumeAddress) else { return false }
+        var settable: DarwinBoolean = false
+        return AudioObjectIsPropertySettable(device, &Self.volumeAddress, &settable) == noErr && settable.boolValue
+    }
+
     var isMuted: Bool {
         var value = UInt32(0)
         var size = UInt32(MemoryLayout<UInt32>.size)

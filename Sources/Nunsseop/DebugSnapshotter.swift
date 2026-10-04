@@ -1,3 +1,4 @@
+#if DEBUG
 import AppKit
 import Combine
 
@@ -48,3 +49,4 @@ final class DebugSnapshotter {
         print("snapshot \(url.path)")
     }
 }
+#endif

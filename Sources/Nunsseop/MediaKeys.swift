@@ -42,7 +42,8 @@ enum MediaKey {
 final class MediaKeyInterceptor {
     /// Called on the main queue. `fine` is true when Option+Shift is held.
     var onKey: ((MediaKey, _ fine: Bool) -> Void)?
-    /// Brightness keys are only taken while this returns true.
+    /// Keys are only taken while these return true; otherwise the system handles them.
+    var handlesVolume: () -> Bool = { false }
     var handlesBrightness: () -> Bool = { false }
 
     private var tap: CFMachPort?
@@ -96,9 +97,9 @@ final class MediaKeyInterceptor {
         let isDown = ((ns.data1 & 0xFF00) >> 8) == 0xA
         let key: MediaKey
         switch code {
-        case 0: key = .volumeUp
-        case 1: key = .volumeDown
-        case 7: key = .mute
+        case 0 where handlesVolume(): key = .volumeUp
+        case 1 where handlesVolume(): key = .volumeDown
+        case 7 where handlesVolume(): key = .mute
         case 2 where handlesBrightness(): key = .brightnessUp
         case 3 where handlesBrightness(): key = .brightnessDown
         default: return Unmanaged.passUnretained(event)

@@ -22,6 +22,7 @@ final class HUDCenter: ObservableObject {
     private let interceptor = MediaKeyInterceptor()
     private var dismissWork: DispatchWorkItem?
     private var lastHeadphones: HeadphoneBattery?
+    private var headphoneCheckInFlight = false
     private var cancellables: Set<AnyCancellable> = []
 
     init(settings: AppSettings) {
@@ -45,6 +46,8 @@ final class HUDCenter: ObservableObject {
         powerMonitor.start()
         power = powerMonitor.state
 
+        // The tap callback runs on the main run loop.
+        interceptor.handlesVolume = { [weak self] in MainActor.assumeIsolated { self?.audio.canSetVolume ?? false } }
         interceptor.handlesBrightness = { BuiltInBrightness.isAvailable }
         interceptor.onKey = { [weak self] key, fine in self?.handle(key, fine: fine) }
         settings.$replaceSystemHUD
@@ -54,14 +57,16 @@ final class HUDCenter: ObservableObject {
 
         checkHeadphones(after: 1)
 
+        #if DEBUG
         if let i = CommandLine.arguments.firstIndex(of: "--demo-hud"), i + 1 < CommandLine.arguments.count {
             let demo: HUDEvent = switch CommandLine.arguments[i + 1] {
             case "power": .power(PowerState(percent: 76, isCharging: true, onAC: true))
             case "brightness": .brightness(0.6)
-            default: .headphones(HeadphoneBattery(name: "AirPods Pro", levels: [("왼쪽", 90), ("오른쪽", 85), ("케이스", 60)]))
+            default: .headphones(HeadphoneBattery(name: "AirPods Pro", levels: [(String(localized: "Left"), 90), (String(localized: "Right"), 85), (String(localized: "Case"), 60)]))
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { self.show(demo, duration: 30) }
         }
+        #endif
     }
 
     func retryInterception() {
@@ -104,11 +109,13 @@ final class HUDCenter: ObservableObject {
     }
 
     private func checkHeadphones(after delay: Double) {
-        guard settings.headphoneHUDEnabled else { return }
+        guard settings.headphoneHUDEnabled, !headphoneCheckInFlight else { return }
+        headphoneCheckInFlight = true
         DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + delay) { [weak self] in
             let battery = HeadphoneBatteryReader.read()
             DispatchQueue.main.async {
                 guard let self else { return }
+                self.headphoneCheckInFlight = false
                 defer { self.lastHeadphones = battery }
                 guard let battery, battery.name != self.lastHeadphones?.name else { return }
                 self.show(.headphones(battery), duration: 3.5)

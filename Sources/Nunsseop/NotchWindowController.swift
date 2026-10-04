@@ -33,8 +33,8 @@ final class NotchWindowController {
     private var pillWidthObserver: AnyCancellable?
 
     init() {
-        let screen = NotchGeometry.pickScreen()!
-        let geometry = NotchGeometry(screen: screen, pillWidth: AppSettings.shared.pillWidth)
+        let geometry = NotchGeometry.pickScreen().map { NotchGeometry(screen: $0, pillWidth: AppSettings.shared.pillWidth) }
+            ?? NotchGeometry(fallbackWidth: AppSettings.shared.pillWidth)
         model = NotchViewModel(geometry: geometry, settings: .shared)
         panel = NotchPanel(frame: geometry.panelFrame)
 
@@ -42,13 +42,17 @@ final class NotchWindowController {
         hosting.sizingOptions = []
         panel.contentView = hosting
 
+        #if DEBUG
         if let i = CommandLine.arguments.firstIndex(of: "--snapshot-dir"), i + 1 < CommandLine.arguments.count {
             snapshotter = DebugSnapshotter(directory: URL(fileURLWithPath: CommandLine.arguments[i + 1]),
                                            view: hosting, model: model)
         }
+        #endif
     }
 
+    #if DEBUG
     private var snapshotter: DebugSnapshotter?
+    #endif
 
     func show() {
         panel.setFrame(model.geometry.panelFrame, display: true)

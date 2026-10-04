@@ -88,10 +88,11 @@ final class NowPlayingController: ObservableObject {
     @Published private(set) var browserNeedingJavaScript: String?
 
     private let sources: [ScriptSource] = [.music, .spotify]
-    private let queue = DispatchQueue(label: "notchapp.nowplaying")
+    private let queue = DispatchQueue(label: "nunsseop.nowplaying")
     private var timer: Timer?
     private var artworkIdentity: String?
     private var browserHit: BrowserMedia.Hit?
+    private var pollInFlight = false
     private let mediaRemote = MediaRemoteBridge()
     /// True while the MediaRemote helper is delivering updates; the AppleScript
     /// and browser sources are only polled when it is not.
@@ -105,10 +106,12 @@ final class NowPlayingController: ObservableObject {
     }
 
     func start() {
+        #if DEBUG
         if CommandLine.arguments.contains("--demo-track") {
             showDemoTrack()
             return
         }
+        #endif
         mediaRemote.onUpdate = { [weak self] update in self?.apply(update) }
         mediaRemote.onUnavailable = { [weak self] in self?.mediaRemoteActive = false }
         mediaRemote.start()
@@ -143,7 +146,8 @@ final class NowPlayingController: ObservableObject {
     }
 
     private func poll() {
-        guard !mediaRemoteActive else { return }
+        guard !mediaRemoteActive, !pollInFlight else { return }
+        pollInFlight = true
         let isRunning = { (id: String) in !NSRunningApplication.runningApplications(withBundleIdentifier: id).isEmpty }
         let apps = sources.filter { isRunning($0.bundleID) }
         let browsers = BrowserMedia.all.filter { isRunning($0.bundleID) }
@@ -173,6 +177,7 @@ final class NowPlayingController: ObservableObject {
                 }
             }
             DispatchQueue.main.async {
+                self?.pollInFlight = false
                 self?.apply(result)
             }
         }
@@ -220,9 +225,9 @@ final class NowPlayingController: ObservableObject {
     private func loadArtwork(for track: NowPlayingTrack) {
         let identity = track.identity
         if let hit = browserHit {
-            guard let url = hit.artworkURL, url.scheme == "https" else { return }
-            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-                guard let data, let image = NSImage(data: data) else { return }
+            guard let url = hit.artworkURL, Self.isAllowedArtworkURL(url) else { return }
+            Self.artworkSession.dataTask(with: url) { [weak self] data, _, _ in
+                guard let data, data.count <= Self.maxArtworkBytes, let image = NSImage(data: data) else { return }
                 DispatchQueue.main.async { self?.setArtwork(image, for: identity) }
             }.resume()
             return
@@ -232,15 +237,32 @@ final class NowPlayingController: ObservableObject {
             guard case .success(let result) = Self.run(source.artworkScript) else { return }
             if source.artworkIsURL {
                 guard let string = result.stringValue, let url = URL(string: string),
-                      url.scheme == "https" else { return }
-                URLSession.shared.dataTask(with: url) { data, _, _ in
-                    guard let data, let image = NSImage(data: data) else { return }
+                      Self.isAllowedArtworkURL(url) else { return }
+                Self.artworkSession.dataTask(with: url) { data, _, _ in
+                    guard let data, data.count <= Self.maxArtworkBytes, let image = NSImage(data: data) else { return }
                     DispatchQueue.main.async { self?.setArtwork(image, for: identity) }
                 }.resume()
             } else if let image = NSImage(data: result.data) {
                 DispatchQueue.main.async { self?.setArtwork(image, for: identity) }
             }
         }
+    }
+
+    nonisolated private static let maxArtworkBytes = 5_000_000
+
+    nonisolated private static let artworkSession: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 10
+        configuration.timeoutIntervalForResource = 20
+        return URLSession(configuration: configuration)
+    }()
+
+    /// Artwork URLs can come from web pages, so only public HTTPS hosts are fetched.
+    nonisolated static func isAllowedArtworkURL(_ url: URL) -> Bool {
+        guard url.scheme == "https", let host = url.host?.lowercased(), !host.isEmpty else { return false }
+        if host == "localhost" || host.hasSuffix(".local") || host.hasSuffix(".localhost") { return false }
+        if host.contains(":") || host.allSatisfy({ $0.isNumber || $0 == "." }) { return false }
+        return true
     }
 
     private func setArtwork(_ image: NSImage, for identity: String) {

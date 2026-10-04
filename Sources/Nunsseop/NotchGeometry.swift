@@ -10,6 +10,13 @@ struct NotchGeometry: Equatable {
         NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main ?? NSScreen.screens.first
     }
 
+    /// Used only when no screen is attached at launch; the next screen change relayouts.
+    init(fallbackWidth: CGFloat) {
+        screenFrame = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        collapsedSize = CGSize(width: fallbackWidth, height: 24)
+        hasNotch = false
+    }
+
     init(screen: NSScreen, pillWidth: CGFloat) {
         screenFrame = screen.frame
         if screen.safeAreaInsets.top > 0,

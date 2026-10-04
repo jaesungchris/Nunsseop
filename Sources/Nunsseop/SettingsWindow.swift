@@ -12,7 +12,7 @@ final class SettingsWindowController {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 600),
                                   styleMask: [.titled, .closable],
                                   backing: .buffered, defer: false)
-            window.title = "NotchApp 설정"
+            window.title = String(localized: "Nunsseop Settings")
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: SettingsView(settings: .shared))
             window.center()
@@ -29,61 +29,61 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("일반") {
-                Toggle("로그인 시 NotchApp 실행", isOn: Binding(
+            Section("General") {
+                Toggle("Open Nunsseop at login", isOn: Binding(
                     get: { launchAtLogin.isEnabled },
                     set: { launchAtLogin.set($0) }
                 ))
                 if launchAtLogin.needsApproval {
-                    Text("시스템 설정 › 일반 › 로그인 항목에서 NotchApp을 허용해야 합니다.")
+                    Text("Allow Nunsseop in System Settings › General › Login Items.")
                         .font(.caption).foregroundStyle(.orange)
                 }
                 if !launchAtLogin.isInApplicationsFolder {
-                    Text("앱을 /Applications로 옮긴 뒤 켜는 것을 권장합니다. 지금 위치: \(Bundle.main.bundlePath)")
+                    Text("Move the app to /Applications before turning this on. Current location: \(Bundle.main.bundlePath)")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if let error = launchAtLogin.lastError {
                     Text(error).font(.caption).foregroundStyle(.red)
                 }
             }
-            Section("크기") {
-                SliderRow(title: "펼친 너비", value: $settings.expandedWidth,
+            Section("Size") {
+                SliderRow(title: "Expanded width", value: $settings.expandedWidth,
                           range: AppSettings.expandedWidthRange, unit: "pt")
-                SliderRow(title: "펼친 높이", value: $settings.expandedHeight,
+                SliderRow(title: "Expanded height", value: $settings.expandedHeight,
                           range: AppSettings.expandedHeightRange, unit: "pt")
-                SliderRow(title: "노치 없는 화면의 접힌 너비", value: $settings.pillWidth,
+                SliderRow(title: "Collapsed width on screens without a notch", value: $settings.pillWidth,
                           range: AppSettings.pillWidthRange, unit: "pt")
-                Toggle("재생 중 접힌 노치 양옆을 작게", isOn: $settings.compactLiveActivity)
-                Button("크기 기본값으로") { settings.resetSizes() }
+                Toggle("Compact artwork and visualizer while playing", isOn: $settings.compactLiveActivity)
+                Button("Reset sizes") { settings.resetSizes() }
             }
-            Section("동작") {
-                SliderRow(title: "마우스를 올린 뒤 펼치기까지", value: $settings.openDelay,
-                          range: 0...1, unit: "초", format: "%.1f")
+            Section("Behavior") {
+                SliderRow(title: "Delay before opening on hover", value: $settings.openDelay,
+                          range: 0...1, unit: String(localized: "sec"), format: "%.1f")
             }
-            Section("홈") {
-                Toggle("홈 탭에 캘린더 표시", isOn: $settings.calendarEnabled)
+            Section("Home") {
+                Toggle("Show calendar on the Home tab", isOn: $settings.calendarEnabled)
             }
-            Section("시스템 HUD") {
-                Toggle("볼륨이 바뀌면 노치에 표시", isOn: $settings.volumeHUDEnabled)
-                Toggle("볼륨·밝기 키를 가로채 기본 HUD 대신 노치만 표시", isOn: $settings.replaceSystemHUD)
+            Section("System HUD") {
+                Toggle("Show volume changes in the notch", isOn: $settings.volumeHUDEnabled)
+                Toggle("Replace the system volume and brightness HUD", isOn: $settings.replaceSystemHUD)
                 if settings.replaceSystemHUD && !MediaKeyInterceptor.isTrusted {
-                    Text("시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 NotchApp을 허용한 뒤 NotchApp을 다시 실행하세요.")
+                    Text("Allow Nunsseop in System Settings › Privacy & Security › Accessibility, then relaunch Nunsseop.")
                         .font(.caption).foregroundStyle(.orange)
                 }
                 if settings.replaceSystemHUD && !BuiltInBrightness.isAvailable {
-                    Text("내장 디스플레이가 꺼져 있어 밝기 키는 시스템이 처리합니다.")
+                    Text("The built-in display is off, so brightness keys stay with the system.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                Toggle("헤더에 배터리 잔량 표시", isOn: $settings.batteryInHeader)
-                Toggle("전원 연결·해제 시 노치에 표시", isOn: $settings.chargingHUDEnabled)
-                Toggle("헤드폰 연결 시 배터리 표시", isOn: $settings.headphoneHUDEnabled)
+                Toggle("Show battery level in the header", isOn: $settings.batteryInHeader)
+                Toggle("Show when power is connected or disconnected", isOn: $settings.chargingHUDEnabled)
+                Toggle("Show headphone battery when they connect", isOn: $settings.headphoneHUDEnabled)
             }
-            Section("미리보기") {
-                Toggle("곡이나 재생 상태가 바뀌면 노치 아래에 제목 표시", isOn: $settings.sneakPeekEnabled)
-                Toggle("재생 정보가 있으면 항상 표시", isOn: $settings.sneakPeekAlways)
+            Section("Sneak Peek") {
+                Toggle("Show the title under the notch when the track or play state changes", isOn: $settings.sneakPeekEnabled)
+                Toggle("Always show while something is playing", isOn: $settings.sneakPeekAlways)
                     .disabled(!settings.sneakPeekEnabled)
-                SliderRow(title: "표시 시간", value: $settings.sneakPeekDuration,
-                          range: 1...10, unit: "초", format: "%.1f")
+                SliderRow(title: "Duration", value: $settings.sneakPeekDuration,
+                          range: 1...10, unit: String(localized: "sec"), format: "%.1f")
                     .disabled(!settings.sneakPeekEnabled || settings.sneakPeekAlways)
             }
         }
@@ -93,7 +93,7 @@ struct SettingsView: View {
 }
 
 private struct SliderRow: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var value: Double
     let range: ClosedRange<Double>
     let unit: String

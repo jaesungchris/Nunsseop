@@ -50,7 +50,7 @@ final class PowerMonitor {
 
 struct HeadphoneBattery: Equatable {
     var name: String
-    /// Ordered labels such as 왼쪽/오른쪽/케이스 or 배터리, with percentages.
+    /// Ordered labels such as Left/Right/Case or Battery, with percentages.
     var levels: [(label: String, percent: Int)]
 
     static func == (a: HeadphoneBattery, b: HeadphoneBattery) -> Bool {
@@ -62,10 +62,10 @@ struct HeadphoneBattery: Equatable {
 /// the only place macOS exposes them without private frameworks.
 enum HeadphoneBatteryReader {
     private static let keys: [(String, String)] = [
-        ("device_batteryLevelLeft", "왼쪽"),
-        ("device_batteryLevelRight", "오른쪽"),
-        ("device_batteryLevelCase", "케이스"),
-        ("device_batteryLevelMain", "배터리"),
+        ("device_batteryLevelLeft", String(localized: "Left")),
+        ("device_batteryLevelRight", String(localized: "Right")),
+        ("device_batteryLevelCase", String(localized: "Case")),
+        ("device_batteryLevelMain", String(localized: "Battery")),
     ]
 
     static func read() -> HeadphoneBattery? {
@@ -76,6 +76,9 @@ enum HeadphoneBatteryReader {
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
         do { try process.run() } catch { return nil }
+        DispatchQueue.global().asyncAfter(deadline: .now() + 10) {
+            if process.isRunning { process.terminate() }
+        }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
         return parse(data)

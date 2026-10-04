@@ -13,11 +13,11 @@ struct CalendarPanel: View {
                 case .unknown, .denied:
                     VStack(alignment: .leading, spacing: 6) {
                         Text(calendar.access == .denied
-                             ? "캘린더 접근이 꺼져 있습니다"
-                             : "일정을 보려면 캘린더 접근을 허용하세요")
+                             ? String(localized: "Calendar access is off")
+                             : String(localized: "Allow calendar access to see your events"))
                             .font(.system(size: 11))
                             .foregroundStyle(.white.opacity(0.55))
-                        Button(calendar.access == .denied ? "시스템 설정 열기" : "접근 허용") {
+                        Button(calendar.access == .denied ? String(localized: "Open System Settings") : String(localized: "Allow Access")) {
                             calendar.requestAccess()
                         }
                         .buttonStyle(.plain)
@@ -63,7 +63,7 @@ private struct EventList: View {
 
     var body: some View {
         if items.isEmpty {
-            Text("일정 없음")
+            Text("No events")
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.45))
         } else {
@@ -76,7 +76,7 @@ private struct EventList: View {
                                 Text(item.title)
                                     .font(.system(size: 11, weight: .medium))
                                     .lineLimit(1)
-                                Text(item.isAllDay ? "종일" : "\(item.start.formatted(date: .omitted, time: .shortened)) – \(item.end.formatted(date: .omitted, time: .shortened))")
+                                Text(item.isAllDay ? String(localized: "All day") : "\(item.start.formatted(date: .omitted, time: .shortened)) – \(item.end.formatted(date: .omitted, time: .shortened))")
                                     .font(.system(size: 9).monospacedDigit())
                                     .foregroundStyle(.white.opacity(0.5))
                             }
