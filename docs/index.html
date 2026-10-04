@@ -111,7 +111,7 @@
 <body data-lang="en">
 <div class="wrap">
   <header class="top">
-    <div class="brand">Nunsseop<span>눈썹</span></div>
+    <div class="brand"><img src="images/icon.png" width="28" height="28" alt="" style="vertical-align:-8px;margin-right:8px">Nunsseop<span>눈썹</span></div>
     <div class="lang" role="group" aria-label="Language">
       <button type="button" data-set="en" aria-pressed="true">EN</button>
       <button type="button" data-set="ko" aria-pressed="false">한국어</button>
@@ -123,10 +123,10 @@
     <p class="lead en">Your MacBook notch, made useful. What's playing, a file shelf, your calendar and system HUDs, all hanging from the top of the screen.</p>
     <p class="lead ko">MacBook 노치를 쓸모 있는 공간으로. 지금 재생 중인 음악, 파일 선반, 캘린더, 시스템 HUD를 화면 맨 위에서 바로.</p>
     <div class="cta">
-      <a class="btn primary" href="https://github.com/namekun/Nunsseop">
-        <span class="en">View on GitHub</span><span class="ko">GitHub에서 보기</span>
+      <a class="btn primary" href="https://github.com/namekun/Nunsseop/releases/latest">
+        <span class="en">Download for macOS</span><span class="ko">macOS용 다운로드</span>
       </a>
-      <a class="btn" href="#install"><span class="en">Build it</span><span class="ko">빌드하기</span></a>
+      <a class="btn" href="https://github.com/namekun/Nunsseop"><span class="en">View on GitHub</span><span class="ko">GitHub에서 보기</span></a>
     </div>
     <div class="stage">
       <div class="menubar"></div>
@@ -141,8 +141,8 @@
       <div class="card">
         <div class="icon">🎵</div>
         <h3><span class="en">Now playing</span><span class="ko">지금 재생 중</span></h3>
-        <p class="en">Artwork, progress and controls for anything that plays: Music, Spotify, YouTube Music, and browsers such as Safari, Chrome, Arc, Dia and Aside.</p>
-        <p class="ko">Music, Spotify, YouTube Music, 그리고 Safari·Chrome·Arc·Dia·Aside 같은 브라우저 재생까지 앨범아트, 진행바, 재생 컨트롤로 보여 줍니다.</p>
+        <p class="en">Artwork, progress and controls for anything that plays: Music, Spotify, YouTube Music, and browsers such as Safari, Chrome, Arc, Dia and Aside. Drag the bar to seek.</p>
+        <p class="ko">Music, Spotify, YouTube Music, 그리고 Safari·Chrome·Arc·Dia·Aside 같은 브라우저 재생까지 앨범아트, 진행바, 재생 컨트롤로 보여 줍니다. 진행바를 끌어 위치를 옮길 수 있습니다.</p>
       </div>
       <div class="card">
         <div class="icon">👀</div>
@@ -153,26 +153,38 @@
       <div class="card">
         <div class="icon">📥</div>
         <h3><span class="en">File shelf</span><span class="ko">파일 선반</span></h3>
-        <p class="en">Drop files on the notch to keep them close, drag them out when you need them. It survives restarts.</p>
-        <p class="ko">파일을 노치에 끌어다 두고 필요할 때 다시 끌어내세요. 앱을 다시 켜도 그대로 남아 있습니다.</p>
+        <p class="en">Drop files on the notch to keep them close and drag them out when you need them. Send them with AirDrop or share them in a click.</p>
+        <p class="ko">파일을 노치에 끌어다 두고 필요할 때 다시 끌어내세요. AirDrop이나 공유로 바로 보낼 수 있습니다.</p>
       </div>
       <div class="card">
         <div class="icon">📅</div>
-        <h3><span class="en">Calendar</span><span class="ko">캘린더</span></h3>
-        <p class="en">A week strip and the day's events, right next to your music.</p>
-        <p class="ko">음악 옆에 이번 주 날짜와 그날 일정을 보여 줍니다.</p>
+        <h3><span class="en">Calendar and reminders</span><span class="ko">캘린더와 미리 알림</span></h3>
+        <p class="en">A week strip, the day's events and the reminders due, right next to your music. Tick reminders off from the notch.</p>
+        <p class="ko">음악 옆에 이번 주 날짜, 그날 일정, 미리 알림을 보여 줍니다. 미리 알림은 노치에서 바로 완료할 수 있습니다.</p>
       </div>
       <div class="card">
         <div class="icon">🔊</div>
         <h3><span class="en">System HUDs</span><span class="ko">시스템 HUD</span></h3>
-        <p class="en">Volume, brightness, charging and headphone battery appear in the notch. It can replace the system volume and brightness HUD.</p>
-        <p class="ko">볼륨, 밝기, 충전, 헤드폰 배터리를 노치에 표시합니다. 기본 볼륨·밝기 HUD를 대체할 수도 있습니다.</p>
+        <p class="en">Volume, brightness (even on external displays over DDC), keyboard backlight, charging and headphone battery appear in the notch, replacing the system HUD if you like.</p>
+        <p class="ko">볼륨, 밝기(DDC 지원 외부 모니터 포함), 키보드 백라이트, 충전, 헤드폰 배터리를 노치에 표시하고, 원하면 기본 HUD를 대체합니다.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📷</div>
+        <h3><span class="en">Mirror</span><span class="ko">미러</span></h3>
+        <p class="en">Check yourself before a call with the camera of your choice. Nothing is recorded.</p>
+        <p class="ko">통화 전에 원하는 카메라로 내 모습을 확인하세요. 녹화되지 않습니다.</p>
+      </div>
+      <div class="card">
+        <div class="icon">👆</div>
+        <h3><span class="en">Gestures</span><span class="ko">제스처</span></h3>
+        <p class="en">Swipe down on the notch to open it, up to close it, sideways on Home to skip tracks.</p>
+        <p class="ko">노치에서 아래로 쓸면 열리고 위로 쓸면 닫히며, 홈에서 좌우로 쓸면 곡이 넘어갑니다.</p>
       </div>
       <div class="card">
         <div class="icon">⚙️</div>
         <h3><span class="en">Make it yours</span><span class="ko">내 맞게 조절</span></h3>
-        <p class="en">Size, hover delay, sneak peek and every HUD are adjustable. English and Korean, following your Mac's language.</p>
-        <p class="ko">크기, 열림 지연, 미리보기, 각 HUD를 조절할 수 있습니다. Mac 언어에 따라 영어 또는 한국어로 표시됩니다.</p>
+        <p class="en">Display, size, hover delay, sneak peek and every HUD are adjustable. Available in English, Korean, Japanese, Chinese, Spanish, German and French.</p>
+        <p class="ko">표시할 화면, 크기, 열림 지연, 미리보기, 각 HUD를 조절할 수 있습니다. 영어, 한국어, 일본어, 중국어, 스페인어, 독일어, 프랑스어를 지원합니다.</p>
       </div>
     </div>
   </section>
@@ -180,6 +192,10 @@
   <section>
     <h2><span class="en">In the notch</span><span class="ko">노치에서는 이렇게</span></h2>
     <p class="sub"><span class="en">Screens without a notch get a pill at the top centre.</span><span class="ko">노치가 없는 화면에서는 상단 중앙에 작은 막대로 나타납니다.</span></p>
+    <div class="stage" style="margin:0 0 14px">
+      <div class="menubar"></div>
+      <img src="images/shelf.png" width="642" alt="File shelf with the AirDrop tile">
+    </div>
     <div class="shots">
       <div class="shot">
         <img src="images/collapsed.png" width="284" height="42" alt="Collapsed notch with artwork and visualizer">
@@ -197,14 +213,17 @@
   </section>
 
   <section id="install">
-    <h2><span class="en">Build and run</span><span class="ko">빌드하고 실행하기</span></h2>
-    <p class="sub"><span class="en">Requires macOS 14 or later and the Xcode command line tools.</span><span class="ko">macOS 14 이상과 Xcode 명령줄 도구가 필요합니다.</span></p>
+    <h2><span class="en">Install</span><span class="ko">설치</span></h2>
+    <p class="sub"><span class="en">macOS 14 or later. Download the dmg from <a href="https://github.com/namekun/Nunsseop/releases/latest">Releases</a> and drag Nunsseop to Applications.</span><span class="ko">macOS 14 이상. <a href="https://github.com/namekun/Nunsseop/releases/latest">Releases</a>에서 dmg를 받아 Nunsseop을 응용 프로그램 폴더로 옮기세요.</span></p>
+    <p class="en">The app isn't notarized yet, so remove the quarantine flag once before the first launch:</p>
+    <p class="ko">아직 공증되지 않은 앱이라, 처음 실행하기 전에 한 번 격리 표시를 지워 주세요.</p>
+<pre><code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code></pre>
+    <p class="en" style="margin-top:28px">Or build it yourself with the Xcode command line tools:</p>
+    <p class="ko" style="margin-top:28px">직접 빌드하려면 Xcode 명령줄 도구가 필요합니다.</p>
 <pre><code>git clone https://github.com/namekun/Nunsseop.git
 cd Nunsseop
 ./scripts/bundle.sh release
 open build/Nunsseop.app</code></pre>
-    <p class="note en">Builds are ad-hoc signed, so macOS may ask for permissions again after you rebuild. Move the app to /Applications before turning on launch at login.</p>
-    <p class="note ko">임시 서명으로 빌드되기 때문에, 다시 빌드하면 macOS가 권한을 다시 물을 수 있습니다. 로그인 시 실행을 켜기 전에 앱을 /Applications로 옮겨 주세요.</p>
   </section>
 
   <section>
@@ -216,7 +235,9 @@ open build/Nunsseop.app</code></pre>
         </thead>
         <tbody>
           <tr><td><span class="en">Calendar</span><span class="ko">캘린더</span></td><td><span class="en">Calendars</span><span class="ko">캘린더</span></td></tr>
-          <tr><td><span class="en">Replacing the volume/brightness HUD</span><span class="ko">볼륨·밝기 HUD 대체</span></td><td><span class="en">Accessibility</span><span class="ko">손쉬운 사용</span></td></tr>
+          <tr><td><span class="en">Reminders</span><span class="ko">미리 알림</span></td><td><span class="en">Reminders</span><span class="ko">미리 알림</span></td></tr>
+          <tr><td><span class="en">Mirror</span><span class="ko">미러</span></td><td><span class="en">Camera</span><span class="ko">카메라</span></td></tr>
+          <tr><td><span class="en">Replacing the volume, brightness and keyboard backlight HUD</span><span class="ko">볼륨·밝기·키보드 백라이트 HUD 대체</span></td><td><span class="en">Accessibility</span><span class="ko">손쉬운 사용</span></td></tr>
           <tr><td><span class="en">Fallback for Music, Spotify and browsers</span><span class="ko">Music·Spotify·브라우저 대체 경로</span></td><td><span class="en">Automation</span><span class="ko">자동화</span></td></tr>
           <tr><td><span class="en">Launch at login</span><span class="ko">로그인 시 실행</span></td><td><span class="en">Login Items</span><span class="ko">로그인 항목</span></td></tr>
         </tbody>
