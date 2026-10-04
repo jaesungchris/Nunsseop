@@ -147,6 +147,7 @@ private struct NotchDropDelegate: DropDelegate {
 private struct HeaderBar: View {
     @ObservedObject var model: NotchViewModel
     @ObservedObject var shelf: ShelfStore
+    @ObservedObject private var updates = UpdateChecker.shared
     let height: CGFloat
 
     init(model: NotchViewModel, height: CGFloat) {
@@ -179,6 +180,11 @@ private struct HeaderBar: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.45))
                     .frame(width: 26, height: 22)
+                    .overlay(alignment: .topTrailing) {
+                        if updates.available != nil {
+                            Circle().fill(Color.blue).frame(width: 6, height: 6).offset(x: -4, y: 3)
+                        }
+                    }
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

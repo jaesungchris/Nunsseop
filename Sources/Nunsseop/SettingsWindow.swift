@@ -25,6 +25,7 @@ final class SettingsWindowController {
 
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
+    @ObservedObject private var updates = UpdateChecker.shared
     @StateObject private var launchAtLogin = LaunchAtLogin()
 
     var body: some View {
@@ -45,6 +46,25 @@ struct SettingsView: View {
                 if let error = launchAtLogin.lastError {
                     Text(error).font(.caption).foregroundStyle(.red)
                 }
+            }
+            Section("Updates") {
+                Toggle("Check for updates automatically", isOn: $settings.checkForUpdates)
+                HStack {
+                    if let release = updates.available {
+                        Text("Version \(release.version) is available")
+                        Spacer()
+                        Button("Download") { NSWorkspace.shared.open(release.url) }
+                    } else {
+                        Text(updates.isChecking ? String(localized: "Checking…")
+                             : updates.failed ? String(localized: "Couldn't check for updates")
+                             : updates.lastChecked == nil ? String(localized: "Not checked yet")
+                             : String(localized: "Nunsseop is up to date"))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Check Now") { updates.check() }.disabled(updates.isChecking)
+                    }
+                }
+                Text("Version \(updates.currentVersion)").font(.caption).foregroundStyle(.secondary)
             }
             Section("Display") {
                 Picker("Show on", selection: $settings.displayName) {

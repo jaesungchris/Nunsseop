@@ -99,3 +99,15 @@
 
 /* Backlights */
 "Brightness keys adjust the display under the pointer, including external displays that support DDC. Keyboard backlight keys work on keyboards that have them." = "밝기 키는 마우스가 있는 화면을 조절합니다. DDC를 지원하는 외부 모니터도 포함됩니다. 키보드 백라이트 키는 해당 키가 있는 키보드에서 동작합니다.";
+
+/* Updates */
+"Updates" = "업데이트";
+"Check for updates automatically" = "자동으로 업데이트 확인";
+"Version %@ is available" = "새 버전 %@이 있습니다";
+"Download" = "다운로드";
+"Checking…" = "확인 중…";
+"Couldn't check for updates" = "업데이트를 확인하지 못했습니다";
+"Not checked yet" = "아직 확인하지 않음";
+"Nunsseop is up to date" = "최신 버전입니다";
+"Check Now" = "지금 확인";
+"Version %@" = "버전 %@";

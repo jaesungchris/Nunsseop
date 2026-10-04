@@ -39,6 +39,7 @@ final class NotchWindowController {
     private var swipeIdleWork: DispatchWorkItem?
     private var screenObserver: NSObjectProtocol?
     private var pillWidthObserver: AnyCancellable?
+    private var updatesObserver: AnyCancellable?
 
     init() {
         let geometry = NotchGeometry.pickScreen(preferredName: AppSettings.shared.displayName).map { NotchGeometry(screen: $0, pillWidth: AppSettings.shared.pillWidth) }
@@ -68,6 +69,9 @@ final class NotchWindowController {
         installMonitors()
         model.nowPlaying.start()
         model.hud.start()
+        updatesObserver = model.settings.$checkForUpdates
+            .removeDuplicates()
+            .sink { UpdateChecker.shared.startAutomaticChecks(enabled: $0) }
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main

@@ -34,6 +34,7 @@ final class AppSettings: ObservableObject {
     @Published var remindersEnabled: Bool { didSet { defaults.set(remindersEnabled, forKey: "remindersEnabled") } }
     /// NSScreen.localizedName of the display to use; empty means automatic.
     @Published var displayName: String { didSet { defaults.set(displayName, forKey: "displayName") } }
+    @Published var checkForUpdates: Bool { didSet { defaults.set(checkForUpdates, forKey: "checkForUpdates") } }
     @Published var mirrorEnabled: Bool { didSet { defaults.set(mirrorEnabled, forKey: "mirrorEnabled") } }
     /// AVCaptureDevice.uniqueID; empty means the system default camera.
     @Published var mirrorCameraID: String { didSet { defaults.set(mirrorCameraID, forKey: "mirrorCameraID") } }
@@ -60,6 +61,7 @@ final class AppSettings: ObservableObject {
             "calendarEnabled": true,
             "remindersEnabled": true,
             "mirrorEnabled": true,
+            "checkForUpdates": true,
             "displayName": "",
             "mirrorCameraID": "",
             "swipeToOpen": true,
@@ -81,6 +83,7 @@ final class AppSettings: ObservableObject {
         calendarEnabled = defaults.bool(forKey: "calendarEnabled")
         remindersEnabled = defaults.bool(forKey: "remindersEnabled")
         mirrorEnabled = defaults.bool(forKey: "mirrorEnabled")
+        checkForUpdates = defaults.bool(forKey: "checkForUpdates")
         displayName = defaults.string(forKey: "displayName") ?? ""
         mirrorCameraID = defaults.string(forKey: "mirrorCameraID") ?? ""
         swipeToOpen = defaults.bool(forKey: "swipeToOpen")

@@ -1,0 +1,73 @@
+import AppKit
+
+/// Compares the running version with the latest GitHub release.
+@MainActor
+final class UpdateChecker: ObservableObject {
+    static let shared = UpdateChecker()
+
+    struct Release: Equatable {
+        let version: String
+        let url: URL
+    }
+
+    @Published private(set) var available: Release?
+    @Published private(set) var isChecking = false
+    @Published private(set) var lastChecked: Date?
+    @Published private(set) var failed = false
+
+    let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+    private let endpoint = URL(string: "https://api.github.com/repos/namekun/Nunsseop/releases/latest")!
+    private var timer: Timer?
+
+    func startAutomaticChecks(enabled: Bool) {
+        timer?.invalidate()
+        timer = nil
+        guard enabled else { return }
+        check()
+        timer = Timer.scheduledTimer(withTimeInterval: 24 * 60 * 60, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.check() }
+        }
+    }
+
+    func check() {
+        guard !isChecking else { return }
+        isChecking = true
+        var request = URLRequest(url: endpoint, timeoutInterval: 15)
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, _ in
+            let status = (response as? HTTPURLResponse)?.statusCode
+            // 404 means the repository has no releases yet.
+            let release = status == 200 ? data.flatMap(Self.parse) : nil
+            let ok = status == 404 || (status == 200 && release != nil)
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.isChecking = false
+                self.lastChecked = Date()
+                self.failed = !ok
+                if let release, Self.isNewer(release.version, than: self.currentVersion) {
+                    self.available = release
+                } else if ok {
+                    self.available = nil
+                }
+            }
+        }.resume()
+    }
+
+    nonisolated private static func parse(_ data: Data) -> Release? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let tag = json["tag_name"] as? String,
+              let page = (json["html_url"] as? String).flatMap(URL.init(string:)),
+              page.host == "github.com" else { return nil }
+        return Release(version: tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV")), url: page)
+    }
+
+    nonisolated static func isNewer(_ candidate: String, than current: String) -> Bool {
+        let a = candidate.split(separator: ".").map { Int($0) ?? 0 }
+        let b = current.split(separator: ".").map { Int($0) ?? 0 }
+        for i in 0..<max(a.count, b.count) {
+            let x = i < a.count ? a[i] : 0, y = i < b.count ? b[i] : 0
+            if x != y { return x > y }
+        }
+        return false
+    }
+}
