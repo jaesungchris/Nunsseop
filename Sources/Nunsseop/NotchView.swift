@@ -4,6 +4,7 @@ struct NotchView: View {
     @ObservedObject var model: NotchViewModel
     @ObservedObject var nowPlaying: NowPlayingController
     @State private var isDropTargeted = false
+    @State private var isAirDropTargeted = false
 
     init(model: NotchViewModel) {
         self.model = model
@@ -35,7 +36,8 @@ struct NotchView: View {
                                     }
                                 }
                             case .shelf:
-                                ShelfView(shelf: model.shelf, isDropTargeted: isDropTargeted)
+                                ShelfView(shelf: model.shelf, isDropTargeted: isDropTargeted && !isAirDropTargeted,
+                                          isAirDropTargeted: isAirDropTargeted)
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -73,15 +75,12 @@ struct NotchView: View {
                 Button("Settings…") { SettingsWindowController.shared.show() }
                 Button("Quit Nunsseop") { NSApp.terminate(nil) }
             }
-            .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
-                model.shelf.handleDrop(providers)
-            }
-            .onChange(of: isDropTargeted) { _, targeted in
-                if targeted {
-                    model.tab = .shelf
-                    model.expand()
-                }
-            }
+            .onDrop(of: [.fileURL], delegate: NotchDropDelegate(
+                model: model,
+                isTargeted: $isDropTargeted,
+                isAirDropTargeted: $isAirDropTargeted,
+                airDropRect: airDropRect(in: size)
+            ))
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -90,6 +89,54 @@ struct NotchView: View {
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.showsSneakPeek)
         .animation(.spring(response: 0.32, dampingFraction: 0.82), value: model.hud.event)
         .animation(.easeInOut(duration: 0.18), value: model.tab)
+    }
+}
+
+extension NotchView {
+    /// Where ShelfView's AirDrop tile sits inside the expanded shape.
+    func airDropRect(in size: CGSize) -> CGRect {
+        let inset: CGFloat = 18 + 14
+        let top = max(model.geometry.collapsedSize.height, 24) + 8
+        return CGRect(x: size.width - inset - ShelfView.airDropWidth, y: top,
+                      width: ShelfView.airDropWidth, height: size.height - top - 16)
+    }
+}
+
+/// Drops land on the shelf, or go straight to AirDrop when released over the AirDrop tile.
+private struct NotchDropDelegate: DropDelegate {
+    let model: NotchViewModel
+    @Binding var isTargeted: Bool
+    @Binding var isAirDropTargeted: Bool
+    let airDropRect: CGRect
+
+    func validateDrop(info: DropInfo) -> Bool { info.hasItemsConforming(to: [.fileURL]) }
+
+    func dropEntered(info: DropInfo) {
+        isTargeted = true
+        model.tab = .shelf
+        model.expand()
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        isAirDropTargeted = model.isExpanded && model.tab == .shelf && airDropRect.contains(info.location)
+        return DropProposal(operation: .copy)
+    }
+
+    func dropExited(info: DropInfo) {
+        isTargeted = false
+        isAirDropTargeted = false
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        let providers = info.itemProviders(for: [.fileURL])
+        let toAirDrop = isAirDropTargeted
+        isTargeted = false
+        isAirDropTargeted = false
+        if toAirDrop {
+            ShelfSharing.loadURLs(from: providers) { ShelfSharing.airDrop($0) }
+            return true
+        }
+        return model.shelf.handleDrop(providers)
     }
 }
 

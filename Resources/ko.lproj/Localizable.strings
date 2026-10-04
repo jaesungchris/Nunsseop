@@ -66,3 +66,9 @@
 "Dia will quit and reopen with JavaScript from AppleScript allowed. Downloads, uploads or unsent forms in Dia may be lost. While it runs this way, any app you have allowed to control Dia can run JavaScript in its tabs." = "Dia를 종료한 뒤 AppleScript의 JavaScript 실행을 허용한 상태로 다시 엽니다. Dia에서 진행 중인 다운로드·업로드나 보내지 않은 입력은 사라질 수 있습니다. 이 상태로 실행되는 동안에는 Dia 제어를 허용한 다른 앱도 Dia 탭에서 JavaScript를 실행할 수 있습니다.";
 "Relaunch" = "다시 실행";
 "Cancel" = "취소";
+
+/* Shelf sharing */
+"AirDrop All" = "모두 AirDrop으로 보내기";
+"Share All…" = "모두 공유…";
+"Share…" = "공유…";
+"Drop files to send with AirDrop, or click to send everything on the shelf" = "파일을 끌어다 놓으면 AirDrop으로 보내고, 클릭하면 선반의 모든 파일을 보냅니다";
