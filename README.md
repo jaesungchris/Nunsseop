@@ -89,6 +89,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 
 **🧩 Make it yours**
 - Pick your tabs and their order, what the header and collapsed notch show, and which pop-ups you get. **Anything you turn off stops running.**
+- During a call in Zoom, FaceTime, Teams, Slack, Discord or Google Meet, the collapsed notch shows the app and how long you've been talking. No extra permissions needed.
 - Podcasts and long videos get 15-second skips and a speed button (1× to 2×).
 - The Tools tab picks a color from anywhere on screen and copies text out of any part of the screen. Tracking parameters are stripped from links you copy.
 - Even when nothing is playing, each side of the collapsed notch can show something you pick: Claude Code or Codex usage left, battery, weather or the date.
