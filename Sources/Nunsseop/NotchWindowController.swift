@@ -100,6 +100,7 @@ final class NotchWindowController {
                 self.model.search.query = query
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                     self.model.tab = .search
+                    self.model.expand()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { self.snapshotter?.capture(label: "search") }
                 }
             }

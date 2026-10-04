@@ -32,6 +32,15 @@ struct NotchGeometry: Equatable {
         hasNotch = false
     }
 
+    /// Debug builds can pretend a display has a notch of this width with `--fake-notch <points>`.
+    private static let fakeNotchWidth: CGFloat = {
+        #if DEBUG
+        if let i = CommandLine.arguments.firstIndex(of: "--fake-notch"), i + 1 < CommandLine.arguments.count,
+           let width = Double(CommandLine.arguments[i + 1]) { return width }
+        #endif
+        return 0
+    }()
+
     init(screen: NSScreen, pillWidth: CGFloat) {
         screenFrame = screen.frame
         if screen.safeAreaInsets.top > 0,
@@ -40,6 +49,9 @@ struct NotchGeometry: Equatable {
             // The shape's top corners flare outward, so widen it to keep the body as wide as the housing.
             let width = screen.frame.width - left.width - right.width + 12
             collapsedSize = CGSize(width: width, height: screen.safeAreaInsets.top)
+            hasNotch = true
+        } else if Self.fakeNotchWidth > 0 {
+            collapsedSize = CGSize(width: Self.fakeNotchWidth, height: 32)
             hasNotch = true
         } else {
             let menuBarHeight = screen.frame.maxY - screen.visibleFrame.maxY

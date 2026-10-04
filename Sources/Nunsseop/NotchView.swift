@@ -179,60 +179,128 @@ private struct HeaderBar: View {
         self.height = height
     }
 
+    private static let slot: CGFloat = 36
+
+    /// Which tabs sit left of the camera, which go to its right, and which only fit in the overflow menu.
+    private var plan: (side: CGFloat, camera: CGFloat, left: [NotchTab], right: [NotchTab], overflow: [NotchTab], menuOnLeft: Bool) {
+        let tabs = model.settings.visibleTabs
+        let content = model.expandedSize.width - 2 * (18 + 14)
+        var status: CGFloat = 2 * (26 + 6)
+        if model.settings.batteryInHeader && model.hud.power != nil { status += 58 }
+        if model.settings.headerWeather && model.weather.current != nil { status += 50 }
+        let camera = model.geometry.hasNotch ? model.geometry.collapsedSize.width + 8 : 0
+        let side = model.geometry.hasNotch ? (content - camera - 12) / 2 : content
+        var leftCount = max(1, Int(((model.geometry.hasNotch ? side : side - status) + 6) / Self.slot))
+        var rightCount = model.geometry.hasNotch ? max(0, Int((side - status + 6) / Self.slot)) : 0
+        var menuOnLeft = false
+        if tabs.count > leftCount + rightCount {
+            if rightCount > 0 { rightCount -= 1 } else { leftCount -= 1; menuOnLeft = true }
+        }
+        let left = Array(tabs.prefix(leftCount))
+        let right = Array(tabs.dropFirst(left.count).prefix(rightCount))
+        return (side, camera, left, right, Array(tabs.dropFirst(left.count + right.count)), menuOnLeft)
+    }
+
     var body: some View {
+        let plan = plan
         HStack(spacing: 6) {
-            ForEach(model.settings.visibleTabs) { tab in
-                TabButton(symbol: tab.symbol, selected: model.tab == tab,
-                          badge: tab == .shelf ? shelf.items.count : 0) { model.tab = tab }
-                    .help(tab.title)
-            }
-            Spacer()
-            // The middle sits under the camera on notched displays, and gets crowded with many tabs.
-            if model.settings.headerDate && !model.geometry.hasNotch && model.settings.visibleTabs.count <= 7 {
-                Text(Date.now, format: .dateTime.month().day().weekday(.abbreviated))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.45))
-                    .lineLimit(1)
-                    .fixedSize()
-            }
-            Spacer()
-            if model.settings.headerWeather, let weather = model.weather.current {
-                HStack(spacing: 4) {
-                    Image(systemName: WeatherModel.symbol(for: weather.code)).symbolRenderingMode(.multicolor)
-                    Text("\(Int(weather.temperature.rounded()))°").monospacedDigit()
+            if model.geometry.hasNotch {
+                HStack(spacing: 6) {
+                    tabButtons(plan.left)
+                    if plan.menuOnLeft { overflowMenu(plan.overflow) }
                 }
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(0.7))
-                .help("\(weather.place) · \(Int(weather.low.rounded()))° / \(Int(weather.high.rounded()))°")
+                .frame(width: plan.side, alignment: .leading)
+                Color.clear.frame(width: plan.camera)
+                HStack(spacing: 6) {
+                    tabButtons(plan.right)
+                    if !plan.menuOnLeft { overflowMenu(plan.overflow) }
+                    Spacer(minLength: 0)
+                    status
+                }
+                .frame(width: plan.side)
+            } else {
+                tabButtons(plan.left)
+                overflowMenu(plan.overflow)
+                Spacer()
+                if model.settings.headerDate && model.settings.visibleTabs.count <= 7 {
+                    Text(Date.now, format: .dateTime.month().day().weekday(.abbreviated))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                Spacer()
+                status
             }
-            if model.settings.batteryInHeader, let power = model.hud.power {
-                BatteryBadge(state: power)
-            }
-            Button { SettingsWindowController.shared.show() } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.45))
-                    .frame(width: 26, height: 22)
-                    .overlay(alignment: .topTrailing) {
-                        if updates.available != nil {
-                            Circle().fill(Color.blue).frame(width: 6, height: 6).offset(x: -4, y: 3)
-                        }
-                    }
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Settings")
-            Button { NSApp.terminate(nil) } label: {
-                Image(systemName: "power")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.45))
-                    .frame(width: 26, height: 22)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Quit Nunsseop")
         }
         .frame(height: max(height, 24))
+    }
+
+    private func tabButtons(_ tabs: [NotchTab]) -> some View {
+        ForEach(tabs) { tab in
+            TabButton(symbol: tab.symbol, selected: model.tab == tab,
+                      badge: tab == .shelf ? shelf.items.count : 0) { model.tab = tab }
+                .help(tab.title)
+        }
+    }
+
+    @ViewBuilder private func overflowMenu(_ tabs: [NotchTab]) -> some View {
+        if !tabs.isEmpty {
+            let current = tabs.contains(model.tab)
+            Menu {
+                ForEach(tabs) { tab in
+                    Button { model.tab = tab } label: { Label(tab.title, systemImage: tab.symbol) }
+                }
+            } label: {
+                Image(systemName: current ? model.tab.symbol : "ellipsis")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(current ? .white : .white.opacity(0.45))
+                    .frame(width: 30, height: 22)
+                    .background(Capsule().fill(.white.opacity(current ? 0.16 : 0)))
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help(Text("More tabs"))
+        }
+    }
+
+    @ViewBuilder private var status: some View {
+        if model.settings.headerWeather, let weather = model.weather.current {
+            HStack(spacing: 4) {
+                Image(systemName: WeatherModel.symbol(for: weather.code)).symbolRenderingMode(.multicolor)
+                Text("\(Int(weather.temperature.rounded()))°").monospacedDigit()
+            }
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.white.opacity(0.7))
+            .help("\(weather.place) · \(Int(weather.low.rounded()))° / \(Int(weather.high.rounded()))°")
+        }
+        if model.settings.batteryInHeader, let power = model.hud.power {
+            BatteryBadge(state: power)
+        }
+        Button { SettingsWindowController.shared.show() } label: {
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.45))
+                .frame(width: 26, height: 22)
+                .overlay(alignment: .topTrailing) {
+                    if updates.available != nil {
+                        Circle().fill(Color.blue).frame(width: 6, height: 6).offset(x: -4, y: 3)
+                    }
+                }
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Settings")
+        Button { NSApp.terminate(nil) } label: {
+            Image(systemName: "power")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.45))
+                .frame(width: 26, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Quit Nunsseop")
     }
 }
 
