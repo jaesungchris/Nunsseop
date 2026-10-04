@@ -32,6 +32,8 @@ final class HUDCenter: ObservableObject {
     private var lastKeyboardLevel: Float = 0.5
     private var pendingExternalLevel: Float?
     private var cancellables: Set<AnyCancellable> = []
+    /// Checks for the Accessibility permission while it is missing, so granting it takes effect without a relaunch.
+    private var trustPoll: Timer?
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -102,6 +104,8 @@ final class HUDCenter: ObservableObject {
     }
 
     private func setInterception(_ enabled: Bool) {
+        trustPoll?.invalidate()
+        trustPoll = nil
         guard enabled else {
             interceptor.stop()
             interceptorNeedsPermission = false
@@ -110,6 +114,11 @@ final class HUDCenter: ObservableObject {
         if !MediaKeyInterceptor.isTrusted {
             MediaKeyInterceptor.requestTrust()
             interceptorNeedsPermission = true
+            trustPoll = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    if MediaKeyInterceptor.isTrusted { self?.retryInterception() }
+                }
+            }
             return
         }
         interceptorNeedsPermission = !interceptor.start()

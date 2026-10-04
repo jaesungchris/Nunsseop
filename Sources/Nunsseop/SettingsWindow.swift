@@ -216,7 +216,7 @@ private struct AlertsPane: View {
                 Toggle("Show volume changes in the notch", isOn: $settings.volumeHUDEnabled)
                 Toggle("Replace the system volume and brightness HUD", isOn: $settings.replaceSystemHUD)
                 if settings.replaceSystemHUD && !MediaKeyInterceptor.isTrusted {
-                    Text("Allow Nunsseop in System Settings › Privacy & Security › Accessibility, then relaunch Nunsseop.")
+                    Text("Allow Nunsseop in System Settings › Privacy & Security › Accessibility.")
                         .font(.caption).foregroundStyle(.orange)
                 }
                 Text("Brightness keys adjust the display under the pointer, including external displays that support DDC. Keyboard backlight keys work on keyboards that have them.")

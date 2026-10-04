@@ -17,7 +17,7 @@
 "System HUD" = "系统 HUD";
 "Show volume changes in the notch" = "在刘海中显示音量变化";
 "Replace the system volume and brightness HUD" = "替换系统音量和亮度 HUD";
-"Allow Nunsseop in System Settings › Privacy & Security › Accessibility, then relaunch Nunsseop." = "请在“系统设置 › 隐私与安全性 › 辅助功能”中允许 Nunsseop，然后重新启动 Nunsseop。";
+"Allow Nunsseop in System Settings › Privacy & Security › Accessibility." = "请在“系统设置 › 隐私与安全性 › 辅助功能”中允许 Nunsseop。";
 "Show battery level in the header" = "在顶部显示电池电量";
 "Show when power is connected or disconnected" = "接通或断开电源时显示";
 "Show headphone battery when they connect" = "耳机连接时显示电池";

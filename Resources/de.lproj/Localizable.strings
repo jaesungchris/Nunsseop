@@ -17,7 +17,7 @@
 "System HUD" = "System-HUD";
 "Show volume changes in the notch" = "Lautstärkeänderungen in der Notch anzeigen";
 "Replace the system volume and brightness HUD" = "System-HUD für Lautstärke und Helligkeit ersetzen";
-"Allow Nunsseop in System Settings › Privacy & Security › Accessibility, then relaunch Nunsseop." = "Erlaube Nunsseop unter Systemeinstellungen › Datenschutz & Sicherheit › Bedienungshilfen und starte Nunsseop neu.";
+"Allow Nunsseop in System Settings › Privacy & Security › Accessibility." = "Erlaube Nunsseop unter Systemeinstellungen › Datenschutz & Sicherheit › Bedienungshilfen.";
 "Show battery level in the header" = "Akkustand in der Kopfzeile anzeigen";
 "Show when power is connected or disconnected" = "Beim An- und Abstecken des Netzteils anzeigen";
 "Show headphone battery when they connect" = "Kopfhörer-Akku beim Verbinden anzeigen";
