@@ -4,7 +4,7 @@
 
 **Nunsseop** (눈썹, Korean for *eyebrow*) turns the MacBook notch into a small, useful space: what's playing, a file shelf, your calendar and system HUDs, all hanging from the top of the screen.
 
-Website: https://namekun.github.io/Nunsseop/ · [한국어](#한국어)
+**English** · [한국어](README.ko.md) · [Website](https://namekun.github.io/Nunsseop/)
 
 <p align="center">
   <img src="docs/images/home.png" width="680" alt="Expanded notch with now playing and calendar">
@@ -39,9 +39,13 @@ Screens without a notch get a pill at the top centre instead.
 
 ## Install
 
-Download the latest `Nunsseop-<version>.dmg` from [Releases](https://github.com/namekun/Nunsseop/releases), open it and drag Nunsseop to Applications.
+With [Homebrew](https://brew.sh):
 
-The app is not notarized, so macOS blocks the first launch. Remove the quarantine flag once:
+```sh
+brew install --cask namekun/tap/nunsseop
+```
+
+Or download the latest `Nunsseop-<version>.dmg` from [Releases](https://github.com/namekun/Nunsseop/releases), open it and drag Nunsseop to Applications. The app is not notarized, so remove the quarantine flag once before the first launch (Homebrew does this for you):
 
 ```sh
 xattr -dr com.apple.quarantine /Applications/Nunsseop.app
@@ -92,20 +96,3 @@ The camera preview is shown only while the Mirror tab is open and is never recor
 
 [MIT](LICENSE)
 
----
-
-## 한국어
-
-**Nunsseop(눈썹)** 은 MacBook 노치를 쓸모 있는 공간으로 바꾸는 macOS 앱입니다.
-
-- **지금 재생 중:** Music, Spotify, YouTube Music, 그리고 Safari·Chrome·Arc·Dia·Aside 같은 브라우저 재생을 노치에 표시하고 제어합니다. 진행바를 끌어 재생 위치를 옮길 수 있습니다.
-- **미리보기:** 곡이나 재생 상태가 바뀌면 노치 아래에 제목이 잠깐 나옵니다.
-- **파일 선반:** 노치에 파일을 끌어다 두고 필요할 때 다시 끌어냅니다. AirDrop 칸에 놓으면 바로 AirDrop으로 보내고, 우클릭으로 공유할 수 있습니다.
-- **캘린더와 미리 알림:** 홈 탭에 주간 날짜, 일정, 미리 알림을 보여 주고 노치에서 바로 완료 처리합니다.
-- **시스템 HUD:** 볼륨, 밝기(내장 화면과 DDC 지원 외부 모니터), 키보드 백라이트, 전원 연결, 헤드폰 배터리를 노치에 표시합니다. 원하면 기본 볼륨·밝기 HUD를 대체합니다.
-- **미러:** 원하는 카메라로 내 모습을 바로 확인합니다.
-- **제스처:** 노치에서 아래로 쓸면 열리고 위로 쓸면 닫히며, 홈 탭에서 좌우로 쓸면 곡이 넘어갑니다.
-- **설정:** 표시할 화면, 크기, 열림 지연, 미리보기, 로그인 시 실행, 업데이트 확인 등을 조절할 수 있습니다.
-- **언어:** 영어, 한국어, 일본어, 중국어(간체), 스페인어, 독일어, 프랑스어를 macOS 언어 설정에 따라 표시합니다.
-
-설치는 [Releases](https://github.com/namekun/Nunsseop/releases)에서 dmg를 받아 응용 프로그램 폴더로 옮기면 됩니다. 공증되지 않은 앱이라 처음 한 번은 위의 `xattr` 명령으로 격리 표시를 지워야 합니다. 빌드 방법과 필요한 권한은 위 영문 설명을 참고하세요. 재생 정보는 비공개 MediaRemote 프레임워크를 Apple 서명 `/usr/bin/perl` 안에서 호출해 읽기 때문에, 이후 macOS 업데이트에서 동작하지 않을 수 있습니다.
