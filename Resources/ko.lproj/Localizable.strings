@@ -188,6 +188,11 @@
 "Date" = "날짜";
 "Weather" = "날씨";
 "Collapsed notch" = "접힌 노치";
+"Nothing" = "없음";
+"Claude Code left" = "Claude Code 남은 양";
+"Codex left" = "Codex 남은 양";
+"Left side when idle" = "평소 왼쪽에 표시";
+"Right side when idle" = "평소 오른쪽에 표시";
 "Artwork and visualizer while music plays" = "음악 재생 중 앨범아트와 이퀄라이저";
 "Time left while a timer runs" = "타이머 작동 중 남은 시간";
 "Title under the notch when the track changes" = "곡이 바뀌면 노치 아래에 제목";

@@ -42,6 +42,8 @@ final class NotchWindowController {
     private var updatesObserver: AnyCancellable?
     private var clipboardObserver: AnyCancellable?
     private var settingsObservers: [AnyCancellable] = []
+    /// Keeps the AI limits fresh while an idle ear shows them.
+    private var aiUsageTimer: Timer?
     private var hotKey: GlobalHotKey?
     private var resignObserver: NSObjectProtocol?
 
@@ -198,9 +200,25 @@ final class NotchWindowController {
         }) {
             monitors.append(keys)
         }
-        settingsObservers.append(model.settings.$weatherCity.combineLatest(model.settings.$headerWeather)
+        settingsObservers.append(model.settings.$weatherCity.combineLatest(model.settings.$headerWeather,
+                                                                           model.settings.$idleLeft, model.settings.$idleRight)
             .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
-            .sink { [weak self] city, shown in self?.model.weather.setCity(shown ? city : "") })
+            .sink { [weak self] city, header, left, right in
+                self?.model.weather.setCity(header || left == .weather || right == .weather ? city : "")
+            })
+        settingsObservers.append(model.settings.$idleLeft.combineLatest(model.settings.$idleRight)
+            .map { $0.usesAIUsage || $1.usesAIUsage }
+            .removeDuplicates()
+            .sink { [weak self] shown in
+                guard let self else { return }
+                self.aiUsageTimer?.invalidate()
+                self.aiUsageTimer = nil
+                guard shown else { return }
+                self.model.aiUsage.refresh(includeTokens: false)
+                self.aiUsageTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
+                    MainActor.assumeIsolated { self?.model.aiUsage.refresh(includeTokens: false) }
+                }
+            })
         settingsObservers.append(model.settings.$lyricsEnabled.sink { [weak self] enabled in
             guard let self else { return }
             self.model.lyrics.isEnabled = enabled

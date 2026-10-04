@@ -70,13 +70,15 @@ struct NotchView: View {
                     HUDContent(event: event, height: notchHeight, earWidth: NotchViewModel.hudEarWidth)
                         .padding(.horizontal, topRadius + 6)
                         .transition(.opacity)
-                } else if model.showsLiveActivity || model.showsSneakPeek {
+                } else if model.showsLiveActivity || model.showsSneakPeek || model.showsIdleEars {
                     VStack(spacing: 0) {
                         if model.showsLiveActivity {
                             CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, recorder: model.recorder,
                                               privacy: model.settings.privacyIndicator ? model.privacy : nil,
                                               height: notchHeight, earWidth: model.earWidth,
                                               showsMusic: model.settings.collapsedMusic, showsTimer: model.settings.collapsedTimer)
+                        } else if model.showsIdleEars {
+                            IdleEars(model: model, height: notchHeight)
                         } else {
                             Color.clear.frame(height: notchHeight)
                         }
@@ -492,6 +494,81 @@ private struct BatteryBadge: View {
 }
 
 // MARK: - Collapsed
+
+struct IdleValue {
+    let symbol: String?
+    /// nil draws the symbol in its own colours.
+    let tint: Color?
+    let text: String
+}
+
+extension NotchViewModel {
+    /// The value an idle ear shows, or nil when there is nothing to show for it yet.
+    func idleValue(_ item: IdleItem, at date: Date = .now) -> IdleValue? {
+        switch item {
+        case .none:
+            return nil
+        case .claude, .codex:
+            // The tightest limit decides what is left. A window that already reset has no known usage since, so it is skipped.
+            guard let provider = aiUsage.providers.first(where: { $0.id == item.rawValue }),
+                  let used = [provider.session, provider.weekly].compactMap({ $0 }).filter({ $0.resetsAt != nil }).map(\.percent).max()
+            else { return nil }
+            let left = max(0, 100 - Int(used.rounded()))
+            return IdleValue(symbol: item == .claude ? "sparkles" : "terminal",
+                             tint: left < 15 ? .red : (item == .claude ? .orange : .white), text: "\(left)%")
+        case .battery:
+            guard let power = hud.power else { return nil }
+            return IdleValue(symbol: power.isCharging ? "battery.100percent.bolt" : BatteryBadge.symbol(for: power.percent),
+                             tint: power.percent <= 20 && !power.onAC ? .red : .white, text: "\(power.percent)%")
+        case .weather:
+            guard let weather = weather.current else { return nil }
+            return IdleValue(symbol: WeatherModel.symbol(for: weather.code), tint: nil,
+                             text: "\(Int(weather.temperature.rounded()))°")
+        case .date:
+            return IdleValue(symbol: nil, tint: nil, text: date.formatted(.dateTime.day().weekday(.abbreviated)))
+        }
+    }
+
+    var showsIdleEars: Bool {
+        !showsLiveActivity && (idleValue(settings.idleLeft) != nil || idleValue(settings.idleRight) != nil)
+    }
+}
+
+private struct IdleEars: View {
+    @ObservedObject var model: NotchViewModel
+    let height: CGFloat
+
+    var body: some View {
+        TimelineView(.everyMinute) { context in
+            HStack {
+                ear(model.idleValue(model.settings.idleLeft, at: context.date))
+                Spacer()
+                ear(model.idleValue(model.settings.idleRight, at: context.date))
+            }
+        }
+        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+        .foregroundStyle(.white)
+        .frame(height: height)
+    }
+
+    @ViewBuilder
+    private func ear(_ value: IdleValue?) -> some View {
+        if let value {
+            HStack(spacing: 3) {
+                if let symbol = value.symbol {
+                    if let tint = value.tint {
+                        Image(systemName: symbol).foregroundStyle(tint)
+                    } else {
+                        Image(systemName: symbol).symbolRenderingMode(.multicolor)
+                    }
+                }
+                Text(value.text)
+            }
+            .lineLimit(1)
+            .fixedSize()
+        }
+    }
+}
 
 private struct CollapsedActivity: View {
     @ObservedObject var nowPlaying: NowPlayingController

@@ -163,6 +163,11 @@
 "Date" = "Datum";
 "Weather" = "Wetter";
 "Collapsed notch" = "Eingeklappte Notch";
+"Nothing" = "Nichts";
+"Claude Code left" = "Claude Code übrig";
+"Codex left" = "Codex übrig";
+"Left side when idle" = "Links im Ruhezustand";
+"Right side when idle" = "Rechts im Ruhezustand";
 "Artwork and visualizer while music plays" = "Cover und Visualizer bei Musik";
 "Time left while a timer runs" = "Restzeit, während ein Timer läuft";
 "Title under the notch when the track changes" = "Titel unter der Notch beim Titelwechsel";

@@ -1,6 +1,26 @@
 import AppKit
 import Combine
 
+/// What each side of the collapsed notch shows while nothing is playing or running.
+enum IdleItem: String, CaseIterable, Identifiable {
+    case none, claude, codex, battery, weather, date
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .none: return String(localized: "Nothing")
+        case .claude: return String(localized: "Claude Code left")
+        case .codex: return String(localized: "Codex left")
+        case .battery: return String(localized: "Battery")
+        case .weather: return String(localized: "Weather")
+        case .date: return String(localized: "Date")
+        }
+    }
+
+    var usesAIUsage: Bool { self == .claude || self == .codex }
+}
+
 enum NotchTab: String, CaseIterable, Identifiable {
     case home, shelf, timer, clipboard, notes, tools, system, apps, search, emoji, ai, mirror
 
@@ -116,6 +136,11 @@ final class NotchViewModel: ObservableObject {
         hud.$event
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
+        // The idle ears show these.
+        hud.$power.map { _ in () }
+            .merge(with: weather.$current.map { _ in () }, aiUsage.$providers.map { _ in () })
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
         settings.objectWillChange
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.leaveHiddenTab() }
@@ -166,6 +191,8 @@ final class NotchViewModel: ObservableObject {
     /// for the artwork and a playback indicator, plus a text line underneath
     /// while the sneak peek shows.
     static let hudEarWidth: CGFloat = 96
+    /// Room for a short value such as "73%" or "16°" on each side while idle.
+    static let idleEarWidth: CGFloat = 64
 
     var showsHUD: Bool { hud.event != nil }
 
@@ -179,7 +206,11 @@ final class NotchViewModel: ObservableObject {
             }
             return size
         }
-        if showsLiveActivity { size.width += 2 * earWidth }
+        if showsLiveActivity {
+            size.width += 2 * earWidth
+        } else if showsIdleEars {
+            size.width += 2 * Self.idleEarWidth
+        }
         if showsSneakPeek {
             size.width = max(size.width, 300)
             size.height += Self.sneakPeekHeight

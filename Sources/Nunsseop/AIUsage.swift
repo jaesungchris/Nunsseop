@@ -24,13 +24,21 @@ final class AIUsageModel: ObservableObject {
     @Published private(set) var providers: [Provider] = []
     @Published private(set) var loading = false
 
-    func refresh() {
+    /// Without `includeTokens` only the limits are read, which is cheap; the token totals from the last refresh are kept.
+    func refresh(includeTokens: Bool = true) {
         guard !loading else { return }
         loading = true
         Task.detached(priority: .utility) {
-            let found = [Self.claude(), Self.codex()].compactMap { $0 }
+            let found = [Self.claude(includeTokens: includeTokens), Self.codex()].compactMap { $0 }
             await MainActor.run {
-                self.providers = found
+                self.providers = includeTokens ? found : found.map { provider in
+                    var provider = provider
+                    if let old = self.providers.first(where: { $0.id == provider.id }) {
+                        provider.sessionTokens = old.sessionTokens
+                        provider.weeklyTokens = old.weeklyTokens
+                    }
+                    return provider
+                }
                 self.loading = false
             }
         }
@@ -57,7 +65,7 @@ final class AIUsageModel: ObservableObject {
 
     // MARK: Claude
 
-    nonisolated private static func claude() -> Provider? {
+    nonisolated private static func claude(includeTokens: Bool) -> Provider? {
         var provider = Provider(id: "claude", name: "Claude Code")
         let cache = home.appendingPathComponent(".claude/plugins/oh-my-claudecode/.usage-cache-anthropic.json")
         if let data = try? Data(contentsOf: cache),
@@ -71,7 +79,7 @@ final class AIUsageModel: ObservableObject {
             provider.weekly = window(percent: usage["weeklyPercent"] as? Double, resetsAt: date("weeklyResetsAt"))
             provider.updatedAt = Date(timeIntervalSince1970: stamp / 1000)
         }
-        if let totals = claudeTokens() {
+        if includeTokens, let totals = claudeTokens() {
             provider.sessionTokens = totals.session
             provider.weeklyTokens = totals.weekly
         }

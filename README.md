@@ -89,6 +89,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 
 **🧩 Make it yours**
 - Pick your tabs and their order, what the header and collapsed notch show, and which pop-ups you get. **Anything you turn off stops running.**
+- Even when nothing is playing, each side of the collapsed notch can show something you pick: Claude Code or Codex usage left, battery, weather or the date.
 - On macOS 26 the expanded notch and its cards use Liquid Glass, so what's behind shows through softly. You can set how dark the glass is, or switch back to solid black.
 - Choose the display, size and hover delay, launch at login, and hide the notch while the lid is closed.
 - Swipe down to open, up to close, sideways on Home to skip tracks.

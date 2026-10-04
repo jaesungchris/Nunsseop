@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 
 /// Current conditions for a city from Open-Meteo (open-meteo.com), which needs no API key.
@@ -48,34 +49,55 @@ final class WeatherModel: ObservableObject {
             guard let data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let place = (json["results"] as? [[String: Any]])?.first,
                   let lat = place["latitude"] as? Double, let lon = place["longitude"] as? Double else {
-                DispatchQueue.main.async { self?.failed = true }
+                // Open-Meteo misses short non-Latin names such as "서울" or "東京"; Apple's geocoder finds them.
+                DispatchQueue.main.async { self?.geocodeWithApple(city, fahrenheit: fahrenheit) }
                 return
             }
-            let name = place["name"] as? String ?? city
-            var forecast = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
-            forecast.queryItems = [
-                URLQueryItem(name: "latitude", value: String(lat)), URLQueryItem(name: "longitude", value: String(lon)),
-                URLQueryItem(name: "current", value: "temperature_2m,weather_code"),
-                URLQueryItem(name: "daily", value: "temperature_2m_max,temperature_2m_min"),
-                URLQueryItem(name: "forecast_days", value: "1"), URLQueryItem(name: "timezone", value: "auto"),
-                URLQueryItem(name: "temperature_unit", value: fahrenheit ? "fahrenheit" : "celsius"),
-            ]
-            Self.session.dataTask(with: forecast.url!) { data, _, _ in
-                guard let data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                      let now = json["current"] as? [String: Any], let daily = json["daily"] as? [String: Any],
-                      let temperature = now["temperature_2m"] as? Double else {
-                    DispatchQueue.main.async { self?.failed = true }
+            guard let self else { return }
+            Self.fetchForecast(latitude: lat, longitude: lon, name: place["name"] as? String ?? city,
+                               fahrenheit: fahrenheit, into: self)
+        }.resume()
+    }
+
+    private func geocodeWithApple(_ city: String, fahrenheit: Bool) {
+        CLGeocoder().geocodeAddressString(city) { [weak self] placemarks, _ in
+            MainActor.assumeIsolated {
+                guard let self, city == self.city else { return }
+                guard let placemark = placemarks?.first, let coordinate = placemark.location?.coordinate else {
+                    self.failed = true
                     return
                 }
-                let result = Current(place: name, temperature: temperature,
-                                     high: (daily["temperature_2m_max"] as? [Double])?.first ?? temperature,
-                                     low: (daily["temperature_2m_min"] as? [Double])?.first ?? temperature,
-                                     code: now["weather_code"] as? Int ?? 0)
-                DispatchQueue.main.async {
-                    self?.current = result
-                    self?.failed = false
-                }
-            }.resume()
+                Self.fetchForecast(latitude: coordinate.latitude, longitude: coordinate.longitude,
+                                   name: placemark.locality ?? placemark.name ?? city, fahrenheit: fahrenheit, into: self)
+            }
+        }
+    }
+
+    nonisolated private static func fetchForecast(latitude lat: Double, longitude lon: Double, name: String,
+                                                  fahrenheit: Bool, into model: WeatherModel) {
+        var forecast = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
+        forecast.queryItems = [
+            URLQueryItem(name: "latitude", value: String(lat)), URLQueryItem(name: "longitude", value: String(lon)),
+            URLQueryItem(name: "current", value: "temperature_2m,weather_code"),
+            URLQueryItem(name: "daily", value: "temperature_2m_max,temperature_2m_min"),
+            URLQueryItem(name: "forecast_days", value: "1"), URLQueryItem(name: "timezone", value: "auto"),
+            URLQueryItem(name: "temperature_unit", value: fahrenheit ? "fahrenheit" : "celsius"),
+        ]
+        session.dataTask(with: forecast.url!) { [weak model] data, _, _ in
+            guard let data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let now = json["current"] as? [String: Any], let daily = json["daily"] as? [String: Any],
+                  let temperature = now["temperature_2m"] as? Double else {
+                DispatchQueue.main.async { model?.failed = true }
+                return
+            }
+            let result = Current(place: name, temperature: temperature,
+                                 high: (daily["temperature_2m_max"] as? [Double])?.first ?? temperature,
+                                 low: (daily["temperature_2m_min"] as? [Double])?.first ?? temperature,
+                                 code: now["weather_code"] as? Int ?? 0)
+            DispatchQueue.main.async {
+                model?.current = result
+                model?.failed = false
+            }
         }.resume()
     }
 

@@ -163,6 +163,11 @@
 "Date" = "日期";
 "Weather" = "天气";
 "Collapsed notch" = "收起时的刘海";
+"Nothing" = "无";
+"Claude Code left" = "Claude Code 剩余";
+"Codex left" = "Codex 剩余";
+"Left side when idle" = "空闲时左侧";
+"Right side when idle" = "空闲时右侧";
 "Artwork and visualizer while music plays" = "播放音乐时的封面和可视化";
 "Time left while a timer runs" = "计时器运行时的剩余时间";
 "Title under the notch when the track changes" = "曲目变化时在刘海下方显示标题";

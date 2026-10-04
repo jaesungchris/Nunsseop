@@ -164,6 +164,12 @@ private struct LayoutPane: View {
             Section("Collapsed notch") {
                 Toggle("Artwork and visualizer while music plays", isOn: $settings.collapsedMusic)
                 Toggle("Time left while a timer runs", isOn: $settings.collapsedTimer)
+                Picker("Left side when idle", selection: $settings.idleLeft) {
+                    ForEach(IdleItem.allCases) { Text($0.title).tag($0) }
+                }
+                Picker("Right side when idle", selection: $settings.idleRight) {
+                    ForEach(IdleItem.allCases) { Text($0.title).tag($0) }
+                }
                 Toggle("Title under the notch when the track changes", isOn: $settings.sneakPeekEnabled)
                 Toggle("Always show the title while something is playing", isOn: $settings.sneakPeekAlways)
                     .disabled(!settings.sneakPeekEnabled)

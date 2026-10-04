@@ -163,6 +163,11 @@
 "Date" = "日付";
 "Weather" = "天気";
 "Collapsed notch" = "折りたたみ時のノッチ";
+"Nothing" = "なし";
+"Claude Code left" = "Claude Code の残り";
+"Codex left" = "Codex の残り";
+"Left side when idle" = "待機中の左側";
+"Right side when idle" = "待機中の右側";
 "Artwork and visualizer while music plays" = "音楽再生中のアートワークとビジュアライザ";
 "Time left while a timer runs" = "タイマー作動中の残り時間";
 "Title under the notch when the track changes" = "曲が変わったらノッチの下にタイトル";
