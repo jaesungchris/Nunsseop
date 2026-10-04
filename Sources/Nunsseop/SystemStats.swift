@@ -139,7 +139,9 @@ struct SystemTab: View {
     }
 
     static func bytes(_ value: Int64) -> String {
-        ByteCountFormatter.string(fromByteCount: max(0, value), countStyle: .memory)
+        // The formatter spells out "bytes" in the user's language; keep "B" like KB and MB.
+        if value < 1024 { return "\(max(0, value)) B" }
+        return ByteCountFormatter.string(fromByteCount: value, countStyle: .memory)
     }
 }
 
