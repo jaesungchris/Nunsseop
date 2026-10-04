@@ -1,0 +1,4 @@
+"NSAppleEventsUsageDescription" = "Affiche ce que lisent Music, Spotify et vos navigateurs, et contrôle la lecture.";
+"NSCalendarsFullAccessUsageDescription" = "Affiche les évènements du jour et de la semaine dans l’onglet Accueil de l’encoche.";
+"NSRemindersFullAccessUsageDescription" = "Affiche les rappels du jour sous le calendrier et permet de les terminer.";
+"NSCameraUsageDescription" = "Affiche votre caméra dans l’onglet Miroir de l’encoche. Rien n’est enregistré ni envoyé.";
