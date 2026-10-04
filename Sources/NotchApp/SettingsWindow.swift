@@ -9,7 +9,7 @@ final class SettingsWindowController {
 
     func show() {
         if window == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 520),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 600),
                                   styleMask: [.titled, .closable],
                                   backing: .buffered, defer: false)
             window.title = "NotchApp 설정"
@@ -25,9 +25,27 @@ final class SettingsWindowController {
 
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
+    @StateObject private var launchAtLogin = LaunchAtLogin()
 
     var body: some View {
         Form {
+            Section("일반") {
+                Toggle("로그인 시 NotchApp 실행", isOn: Binding(
+                    get: { launchAtLogin.isEnabled },
+                    set: { launchAtLogin.set($0) }
+                ))
+                if launchAtLogin.needsApproval {
+                    Text("시스템 설정 › 일반 › 로그인 항목에서 NotchApp을 허용해야 합니다.")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+                if !launchAtLogin.isInApplicationsFolder {
+                    Text("앱을 /Applications로 옮긴 뒤 켜는 것을 권장합니다. 지금 위치: \(Bundle.main.bundlePath)")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                if let error = launchAtLogin.lastError {
+                    Text(error).font(.caption).foregroundStyle(.red)
+                }
+            }
             Section("크기") {
                 SliderRow(title: "펼친 너비", value: $settings.expandedWidth,
                           range: AppSettings.expandedWidthRange, unit: "pt")
@@ -52,8 +70,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 460, height: 600)
     }
 }
 
