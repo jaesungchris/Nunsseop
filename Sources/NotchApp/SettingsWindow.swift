@@ -60,6 +60,21 @@ struct SettingsView: View {
                 SliderRow(title: "마우스를 올린 뒤 펼치기까지", value: $settings.openDelay,
                           range: 0...1, unit: "초", format: "%.1f")
             }
+            Section("시스템 HUD") {
+                Toggle("볼륨이 바뀌면 노치에 표시", isOn: $settings.volumeHUDEnabled)
+                Toggle("볼륨·밝기 키를 가로채 기본 HUD 대신 노치만 표시", isOn: $settings.replaceSystemHUD)
+                if settings.replaceSystemHUD && !MediaKeyInterceptor.isTrusted {
+                    Text("시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 NotchApp을 허용한 뒤 NotchApp을 다시 실행하세요.")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+                if settings.replaceSystemHUD && !BuiltInBrightness.isAvailable {
+                    Text("내장 디스플레이가 꺼져 있어 밝기 키는 시스템이 처리합니다.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Toggle("헤더에 배터리 잔량 표시", isOn: $settings.batteryInHeader)
+                Toggle("전원 연결·해제 시 노치에 표시", isOn: $settings.chargingHUDEnabled)
+                Toggle("헤드폰 연결 시 배터리 표시", isOn: $settings.headphoneHUDEnabled)
+            }
             Section("미리보기") {
                 Toggle("곡이나 재생 상태가 바뀌면 노치 아래에 제목 표시", isOn: $settings.sneakPeekEnabled)
                 Toggle("재생 정보가 있으면 항상 표시", isOn: $settings.sneakPeekAlways)

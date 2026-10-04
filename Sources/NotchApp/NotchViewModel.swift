@@ -16,6 +16,7 @@ final class NotchViewModel: ObservableObject {
     let settings: AppSettings
     let nowPlaying = NowPlayingController()
     let shelf = ShelfStore()
+    let hud: HUDCenter
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
 
@@ -24,6 +25,7 @@ final class NotchViewModel: ObservableObject {
     init(geometry: NotchGeometry, settings: AppSettings) {
         self.geometry = geometry
         self.settings = settings
+        self.hud = HUDCenter(settings: settings)
         nowPlaying.$track
             .map { $0?.isPlaying == true }
             .removeDuplicates()
@@ -33,6 +35,9 @@ final class NotchViewModel: ObservableObject {
             .compactMap { $0.map { "\($0.identity)|\($0.isPlaying)" } }
             .removeDuplicates()
             .sink { [weak self] _ in self?.triggerSneakPeek() }
+            .store(in: &cancellables)
+        hud.$event
+            .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
         settings.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
@@ -50,8 +55,17 @@ final class NotchViewModel: ObservableObject {
     /// While music plays, the collapsed notch grows an "ear" on each side
     /// for the artwork and a playback indicator, plus a text line underneath
     /// while the sneak peek shows.
+    static let hudEarWidth: CGFloat = 96
+
+    var showsHUD: Bool { hud.event != nil }
+
     var collapsedSize: CGSize {
         var size = geometry.collapsedSize
+        if let event = hud.event {
+            size.width += 2 * Self.hudEarWidth
+            if case .headphones = event { size.height += Self.sneakPeekHeight }
+            return size
+        }
         if showsLiveActivity { size.width += 2 * earWidth }
         if showsSneakPeek {
             size.width = max(size.width, 300)

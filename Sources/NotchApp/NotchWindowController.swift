@@ -55,6 +55,7 @@ final class NotchWindowController {
         panel.orderFrontRegardless()
         installMonitors()
         model.nowPlaying.start()
+        model.hud.start()
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main

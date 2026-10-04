@@ -24,6 +24,13 @@ final class AppSettings: ObservableObject {
     /// Seconds the pointer must rest on the notch before it opens.
     @Published var openDelay: Double { didSet { defaults.set(openDelay, forKey: "openDelay") } }
 
+    @Published var volumeHUDEnabled: Bool { didSet { defaults.set(volumeHUDEnabled, forKey: "volumeHUDEnabled") } }
+    /// Takes over the volume/brightness keys so only the notch HUD shows.
+    @Published var replaceSystemHUD: Bool { didSet { defaults.set(replaceSystemHUD, forKey: "replaceSystemHUD") } }
+    @Published var batteryInHeader: Bool { didSet { defaults.set(batteryInHeader, forKey: "batteryInHeader") } }
+    @Published var chargingHUDEnabled: Bool { didSet { defaults.set(chargingHUDEnabled, forKey: "chargingHUDEnabled") } }
+    @Published var headphoneHUDEnabled: Bool { didSet { defaults.set(headphoneHUDEnabled, forKey: "headphoneHUDEnabled") } }
+
     private init() {
         defaults.register(defaults: [
             "expandedWidth": 620.0,
@@ -34,6 +41,11 @@ final class AppSettings: ObservableObject {
             "sneakPeekAlways": false,
             "sneakPeekDuration": 3.0,
             "openDelay": 0.1,
+            "volumeHUDEnabled": true,
+            "replaceSystemHUD": false,
+            "batteryInHeader": true,
+            "chargingHUDEnabled": true,
+            "headphoneHUDEnabled": true,
         ])
         expandedWidth = defaults.double(forKey: "expandedWidth")
         expandedHeight = defaults.double(forKey: "expandedHeight")
@@ -43,6 +55,11 @@ final class AppSettings: ObservableObject {
         sneakPeekAlways = defaults.bool(forKey: "sneakPeekAlways")
         sneakPeekDuration = defaults.double(forKey: "sneakPeekDuration")
         openDelay = defaults.double(forKey: "openDelay")
+        volumeHUDEnabled = defaults.bool(forKey: "volumeHUDEnabled")
+        replaceSystemHUD = defaults.bool(forKey: "replaceSystemHUD")
+        batteryInHeader = defaults.bool(forKey: "batteryInHeader")
+        chargingHUDEnabled = defaults.bool(forKey: "chargingHUDEnabled")
+        headphoneHUDEnabled = defaults.bool(forKey: "headphoneHUDEnabled")
     }
 
     func resetSizes() {
