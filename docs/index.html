@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nunsseop — your MacBook notch, made useful</title>
+<meta name="description" content="Nunsseop turns the MacBook notch into a small, useful space: now playing, a file shelf, calendar and system HUDs.">
+<meta property="og:title" content="Nunsseop">
+<meta property="og:description" content="Your MacBook notch, made useful. Free and open source.">
+<meta property="og:image" content="images/home.png">
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --surface: #151518;
+    --border: #26262b;
+    --text: #f2f2f4;
+    --muted: #9a9aa3;
+    --accent: #c86bfa;
+    --accent-2: #ff5f8f;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 0;
+  }
+  .brand { font-weight: 700; letter-spacing: -0.01em; }
+  .brand span { color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .lang {
+    display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden;
+  }
+  .lang button {
+    background: transparent; color: var(--muted); border: 0; padding: 6px 12px;
+    font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .lang button[aria-pressed="true"] { background: var(--surface); color: var(--text); }
+
+  .hero { text-align: center; padding: 56px 0 24px; }
+  .hero h1 {
+    font-size: clamp(40px, 8vw, 76px); line-height: 1.02; margin: 0 0 16px; letter-spacing: -0.03em;
+    background: linear-gradient(90deg, var(--text), var(--accent) 60%, var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p.lead { font-size: clamp(17px, 2.4vw, 21px); color: var(--muted); max-width: 640px; margin: 0 auto 28px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 999px;
+    font-weight: 600; font-size: 15px; border: 1px solid var(--border); color: var(--text);
+  }
+  .btn.primary { background: var(--text); color: #000; border-color: var(--text); }
+  .btn:hover { text-decoration: none; opacity: 0.9; }
+
+  .stage {
+    margin: 48px auto 0; max-width: 820px; position: relative;
+    background: radial-gradient(120% 90% at 50% 0%, #2a1840 0%, #121016 55%, var(--bg) 100%);
+    border: 1px solid var(--border); border-radius: 24px; padding: 0 16px 40px;
+    overflow: hidden;
+  }
+  .stage .menubar { height: 28px; }
+  .stage img { display: block; margin: -28px auto 0; width: 100%; max-width: 642px; height: auto; }
+
+  section { padding: 72px 0 0; }
+  h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.02em; margin: 0 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 28px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .card .icon { font-size: 22px; margin-bottom: 10px; }
+
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .shot {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0 16px 18px; text-align: center;
+  }
+  .shot img { width: 100%; max-width: 404px; height: auto; display: block; margin: 0 auto 12px; }
+  .shot p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  pre {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; overflow-x: auto; font: 14px/1.6 ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--text);
+  }
+  .note {
+    border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; color: var(--muted); margin: 20px 0 0;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+
+  footer { padding: 72px 0 48px; color: var(--muted); font-size: 14px; text-align: center; }
+
+  [data-lang="ko"] .en, [data-lang="en"] .ko { display: none; }
+</style>
+</head>
+<body data-lang="en">
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Nunsseop<span>눈썹</span></div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-set="en" aria-pressed="true">EN</button>
+      <button type="button" data-set="ko" aria-pressed="false">한국어</button>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1>Nunsseop</h1>
+    <p class="lead en">Your MacBook notch, made useful. What's playing, a file shelf, your calendar and system HUDs, all hanging from the top of the screen.</p>
+    <p class="lead ko">MacBook 노치를 쓸모 있는 공간으로. 지금 재생 중인 음악, 파일 선반, 캘린더, 시스템 HUD를 화면 맨 위에서 바로.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/namekun/Nunsseop">
+        <span class="en">View on GitHub</span><span class="ko">GitHub에서 보기</span>
+      </a>
+      <a class="btn" href="#install"><span class="en">Build it</span><span class="ko">빌드하기</span></a>
+    </div>
+    <div class="stage">
+      <div class="menubar"></div>
+      <img src="images/home.png" width="642" height="208" alt="Expanded Nunsseop notch showing now playing and calendar">
+    </div>
+  </div>
+
+  <section>
+    <h2><span class="en">What it does</span><span class="ko">주요 기능</span></h2>
+    <p class="sub"><span class="en">Hover over the notch to open it. Right-click for Settings.</span><span class="ko">노치에 마우스를 올리면 열리고, 우클릭하면 설정이 나옵니다.</span></p>
+    <div class="grid">
+      <div class="card">
+        <div class="icon">🎵</div>
+        <h3><span class="en">Now playing</span><span class="ko">지금 재생 중</span></h3>
+        <p class="en">Artwork, progress and controls for anything that plays: Music, Spotify, YouTube Music, and browsers such as Safari, Chrome, Arc, Dia and Aside.</p>
+        <p class="ko">Music, Spotify, YouTube Music, 그리고 Safari·Chrome·Arc·Dia·Aside 같은 브라우저 재생까지 앨범아트, 진행바, 재생 컨트롤로 보여 줍니다.</p>
+      </div>
+      <div class="card">
+        <div class="icon">👀</div>
+        <h3><span class="en">Sneak peek</span><span class="ko">미리보기</span></h3>
+        <p class="en">When the track changes, its title slides out under the notch for a moment, or stays there if you like.</p>
+        <p class="ko">곡이 바뀌면 노치 아래에 제목이 잠깐 나옵니다. 원하면 계속 보이게 할 수도 있습니다.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📥</div>
+        <h3><span class="en">File shelf</span><span class="ko">파일 선반</span></h3>
+        <p class="en">Drop files on the notch to keep them close, drag them out when you need them. It survives restarts.</p>
+        <p class="ko">파일을 노치에 끌어다 두고 필요할 때 다시 끌어내세요. 앱을 다시 켜도 그대로 남아 있습니다.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📅</div>
+        <h3><span class="en">Calendar</span><span class="ko">캘린더</span></h3>
+        <p class="en">A week strip and the day's events, right next to your music.</p>
+        <p class="ko">음악 옆에 이번 주 날짜와 그날 일정을 보여 줍니다.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔊</div>
+        <h3><span class="en">System HUDs</span><span class="ko">시스템 HUD</span></h3>
+        <p class="en">Volume, brightness, charging and headphone battery appear in the notch. It can replace the system volume and brightness HUD.</p>
+        <p class="ko">볼륨, 밝기, 충전, 헤드폰 배터리를 노치에 표시합니다. 기본 볼륨·밝기 HUD를 대체할 수도 있습니다.</p>
+      </div>
+      <div class="card">
+        <div class="icon">⚙️</div>
+        <h3><span class="en">Make it yours</span><span class="ko">내 맞게 조절</span></h3>
+        <p class="en">Size, hover delay, sneak peek and every HUD are adjustable. English and Korean, following your Mac's language.</p>
+        <p class="ko">크기, 열림 지연, 미리보기, 각 HUD를 조절할 수 있습니다. Mac 언어에 따라 영어 또는 한국어로 표시됩니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="en">In the notch</span><span class="ko">노치에서는 이렇게</span></h2>
+    <p class="sub"><span class="en">Screens without a notch get a pill at the top centre.</span><span class="ko">노치가 없는 화면에서는 상단 중앙에 작은 막대로 나타납니다.</span></p>
+    <div class="shots">
+      <div class="shot">
+        <img src="images/collapsed.png" width="284" height="42" alt="Collapsed notch with artwork and visualizer">
+        <p class="en">Music playing, collapsed</p><p class="ko">재생 중일 때 접힌 노치</p>
+      </div>
+      <div class="shot">
+        <img src="images/hud-headphones.png" width="404" height="66" alt="Headphone battery HUD">
+        <p class="en">Headphones connected</p><p class="ko">헤드폰 연결</p>
+      </div>
+      <div class="shot">
+        <img src="images/hud-brightness.png" width="404" height="42" alt="Brightness HUD">
+        <p class="en">Brightness</p><p class="ko">밝기</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <h2><span class="en">Build and run</span><span class="ko">빌드하고 실행하기</span></h2>
+    <p class="sub"><span class="en">Requires macOS 14 or later and the Xcode command line tools.</span><span class="ko">macOS 14 이상과 Xcode 명령줄 도구가 필요합니다.</span></p>
+<pre><code>git clone https://github.com/namekun/Nunsseop.git
+cd Nunsseop
+./scripts/bundle.sh release
+open build/Nunsseop.app</code></pre>
+    <p class="note en">Builds are ad-hoc signed, so macOS may ask for permissions again after you rebuild. Move the app to /Applications before turning on launch at login.</p>
+    <p class="note ko">임시 서명으로 빌드되기 때문에, 다시 빌드하면 macOS가 권한을 다시 물을 수 있습니다. 로그인 시 실행을 켜기 전에 앱을 /Applications로 옮겨 주세요.</p>
+  </section>
+
+  <section>
+    <h2><span class="en">Permissions</span><span class="ko">필요한 권한</span></h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th class="en">Feature</th><th class="ko">기능</th><th class="en">Permission</th><th class="ko">권한</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="en">Calendar</span><span class="ko">캘린더</span></td><td><span class="en">Calendars</span><span class="ko">캘린더</span></td></tr>
+          <tr><td><span class="en">Replacing the volume/brightness HUD</span><span class="ko">볼륨·밝기 HUD 대체</span></td><td><span class="en">Accessibility</span><span class="ko">손쉬운 사용</span></td></tr>
+          <tr><td><span class="en">Fallback for Music, Spotify and browsers</span><span class="ko">Music·Spotify·브라우저 대체 경로</span></td><td><span class="en">Automation</span><span class="ko">자동화</span></td></tr>
+          <tr><td><span class="en">Launch at login</span><span class="ko">로그인 시 실행</span></td><td><span class="en">Login Items</span><span class="ko">로그인 항목</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="en">How now playing works</span><span class="ko">재생 정보를 읽는 방식</span></h2>
+    <p class="en">Since macOS 15.4, the private MediaRemote framework only answers apps signed by Apple. Nunsseop runs a small helper inside the system's <code>/usr/bin/perl</code> to read what's playing and send play, pause, next and previous. Because this relies on private API, a future macOS update may break it; Nunsseop then falls back to AppleScript for Music and Spotify and to reading media tabs in browsers.</p>
+    <p class="ko">macOS 15.4부터 비공개 MediaRemote 프레임워크는 Apple이 서명한 앱에만 응답합니다. Nunsseop은 시스템의 <code>/usr/bin/perl</code> 안에서 작은 헬퍼를 실행해 재생 정보를 읽고 재생·일시정지·다음·이전 명령을 보냅니다. 비공개 API에 기대는 방식이라 이후 macOS 업데이트에서 막힐 수 있으며, 그때는 Music·Spotify AppleScript와 브라우저 탭 읽기로 자동 전환됩니다.</p>
+  </section>
+
+  <footer>
+    <p class="en">Free and open source under the MIT License. Inspired by <a href="https://github.com/TheBoredTeam/boring.notch">boring.notch</a>; an independent implementation.</p>
+    <p class="ko">MIT 라이선스로 공개된 무료 오픈소스입니다. <a href="https://github.com/TheBoredTeam/boring.notch">boring.notch</a>에서 영감을 받아 독립적으로 구현했습니다.</p>
+    <p><a href="https://github.com/namekun/Nunsseop">github.com/namekun/Nunsseop</a></p>
+  </footer>
+</div>
+<script>
+  (function () {
+    var buttons = document.querySelectorAll('.lang button');
+    function apply(lang) {
+      document.body.setAttribute('data-lang', lang);
+      document.documentElement.lang = lang;
+      buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.set === lang)); });
+      try { localStorage.setItem('nunsseop-lang', lang); } catch (e) {}
+    }
+    var saved = null;
+    try { saved = localStorage.getItem('nunsseop-lang'); } catch (e) {}
+    apply(saved || ((navigator.language || '').toLowerCase().indexOf('ko') === 0 ? 'ko' : 'en'));
+    buttons.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset.set); }); });
+  })();
+</script>
+</body>
+</html>
