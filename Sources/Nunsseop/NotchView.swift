@@ -31,7 +31,7 @@ struct NotchView: View {
                                 HStack(spacing: 16) {
                                     HomeTab(nowPlaying: nowPlaying)
                                     if model.settings.calendarEnabled {
-                                        CalendarPanel(calendar: model.calendar)
+                                        CalendarPanel(calendar: model.calendar, showsReminders: model.settings.remindersEnabled)
                                             .frame(width: 168)
                                     }
                                 }

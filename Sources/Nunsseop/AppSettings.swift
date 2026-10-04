@@ -31,6 +31,7 @@ final class AppSettings: ObservableObject {
     @Published var chargingHUDEnabled: Bool { didSet { defaults.set(chargingHUDEnabled, forKey: "chargingHUDEnabled") } }
     @Published var headphoneHUDEnabled: Bool { didSet { defaults.set(headphoneHUDEnabled, forKey: "headphoneHUDEnabled") } }
     @Published var calendarEnabled: Bool { didSet { defaults.set(calendarEnabled, forKey: "calendarEnabled") } }
+    @Published var remindersEnabled: Bool { didSet { defaults.set(remindersEnabled, forKey: "remindersEnabled") } }
     /// Two-finger swipe down on the notch opens it, swipe up closes it.
     @Published var swipeToOpen: Bool { didSet { defaults.set(swipeToOpen, forKey: "swipeToOpen") } }
     /// Two-finger swipe left/right on the Home tab skips tracks.
@@ -52,6 +53,7 @@ final class AppSettings: ObservableObject {
             "chargingHUDEnabled": true,
             "headphoneHUDEnabled": true,
             "calendarEnabled": true,
+            "remindersEnabled": true,
             "swipeToOpen": true,
             "swipeForTracks": true,
         ])
@@ -69,6 +71,7 @@ final class AppSettings: ObservableObject {
         chargingHUDEnabled = defaults.bool(forKey: "chargingHUDEnabled")
         headphoneHUDEnabled = defaults.bool(forKey: "headphoneHUDEnabled")
         calendarEnabled = defaults.bool(forKey: "calendarEnabled")
+        remindersEnabled = defaults.bool(forKey: "remindersEnabled")
         swipeToOpen = defaults.bool(forKey: "swipeToOpen")
         swipeForTracks = defaults.bool(forKey: "swipeForTracks")
     }

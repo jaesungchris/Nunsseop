@@ -64,6 +64,8 @@ struct SettingsView: View {
             }
             Section("Home") {
                 Toggle("Show calendar on the Home tab", isOn: $settings.calendarEnabled)
+                Toggle("Show reminders under the calendar", isOn: $settings.remindersEnabled)
+                    .disabled(!settings.calendarEnabled)
             }
             Section("System HUD") {
                 Toggle("Show volume changes in the notch", isOn: $settings.volumeHUDEnabled)

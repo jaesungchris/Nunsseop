@@ -29,6 +29,8 @@
     <string>Shows what Music, Spotify and your browsers are playing and controls playback.</string>
     <key>NSCalendarsFullAccessUsageDescription</key>
     <string>Shows today's and this week's events on the notch's Home tab.</string>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>Shows reminders due today under the calendar and lets you complete them.</string>
     <key>NSHighResolutionCapable</key>
     <true/>
 </dict>

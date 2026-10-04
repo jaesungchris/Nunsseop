@@ -76,3 +76,11 @@
 /* Gestures */
 "Swipe down on the notch to open, up to close" = "노치에서 두 손가락으로 아래로 쓸면 열기, 위로 쓸면 닫기";
 "Swipe left or right on the Home tab to skip tracks" = "홈 탭에서 좌우로 쓸어 이전·다음 곡";
+
+/* Reminders */
+"Show reminders under the calendar" = "캘린더 아래에 미리 알림 표시";
+"Reminders" = "미리 알림";
+"No reminders" = "미리 알림 없음";
+"Mark as completed" = "완료로 표시";
+"Allow Reminders" = "미리 알림 허용";
+"Events" = "일정";
