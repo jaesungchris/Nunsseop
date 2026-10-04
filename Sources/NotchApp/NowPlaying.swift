@@ -84,7 +84,7 @@ final class NowPlayingController: ObservableObject {
     }
     @Published private(set) var tint: Color = .white
     @Published private(set) var needsAutomationPermission = false
-    /// Name of a browser that refused to run JavaScript from Apple Events.
+    /// Bundle ID of a browser that refused to run JavaScript from Apple Events.
     @Published private(set) var browserNeedingJavaScript: String?
 
     private let sources: [ScriptSource] = [.music, .spotify]
@@ -155,8 +155,7 @@ final class NowPlayingController: ObservableObject {
                 case .failure(.notAuthorized):
                     result.denied = true
                 case .failure(.javaScriptDisabled):
-                    result.javaScriptDisabledIn = FileManager.default.displayName(
-                        atPath: NSWorkspace.shared.urlForApplication(withBundleIdentifier: browser.bundleID)?.path ?? browser.bundleID)
+                    result.javaScriptDisabledIn = browser.bundleID
                 case .failure(.other):
                     break
                 }

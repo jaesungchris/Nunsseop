@@ -16,6 +16,7 @@ struct BrowserMedia {
         BrowserMedia(bundleID: "com.brave.Browser", dialect: .chromium),
         BrowserMedia(bundleID: "company.thebrowser.Browser", dialect: .chromium),
         BrowserMedia(bundleID: "company.thebrowser.dia", dialect: .chromium),
+        BrowserMedia(bundleID: "at.studio.AsideBrowser", dialect: .chromium),
         BrowserMedia(bundleID: "com.naver.Whale", dialect: .chromium),
         BrowserMedia(bundleID: "com.vivaldi.Vivaldi", dialect: .chromium),
         BrowserMedia(bundleID: "com.operasoftware.Opera", dialect: .chromium),
@@ -175,6 +176,45 @@ struct BrowserMedia {
         )
         let artworkURL = (info["art"] as? String).flatMap(URL.init(string:))
         return Hit(track: track, artworkURL: artworkURL, location: location)
+    }
+
+    static let diaBundleID = "company.thebrowser.dia"
+    static let diaJavaScriptFlag = "--enable-applescript-javascript"
+
+    static func displayName(of bundleID: String) -> String {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return bundleID }
+        return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+    }
+
+    /// Where the user turns on JavaScript from Apple Events in each browser.
+    static func enableHint(for bundleID: String) -> String {
+        switch bundleID {
+        case "com.apple.Safari":
+            return "Safari › 설정 › 고급에서 '웹 개발자를 위한 기능 보기'를 켠 뒤, 설정의 개발자 탭에서 'Apple 이벤트에서 JavaScript 허용'을 켜세요"
+        case diaBundleID:
+            return "Dia는 메뉴로 켤 수 없고, JavaScript 허용 옵션을 붙여 다시 실행해야 합니다"
+        default:
+            return "\(displayName(of: bundleID))의 메뉴 막대 › 보기 › 개발자 › 'Apple Events의 자바스크립트 허용'을 켜세요"
+        }
+    }
+
+    /// Dia only allows AppleScript JavaScript when launched with a flag, so quit
+    /// it and open it again with that flag. Dia restores its tabs on launch.
+    @MainActor
+    static func relaunchDiaWithJavaScript() {
+        guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: diaBundleID).first,
+              let url = app.bundleURL else { return }
+        app.terminate()
+        func reopen(attempt: Int) {
+            if !app.isTerminated && attempt < 50 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { reopen(attempt: attempt + 1) }
+                return
+            }
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.arguments = [diaJavaScriptFlag]
+            NSWorkspace.shared.openApplication(at: url, configuration: configuration)
+        }
+        reopen(attempt: 0)
     }
 
     func send(_ command: NowPlayingCommand, at location: Location) {

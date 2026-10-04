@@ -321,7 +321,7 @@ private struct HomeTab: View {
 
     private var emptyMessage: String {
         if let browser = nowPlaying.browserNeedingJavaScript {
-            return "\(browser)의 메뉴 보기(또는 개발자) › 'Apple Events의 JavaScript 허용'을 켜면 브라우저 재생도 표시됩니다"
+            return BrowserMedia.enableHint(for: browser)
         }
         if nowPlaying.needsAutomationPermission {
             return "시스템 설정 › 개인정보 보호 및 보안 › 자동화에서 NotchApp을 허용하세요"
@@ -377,6 +377,15 @@ private struct HomeTab: View {
                     Text(emptyMessage)
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.5))
+                    if nowPlaying.browserNeedingJavaScript == BrowserMedia.diaBundleID {
+                        Button("Dia 다시 실행 (JavaScript 허용)") { BrowserMedia.relaunchDiaWithJavaScript() }
+                            .buttonStyle(.plain)
+                            .font(.system(size: 11, weight: .semibold))
+                            .padding(.horizontal, 10).padding(.vertical, 4)
+                            .background(Capsule().fill(.white.opacity(0.15)))
+                            .padding(.top, 2)
+                            .help("Dia를 종료한 뒤 \(BrowserMedia.diaJavaScriptFlag) 옵션으로 다시 엽니다. 탭은 Dia가 복원합니다.")
+                    }
                 }
             }
             .foregroundStyle(.white)
