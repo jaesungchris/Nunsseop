@@ -66,6 +66,14 @@ struct SettingsView: View {
                 Toggle("Show calendar on the Home tab", isOn: $settings.calendarEnabled)
                 Toggle("Show reminders under the calendar", isOn: $settings.remindersEnabled)
                     .disabled(!settings.calendarEnabled)
+                Toggle("Show the Mirror tab", isOn: $settings.mirrorEnabled)
+                Picker("Camera", selection: $settings.mirrorCameraID) {
+                    Text("System default").tag("")
+                    ForEach(MirrorModel.cameras, id: \.uniqueID) { camera in
+                        Text(camera.localizedName).tag(camera.uniqueID)
+                    }
+                }
+                .disabled(!settings.mirrorEnabled)
             }
             Section("System HUD") {
                 Toggle("Show volume changes in the notch", isOn: $settings.volumeHUDEnabled)

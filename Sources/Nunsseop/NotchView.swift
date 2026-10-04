@@ -38,6 +38,8 @@ struct NotchView: View {
                             case .shelf:
                                 ShelfView(shelf: model.shelf, isDropTargeted: isDropTargeted && !isAirDropTargeted,
                                           isAirDropTargeted: isAirDropTargeted)
+                            case .mirror:
+                                MirrorTab(mirror: model.mirror, deviceID: model.settings.mirrorCameraID)
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -158,6 +160,9 @@ private struct HeaderBar: View {
             TabButton(symbol: "house.fill", selected: model.tab == .home) { model.tab = .home }
             TabButton(symbol: "tray.fill", selected: model.tab == .shelf,
                       badge: shelf.items.count) { model.tab = .shelf }
+            if model.settings.mirrorEnabled {
+                TabButton(symbol: "camera.fill", selected: model.tab == .mirror) { model.tab = .mirror }
+            }
             Spacer()
             // The middle of the header sits under the camera housing on notched displays.
             if !model.geometry.hasNotch {

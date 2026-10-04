@@ -27,6 +27,8 @@
     <true/>
     <key>NSAppleEventsUsageDescription</key>
     <string>Shows what Music, Spotify and your browsers are playing and controls playback.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Shows your camera in the notch's Mirror tab. Nothing is recorded or sent.</string>
     <key>NSCalendarsFullAccessUsageDescription</key>
     <string>Shows today's and this week's events on the notch's Home tab.</string>
     <key>NSRemindersFullAccessUsageDescription</key>

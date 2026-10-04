@@ -2,7 +2,7 @@ import AppKit
 import Combine
 
 enum NotchTab {
-    case home, shelf
+    case home, shelf, mirror
 }
 
 @MainActor
@@ -18,6 +18,7 @@ final class NotchViewModel: ObservableObject {
     let shelf = ShelfStore()
     let hud: HUDCenter
     let calendar = CalendarModel()
+    let mirror = MirrorModel()
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
 

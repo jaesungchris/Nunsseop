@@ -32,6 +32,9 @@ final class AppSettings: ObservableObject {
     @Published var headphoneHUDEnabled: Bool { didSet { defaults.set(headphoneHUDEnabled, forKey: "headphoneHUDEnabled") } }
     @Published var calendarEnabled: Bool { didSet { defaults.set(calendarEnabled, forKey: "calendarEnabled") } }
     @Published var remindersEnabled: Bool { didSet { defaults.set(remindersEnabled, forKey: "remindersEnabled") } }
+    @Published var mirrorEnabled: Bool { didSet { defaults.set(mirrorEnabled, forKey: "mirrorEnabled") } }
+    /// AVCaptureDevice.uniqueID; empty means the system default camera.
+    @Published var mirrorCameraID: String { didSet { defaults.set(mirrorCameraID, forKey: "mirrorCameraID") } }
     /// Two-finger swipe down on the notch opens it, swipe up closes it.
     @Published var swipeToOpen: Bool { didSet { defaults.set(swipeToOpen, forKey: "swipeToOpen") } }
     /// Two-finger swipe left/right on the Home tab skips tracks.
@@ -54,6 +57,8 @@ final class AppSettings: ObservableObject {
             "headphoneHUDEnabled": true,
             "calendarEnabled": true,
             "remindersEnabled": true,
+            "mirrorEnabled": true,
+            "mirrorCameraID": "",
             "swipeToOpen": true,
             "swipeForTracks": true,
         ])
@@ -72,6 +77,8 @@ final class AppSettings: ObservableObject {
         headphoneHUDEnabled = defaults.bool(forKey: "headphoneHUDEnabled")
         calendarEnabled = defaults.bool(forKey: "calendarEnabled")
         remindersEnabled = defaults.bool(forKey: "remindersEnabled")
+        mirrorEnabled = defaults.bool(forKey: "mirrorEnabled")
+        mirrorCameraID = defaults.string(forKey: "mirrorCameraID") ?? ""
         swipeToOpen = defaults.bool(forKey: "swipeToOpen")
         swipeForTracks = defaults.bool(forKey: "swipeForTracks")
     }

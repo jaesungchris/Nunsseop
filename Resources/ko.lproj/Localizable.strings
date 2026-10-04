@@ -84,3 +84,11 @@
 "Mark as completed" = "완료로 표시";
 "Allow Reminders" = "미리 알림 허용";
 "Events" = "일정";
+
+/* Mirror */
+"Camera access is off" = "카메라 접근이 꺼져 있습니다";
+"Use your camera as a mirror" = "카메라를 거울처럼 사용하세요";
+"Allow Camera" = "카메라 허용";
+"Show the Mirror tab" = "미러 탭 표시";
+"Camera" = "카메라";
+"System default" = "시스템 기본값";
