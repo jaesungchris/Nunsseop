@@ -34,6 +34,9 @@ final class NotchWindowController {
     private var monitors: [Any] = []
     private var collapseWork: DispatchWorkItem?
     private var openWork: DispatchWorkItem?
+    private var swipe = CGVector.zero
+    private var swipeFired = false
+    private var swipeIdleWork: DispatchWorkItem?
     private var screenObserver: NSObjectProtocol?
     private var pillWidthObserver: AnyCancellable?
 
@@ -97,6 +100,50 @@ final class NotchWindowController {
             return event
         }) {
             monitors.append(local)
+        }
+        if let scroll = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel, handler: { [weak self] event in
+            MainActor.assumeIsolated { self?.scrolled(event) }
+            return event
+        }) {
+            monitors.append(scroll)
+        }
+    }
+
+    /// Turns two-finger swipes over the notch into open/close and track skips.
+    /// Each swipe fires at most once; it ends when the gesture ends or input pauses.
+    private func scrolled(_ event: NSEvent) {
+        let settings = model.settings
+        guard settings.swipeToOpen || settings.swipeForTracks else { return }
+        if event.phase == .began || event.phase == .mayBegin {
+            swipe = .zero
+            swipeFired = false
+        }
+        // Convert to finger direction regardless of the natural scrolling setting.
+        let sign: CGFloat = event.isDirectionInvertedFromDevice ? 1 : -1
+        let scale: CGFloat = event.hasPreciseScrollingDeltas ? 1 : 10
+        swipe.dx += event.scrollingDeltaX * sign * scale
+        swipe.dy += event.scrollingDeltaY * sign * scale
+
+        swipeIdleWork?.cancel()
+        let idle = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                self?.swipe = .zero
+                self?.swipeFired = false
+            }
+        }
+        swipeIdleWork = idle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: idle)
+        if event.phase == .ended || event.phase == .cancelled { idle.perform() }
+
+        guard !swipeFired else { return }
+        let threshold: CGFloat = 40
+        if abs(swipe.dy) > threshold && abs(swipe.dy) > abs(swipe.dx) * 1.5, settings.swipeToOpen {
+            swipeFired = true
+            if swipe.dy > 0 { model.expand() } else { model.collapse() }
+        } else if abs(swipe.dx) > threshold && abs(swipe.dx) > abs(swipe.dy) * 1.5,
+                  settings.swipeForTracks, model.isExpanded, model.tab == .home, model.nowPlaying.track != nil {
+            swipeFired = true
+            model.nowPlaying.send(swipe.dx < 0 ? .next : .previous)
         }
     }
 

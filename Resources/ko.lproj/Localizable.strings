@@ -72,3 +72,7 @@
 "Share All…" = "모두 공유…";
 "Share…" = "공유…";
 "Drop files to send with AirDrop, or click to send everything on the shelf" = "파일을 끌어다 놓으면 AirDrop으로 보내고, 클릭하면 선반의 모든 파일을 보냅니다";
+
+/* Gestures */
+"Swipe down on the notch to open, up to close" = "노치에서 두 손가락으로 아래로 쓸면 열기, 위로 쓸면 닫기";
+"Swipe left or right on the Home tab to skip tracks" = "홈 탭에서 좌우로 쓸어 이전·다음 곡";

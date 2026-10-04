@@ -31,6 +31,10 @@ final class AppSettings: ObservableObject {
     @Published var chargingHUDEnabled: Bool { didSet { defaults.set(chargingHUDEnabled, forKey: "chargingHUDEnabled") } }
     @Published var headphoneHUDEnabled: Bool { didSet { defaults.set(headphoneHUDEnabled, forKey: "headphoneHUDEnabled") } }
     @Published var calendarEnabled: Bool { didSet { defaults.set(calendarEnabled, forKey: "calendarEnabled") } }
+    /// Two-finger swipe down on the notch opens it, swipe up closes it.
+    @Published var swipeToOpen: Bool { didSet { defaults.set(swipeToOpen, forKey: "swipeToOpen") } }
+    /// Two-finger swipe left/right on the Home tab skips tracks.
+    @Published var swipeForTracks: Bool { didSet { defaults.set(swipeForTracks, forKey: "swipeForTracks") } }
 
     private init() {
         defaults.register(defaults: [
@@ -48,6 +52,8 @@ final class AppSettings: ObservableObject {
             "chargingHUDEnabled": true,
             "headphoneHUDEnabled": true,
             "calendarEnabled": true,
+            "swipeToOpen": true,
+            "swipeForTracks": true,
         ])
         expandedWidth = defaults.double(forKey: "expandedWidth")
         expandedHeight = defaults.double(forKey: "expandedHeight")
@@ -63,6 +69,8 @@ final class AppSettings: ObservableObject {
         chargingHUDEnabled = defaults.bool(forKey: "chargingHUDEnabled")
         headphoneHUDEnabled = defaults.bool(forKey: "headphoneHUDEnabled")
         calendarEnabled = defaults.bool(forKey: "calendarEnabled")
+        swipeToOpen = defaults.bool(forKey: "swipeToOpen")
+        swipeForTracks = defaults.bool(forKey: "swipeForTracks")
     }
 
     func resetSizes() {

@@ -59,6 +59,8 @@ struct SettingsView: View {
             Section("Behavior") {
                 SliderRow(title: "Delay before opening on hover", value: $settings.openDelay,
                           range: 0...1, unit: String(localized: "sec"), format: "%.1f")
+                Toggle("Swipe down on the notch to open, up to close", isOn: $settings.swipeToOpen)
+                Toggle("Swipe left or right on the Home tab to skip tracks", isOn: $settings.swipeForTracks)
             }
             Section("Home") {
                 Toggle("Show calendar on the Home tab", isOn: $settings.calendarEnabled)
