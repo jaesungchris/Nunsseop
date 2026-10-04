@@ -27,6 +27,8 @@ final class CalendarModel: ObservableObject {
         didSet { reload() }
     }
     @Published private(set) var items: [CalendarItem] = []
+    /// Days of `week` that have at least one event, as start-of-day dates.
+    @Published private(set) var busyDays: Set<Date> = []
     @Published private(set) var reminderAccess: Access
     @Published private(set) var reminders: [ReminderItem] = []
 
@@ -124,6 +126,7 @@ final class CalendarModel: ObservableObject {
             CalendarItem(id: "b", title: "Lunch", start: at(12, 30), end: at(13, 30), isAllDay: false, color: .orange),
             CalendarItem(id: "c", title: "5 km run", start: at(19, 0), end: at(19, 40), isAllDay: false, color: .green),
         ]
+        busyDays = Set([0, 2, 5].compactMap { Calendar.current.date(byAdding: .day, value: $0, to: Calendar.current.startOfDay(for: .now)) })
         reminderAccess = .granted
         reminders = [
             ReminderItem(id: "r1", title: "Pay the electricity bill", due: at(18, 0), color: .orange),
@@ -139,7 +142,11 @@ final class CalendarModel: ObservableObject {
     func reload() {
         if isDemo { showDemoItems(); return }
         reloadReminders()
-        guard access == .granted else { items = []; return }
+        guard access == .granted else { items = []; busyDays = []; return }
+        if let first = week.first, let last = week.last, let weekEnd = Calendar.current.date(byAdding: .day, value: 1, to: last) {
+            let weekEvents = store.events(matching: store.predicateForEvents(withStart: first, end: weekEnd, calendars: nil))
+            busyDays = Set(weekEvents.map { Calendar.current.startOfDay(for: max($0.startDate, first)) })
+        }
         let start = selectedDay
         guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return }
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)

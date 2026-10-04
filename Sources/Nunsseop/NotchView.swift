@@ -31,8 +31,10 @@ struct NotchView: View {
                                 HStack(spacing: 16) {
                                     HomeTab(nowPlaying: nowPlaying, lyrics: model.settings.lyricsEnabled ? model.lyrics : nil)
                                     if model.settings.calendarEnabled {
-                                        CalendarPanel(calendar: model.calendar, showsReminders: model.settings.remindersEnabled)
-                                            .frame(width: 168)
+                                        // A wide notch gives the calendar room for the whole week in large digits.
+                                        let wide = model.expandedSize.width >= 700
+                                        CalendarPanel(calendar: model.calendar, showsReminders: model.settings.remindersEnabled, wide: wide)
+                                            .frame(width: wide ? 220 : 168)
                                     }
                                 }
                             case .shelf:

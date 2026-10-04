@@ -3,11 +3,12 @@ import SwiftUI
 struct CalendarPanel: View {
     @ObservedObject var calendar: CalendarModel
     let showsReminders: Bool
+    var wide = false
     @State private var showingReminders = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            WeekStrip(calendar: calendar)
+            WeekStrip(calendar: calendar, days: wide ? 7 : 5, wide: wide)
             if showsReminders && calendar.access == .granted {
                 HStack(spacing: 4) {
                     PanelSwitch(title: String(localized: "Events"), count: calendar.items.count,
@@ -49,30 +50,49 @@ struct CalendarPanel: View {
     }
 }
 
-/// The month, then today in large accent digits followed by the next few days.
+private extension VerticalAlignment {
+    /// The baseline of the day numbers, so the month lines up with them.
+    enum DayNumber: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat { context[.lastTextBaseline] }
+    }
+    static let dayNumber = VerticalAlignment(DayNumber.self)
+}
+
+/// The month, then today in large accent digits followed by the next days, with a dot under days that have events.
 private struct WeekStrip: View {
     @ObservedObject var calendar: CalendarModel
+    let days: Int
+    let wide: Bool
 
     var body: some View {
-        HStack(alignment: .lastTextBaseline, spacing: 0) {
+        HStack(alignment: .dayNumber, spacing: 0) {
             Text(calendar.week.first ?? .now, format: .dateTime.month(.abbreviated))
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: wide ? 20 : 17, weight: .bold))
                 .lineLimit(1)
                 .fixedSize()
-                .padding(.trailing, 4)
-            ForEach(calendar.week.prefix(5), id: \.self) { day in
+                .alignmentGuide(.dayNumber) { $0[.lastTextBaseline] }
+                .padding(.trailing, wide ? 6 : 4)
+            ForEach(calendar.week.prefix(days), id: \.self) { day in
                 let today = Calendar.current.isDateInToday(day)
                 let selected = Calendar.current.isDate(day, inSameDayAs: calendar.selectedDay)
                 let weekend = Calendar.current.isDateInWeekend(day)
                 Button { calendar.selectedDay = day } label: {
-                    VStack(spacing: 0) {
+                    VStack(spacing: 2) {
                         Text(day, format: .dateTime.weekday(.abbreviated))
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundStyle(.white.opacity(selected ? 0.85 : 0.4))
+                            .font(.system(size: wide ? 9 : 8, weight: .semibold))
+                            .foregroundStyle(today ? Color.blue.opacity(0.9) : .white.opacity(selected ? 0.85 : 0.4))
+                            .lineLimit(1)
+                            .fixedSize()
                         Text(String(format: "%02d", Calendar.current.component(.day, from: day)))
-                            .font(.system(size: today ? 19 : 13, weight: today ? .heavy : .semibold).monospacedDigit())
+                            .font(.system(size: today ? (wide ? 22 : 19) : 13,
+                                          weight: today ? .heavy : .semibold).monospacedDigit())
                             .foregroundStyle(today ? Color.blue : (weekend ? Color.red.opacity(0.8) : .white.opacity(selected ? 1 : 0.55)))
                             .fixedSize()
+                            .frame(height: wide ? 24 : 21, alignment: .bottom)
+                            .alignmentGuide(.dayNumber) { $0[.bottom] - 4 }
+                        Circle()
+                            .fill(calendar.busyDays.contains(day) ? Color.white.opacity(0.6) : .clear)
+                            .frame(width: 3, height: 3)
                     }
                     .frame(maxWidth: today ? nil : .infinity)
                     .padding(.horizontal, today ? 2 : 0)
