@@ -212,3 +212,14 @@
 "Screen recording" = "屏幕录制";
 "Record microphone audio" = "录制麦克风声音";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "录屏会存储到截屏的存储位置并添加到架子。首次使用需要屏幕录制权限。";
+"AI usage" = "AI 用量";
+"Loading…" = "正在载入…";
+"No AI usage found" = "没有 AI 使用记录";
+"Updated %@" = "%@更新";
+"5-hour" = "5 小时";
+"Weekly" = "每周";
+"Last 5 hours" = "过去 5 小时";
+"Last 7 days" = "过去 7 天";
+"%@ tokens" = "%@ 个令牌";
+"Resets %@" = "%@重置";
+"Usage appears here once you have used Claude Code or Codex on this Mac." = "在这台 Mac 上使用 Claude Code 或 Codex 后，用量会显示在这里。";

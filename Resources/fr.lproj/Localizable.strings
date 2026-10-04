@@ -212,3 +212,14 @@
 "Screen recording" = "Enregistrement de l’écran";
 "Record microphone audio" = "Enregistrer le son du micro";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "Les enregistrements sont sauvegardés à l’emplacement des captures d’écran et ajoutés à l’étagère. L’autorisation d’enregistrement de l’écran est nécessaire la première fois.";
+"AI usage" = "Usage de l’IA";
+"Loading…" = "Chargement…";
+"No AI usage found" = "Aucun usage de l’IA";
+"Updated %@" = "Mis à jour %@";
+"5-hour" = "5 heures";
+"Weekly" = "Hebdomadaire";
+"Last 5 hours" = "5 dernières heures";
+"Last 7 days" = "7 derniers jours";
+"%@ tokens" = "%@ jetons";
+"Resets %@" = "Réinitialisé %@";
+"Usage appears here once you have used Claude Code or Codex on this Mac." = "L’usage s’affichera ici dès que vous utiliserez Claude Code ou Codex sur ce Mac.";

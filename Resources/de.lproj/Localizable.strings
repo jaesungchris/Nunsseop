@@ -212,3 +212,14 @@
 "Screen recording" = "Bildschirmaufnahme";
 "Record microphone audio" = "Mikrofonton aufnehmen";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "Aufnahmen werden am Speicherort für Bildschirmfotos gesichert und zur Ablage hinzugefügt. Beim ersten Mal ist die Berechtigung für Bildschirmaufnahme nötig.";
+"AI usage" = "KI-Nutzung";
+"Loading…" = "Wird geladen …";
+"No AI usage found" = "Keine KI-Nutzung gefunden";
+"Updated %@" = "Aktualisiert %@";
+"5-hour" = "5 Stunden";
+"Weekly" = "Wöchentlich";
+"Last 5 hours" = "Letzte 5 Stunden";
+"Last 7 days" = "Letzte 7 Tage";
+"%@ tokens" = "%@ Tokens";
+"Resets %@" = "Zurückgesetzt %@";
+"Usage appears here once you have used Claude Code or Codex on this Mac." = "Die Nutzung erscheint hier, sobald du Claude Code oder Codex auf diesem Mac verwendest.";

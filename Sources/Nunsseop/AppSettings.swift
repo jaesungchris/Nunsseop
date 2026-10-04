@@ -45,6 +45,7 @@ final class AppSettings: ObservableObject {
     @Published var shelfTab: Bool { didSet { defaults.set(shelfTab, forKey: "shelfTab") } }
     @Published var searchTab: Bool { didSet { defaults.set(searchTab, forKey: "searchTab") } }
     @Published var emojiTab: Bool { didSet { defaults.set(emojiTab, forKey: "emojiTab") } }
+    @Published var aiTab: Bool { didSet { defaults.set(aiTab, forKey: "aiTab") } }
     /// ⌃⌥Space opens the Search tab from anywhere.
     @Published var searchHotkey: Bool { didSet { defaults.set(searchHotkey, forKey: "searchHotkey") } }
     @Published var peripheralBatteries: Bool { didSet { defaults.set(peripheralBatteries, forKey: "peripheralBatteries") } }
@@ -100,6 +101,7 @@ final class AppSettings: ObservableObject {
             "shelfTab": true,
             "searchTab": true,
             "emojiTab": true,
+            "aiTab": true,
             "searchHotkey": true,
             "peripheralBatteries": true,
             "privacyIndicator": true,
@@ -150,6 +152,7 @@ final class AppSettings: ObservableObject {
         shelfTab = defaults.bool(forKey: "shelfTab")
         searchTab = defaults.bool(forKey: "searchTab")
         emojiTab = defaults.bool(forKey: "emojiTab")
+        aiTab = defaults.bool(forKey: "aiTab")
         searchHotkey = defaults.bool(forKey: "searchHotkey")
         peripheralBatteries = defaults.bool(forKey: "peripheralBatteries")
         privacyIndicator = defaults.bool(forKey: "privacyIndicator")
@@ -202,6 +205,7 @@ final class AppSettings: ObservableObject {
         case .apps: return appsTab
         case .search: return searchTab
         case .emoji: return emojiTab
+        case .ai: return aiTab
         case .mirror: return mirrorEnabled
         }
     }
@@ -218,6 +222,7 @@ final class AppSettings: ObservableObject {
         case .apps: appsTab = visible
         case .search: searchTab = visible
         case .emoji: emojiTab = visible
+        case .ai: aiTab = visible
         case .mirror: mirrorEnabled = visible
         }
     }

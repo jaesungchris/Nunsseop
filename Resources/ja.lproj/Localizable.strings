@@ -212,3 +212,14 @@
 "Screen recording" = "画面収録";
 "Record microphone audio" = "マイクの音声を録音";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "録画はスクリーンショットの保存先に保存され、シェルフに追加されます。初回は画面収録の許可が必要です。";
+"AI usage" = "AI 使用量";
+"Loading…" = "読み込み中…";
+"No AI usage found" = "AI の使用履歴がありません";
+"Updated %@" = "%@ に更新";
+"5-hour" = "5 時間";
+"Weekly" = "週間";
+"Last 5 hours" = "過去 5 時間";
+"Last 7 days" = "過去 7 日間";
+"%@ tokens" = "%@ トークン";
+"Resets %@" = "%@ にリセット";
+"Usage appears here once you have used Claude Code or Codex on this Mac." = "この Mac で Claude Code や Codex を使うと、ここに使用量が表示されます。";

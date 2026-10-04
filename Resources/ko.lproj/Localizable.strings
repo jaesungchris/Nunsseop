@@ -237,3 +237,14 @@
 "Screen recording" = "화면 녹화";
 "Record microphone audio" = "마이크 소리 녹음";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "녹화 파일은 스크린샷 저장 위치에 저장되고 선반에 추가됩니다. 처음에는 화면 기록 권한이 필요합니다.";
+"AI usage" = "AI 사용량";
+"Loading…" = "불러오는 중…";
+"No AI usage found" = "AI 사용 기록이 없습니다";
+"Updated %@" = "%@ 갱신";
+"5-hour" = "5시간";
+"Weekly" = "주간";
+"Last 5 hours" = "최근 5시간";
+"Last 7 days" = "최근 7일";
+"%@ tokens" = "%@ 토큰";
+"Resets %@" = "%@ 초기화";
+"Usage appears here once you have used Claude Code or Codex on this Mac." = "이 Mac에서 Claude Code나 Codex를 쓰면 여기에 사용량이 표시됩니다.";

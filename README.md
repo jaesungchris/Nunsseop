@@ -23,6 +23,7 @@
 - **Tools.** Switch the audio output, mute the microphone, keep the Mac awake, record the screen (with a timer on the collapsed notch) and eject external drives.
 - **System.** CPU, memory, disk and network at a glance, plus the battery of your mouse, keyboard and trackpad, with a warning when one runs low.
 - **Quick search.** Press ⌃⌥Space anywhere to open apps, search the web, or work out sums like `12*(3+4)` and copy the result.
+- **AI usage.** Claude Code and Codex limits, with Claude Code's token use over the last 5 hours and 7 days. Read from files those tools already keep on your Mac, so there is nothing to sign in to or set up.
 - **Emoji picker.** Every emoji, searchable by name, with your recent picks first. One click copies it.
 - **Privacy indicator.** A camera or microphone dot on the collapsed notch while any app is using them.
 - **Apps.** Launch anything in your Dock from the notch.

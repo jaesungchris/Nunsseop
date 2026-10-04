@@ -2,7 +2,7 @@ import AppKit
 import Combine
 
 enum NotchTab: String, CaseIterable, Identifiable {
-    case home, shelf, timer, clipboard, notes, tools, system, apps, search, emoji, mirror
+    case home, shelf, timer, clipboard, notes, tools, system, apps, search, emoji, ai, mirror
 
     var id: String { rawValue }
 
@@ -18,6 +18,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .apps: return "square.grid.3x3.fill"
         case .search: return "magnifyingglass"
         case .emoji: return "face.smiling"
+        case .ai: return "sparkles"
         case .mirror: return "camera.fill"
         }
     }
@@ -34,6 +35,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .apps: return String(localized: "Apps")
         case .search: return String(localized: "Search")
         case .emoji: return String(localized: "Emoji")
+        case .ai: return String(localized: "AI usage")
         case .mirror: return String(localized: "Mirror")
         }
     }
@@ -68,6 +70,7 @@ final class NotchViewModel: ObservableObject {
     let peripherals = PeripheralMonitor()
     let privacy = PrivacyMonitor()
     let emoji = EmojiModel()
+    let aiUsage = AIUsageModel()
     let search = QuickSearchModel()
     let recorder = ScreenRecorder()
     /// Set when opened by the hotkey; the notch then stays open until the pointer visits it or Escape is pressed.
