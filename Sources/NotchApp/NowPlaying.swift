@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import SwiftUI
 
 struct NowPlayingTrack: Equatable {
     var title: String
@@ -78,7 +79,10 @@ private struct ScriptSource {
 @MainActor
 final class NowPlayingController: ObservableObject {
     @Published private(set) var track: NowPlayingTrack?
-    @Published private(set) var artwork: NSImage?
+    @Published private(set) var artwork: NSImage? {
+        didSet { tint = artwork.map(ArtworkTint.color(for:)) ?? .white }
+    }
+    @Published private(set) var tint: Color = .white
     @Published private(set) var needsAutomationPermission = false
 
     private let sources: [ScriptSource] = [.music, .spotify]
@@ -87,6 +91,10 @@ final class NowPlayingController: ObservableObject {
     private var artworkIdentity: String?
 
     func start() {
+        if CommandLine.arguments.contains("--demo-track") {
+            showDemoTrack()
+            return
+        }
         poll()
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.poll() }
@@ -161,6 +169,17 @@ final class NowPlayingController: ObservableObject {
 
     private func setArtwork(_ image: NSImage, for identity: String) {
         if identity == artworkIdentity { artwork = image }
+    }
+
+    /// Fixed track with generated artwork, for checking the layout without a player.
+    private func showDemoTrack() {
+        track = NowPlayingTrack(title: "Midnight Drive", artist: "The Demo Band", album: "Night Roads",
+                                duration: 214, position: 71, isPlaying: true,
+                                sourceBundleID: "com.apple.Music", fetchedAt: Date())
+        artwork = NSImage(size: NSSize(width: 300, height: 300), flipped: false) { rect in
+            NSGradient(colors: [.systemPink, .systemPurple, .systemIndigo])?.draw(in: rect, angle: -45)
+            return true
+        }
     }
 
     private struct ScriptError: Error { let code: Int }

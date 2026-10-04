@@ -1,10 +1,15 @@
 import AppKit
 import Combine
 
+enum NotchTab {
+    case home, shelf
+}
+
 @MainActor
 final class NotchViewModel: ObservableObject {
     @Published var geometry: NotchGeometry
     @Published private(set) var isExpanded = false
+    @Published var tab: NotchTab = .home
     @Published private(set) var showsLiveActivity = false
 
     let nowPlaying = NowPlayingController()

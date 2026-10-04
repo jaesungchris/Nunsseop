@@ -5,7 +5,7 @@ struct NotchGeometry: Equatable {
     var collapsedSize: CGSize
     var hasNotch: Bool
 
-    static let expandedSize = CGSize(width: 640, height: 190)
+    static let expandedSize = CGSize(width: 620, height: 196)
 
     /// Prefers the built-in display with a camera housing; otherwise the main screen.
     static func pickScreen() -> NSScreen? {
