@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nunsseop — your notch, finally useful</title>
-<meta name="description" content="Nunsseop turns the MacBook notch into a space for what's playing, a file shelf, your calendar and system HUDs. Free and open source.">
+<meta name="description" content="Nunsseop turns the MacBook notch into a space for what's playing, a file shelf, quick search, AI usage, your calendar and system HUDs. Free and open source.">
 <meta property="og:title" content="Nunsseop — your notch, finally useful">
 <meta property="og:description" content="Now playing, file shelf with AirDrop, calendar, reminders, mirror and system HUDs in your MacBook notch. Free and open source.">
 <meta property="og:image" content="https://namekun.github.io/Nunsseop/images/home.png">
@@ -154,6 +154,55 @@
   footer { padding: 56px 0 48px; color: var(--faint); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   footer a:hover { color: var(--text); }
 
+
+  .stats { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px 34px; margin: 34px auto 0; color: var(--muted); font-size: 14px; }
+  .stats b { display: block; color: var(--text); font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+
+  .tour { display: grid; grid-template-columns: 300px 1fr; gap: 18px; align-items: stretch; }
+  @media (max-width: 900px) { .tour { grid-template-columns: 1fr; } }
+  .tour-list { display: flex; flex-direction: column; gap: 6px; }
+  @media (max-width: 900px) { .tour-list { flex-direction: row; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; } .tour-list::-webkit-scrollbar { display: none; } }
+  .tour-btn { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 1px solid transparent; background: transparent; color: var(--muted); font: inherit; font-size: 15px; font-weight: 600; padding: 8px 12px; border-radius: 14px; cursor: pointer; overflow: hidden; flex: none; transition: background .2s, color .2s, border-color .2s; }
+  @media (max-width: 900px) { .tour-btn { width: auto; white-space: nowrap; } }
+  .tour-btn .e { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,0.06); font-size: 16px; flex: none; }
+  .tour-btn:hover { color: var(--text); }
+  .tour-btn[aria-selected="true"] { color: var(--text); background: var(--card); border-color: var(--card-border); }
+  .tour-btn .bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: linear-gradient(90deg, var(--violet), var(--pink)); }
+  .tour-btn[aria-selected="true"] .bar.run { animation: fill var(--dur, 5s) linear forwards; }
+  @keyframes fill { to { width: 100%; } }
+  .tour-stage { border-radius: var(--radius); border: 1px solid var(--card-border); overflow: hidden; display: flex; flex-direction: column;
+    background: radial-gradient(90% 120% at 15% 120%, rgba(255,122,168,0.35) 0%, transparent 55%), radial-gradient(80% 100% at 90% 110%, rgba(106,92,255,0.4) 0%, transparent 60%), linear-gradient(160deg, #1d1534, #0c0a14); }
+  .tour-screen { position: relative; aspect-ratio: 1286 / 470; }
+  .tour-screen img { position: absolute; left: 50%; top: 0; width: 86%; height: auto; transform: translateX(-50%) translateY(-6px) scale(.985); opacity: 0; transition: opacity .45s ease, transform .55s cubic-bezier(.2,.9,.25,1.05); filter: drop-shadow(0 24px 40px rgba(0,0,0,0.45)); }
+  .tour-screen img.on { opacity: 1; transform: translateX(-50%); }
+  @media (max-width: 900px) { .tour-screen img { width: 96%; } .tour-screen { aspect-ratio: 1286 / 440; } }
+  .tour-copy { padding: 0 28px 26px; margin-top: auto; }
+  .tour-copy h3 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.02em; }
+  .tour-copy p { margin: 0; color: var(--muted); font-size: 15.5px; max-width: 640px; }
+  .tour-copy kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.12); color: var(--text); }
+
+  .mini-note { margin-top: 20px; display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 18px; background: #000; border: 1px solid rgba(255,255,255,0.08); max-width: 380px; }
+  .mini-note .dot { width: 30px; height: 30px; border-radius: 9px; background: #d97757; display: grid; place-items: center; font-size: 15px; flex: none; }
+  .mini-note b { display: block; font-size: 14px; }
+  .mini-note span { color: var(--muted); font-size: 13px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 34px; }
+  @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
+  .step { border-radius: var(--radius); border: 1px solid var(--card-border); background: var(--card); padding: 24px; }
+  .step .n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 14px; color: #0b0a0f; background: linear-gradient(135deg, #fff, var(--violet)); margin-bottom: 14px; }
+  .step h3 { margin: 0 0 6px; font-size: 18px; }
+  .step p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  .faq { max-width: 820px; margin: 0 auto; display: grid; gap: 10px; }
+  .faq details { border-radius: 18px; border: 1px solid var(--card-border); background: var(--card); padding: 0 22px; transition: border-color .2s; }
+  .faq details[open] { border-color: rgba(200,107,250,0.35); }
+  .faq summary { list-style: none; cursor: pointer; padding: 18px 0; font-weight: 650; font-size: 16px; display: flex; justify-content: space-between; gap: 16px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; color: var(--violet); font-size: 22px; line-height: 1; transition: transform .2s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq .a { color: var(--muted); font-size: 15px; padding: 0 0 18px; }
+  .faq .a code { font-size: 13px; color: var(--text); background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 6px; }
+
   .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
   .reveal.in { opacity: 1; transform: none; }
   [data-lang="ko"] .en, [data-lang="en"] .ko { display: none !important; }
@@ -169,9 +218,10 @@
   <div class="wrap">
     <a class="brand" href="#"><img src="images/icon.png" alt="">Nunsseop <small>눈썹</small></a>
     <div class="nav-links">
+      <a href="#tour"><span class="en">Tour</span><span class="ko">둘러보기</span></a>
       <a href="#features"><span class="en">Features</span><span class="ko">기능</span></a>
       <a href="#install"><span class="en">Install</span><span class="ko">설치</span></a>
-      <a href="#how"><span class="en">How it works</span><span class="ko">작동 방식</span></a>
+      <a href="#faq">FAQ</a>
       <a href="https://github.com/namekun/Nunsseop">GitHub</a>
     </div>
     <div class="lang" role="group" aria-label="Language">
@@ -210,6 +260,12 @@
       </div>
     </div>
     <p class="hint"><span class="en">Hover the notch above — just like on your Mac.</span><span class="ko">위의 노치에 마우스를 올려 보세요. Mac에서와 똑같이요.</span></p>
+    <div class="stats">
+      <div><b>12</b><span class="en">tabs to choose from</span><span class="ko">고를 수 있는 탭</span></div>
+      <div><b>7</b><span class="en">languages</span><span class="ko">개 언어</span></div>
+      <div><b>0</b><span class="en">accounts or trackers</span><span class="ko">계정·추적 없음</span></div>
+      <div><b>1.6 MB</b><span class="en">download, native Swift</span><span class="ko">다운로드, 네이티브 앱</span></div>
+    </div>
   </div>
 </header>
 
@@ -221,56 +277,71 @@
 </div>
 
 <main class="wrap">
+  <section class="block" id="tour">
+    <div class="section-head reveal">
+      <div class="kicker en">Take the tour</div><div class="kicker ko">둘러보기</div>
+      <h2 class="en">One hover, a dozen tools.</h2><h2 class="ko">마우스 한 번에, 도구 열두 개.</h2>
+      <p class="en">These are real screenshots. Pick a tab to see it.</p>
+      <p class="ko">모두 실제 화면입니다. 탭을 골라 보세요.</p>
+    </div>
+    <div class="tour reveal" id="tourBox">
+      <div class="tour-list" role="tablist" id="tourList"></div>
+      <div class="tour-stage">
+        <div class="tour-screen" id="tourScreen"></div>
+        <div class="tour-copy" aria-live="polite"><h3 id="tourTitle"></h3><p id="tourText"></p></div>
+      </div>
+    </div>
+  </section>
+
   <section class="block" id="features">
     <div class="section-head reveal">
-      <div class="kicker en">Everything, one hover away</div><div class="kicker ko">마우스만 올리면 전부</div>
-      <h2 class="en">A tiny panel that does a lot.</h2><h2 class="ko">작지만, 할 줄 아는 게 많은 패널.</h2>
+      <div class="kicker en">And quietly, in the background</div><div class="kicker ko">그리고 조용히, 뒤에서</div>
+      <h2 class="en">It notices, so you don't have to.</h2><h2 class="ko">알아서 챙기니까, 신경 끄셔도 돼요.</h2>
       <p class="en">Built natively in Swift and SwiftUI. No Electron, no account, no tracking.</p>
       <p class="ko">Swift와 SwiftUI로 만든 네이티브 앱. Electron도, 계정도, 추적도 없습니다.</p>
     </div>
 
     <div class="bento">
-      <article class="tile t-wide t-tall reveal">
-        <div class="ico">🎵</div>
-        <h3><span class="en">Now playing, from any app</span><span class="ko">어떤 앱이든, 지금 재생 중</span></h3>
-        <p class="en">Artwork, title and controls for Music, Spotify, YouTube Music and every browser. Drag the bar to seek; the collapsed notch keeps a tiny visualizer tinted with the artwork.</p>
-        <p class="ko">Music, Spotify, YouTube Music, 그리고 모든 브라우저의 앨범아트와 컨트롤. 진행바를 끌어 위치를 옮기고, 접힌 노치에는 앨범아트 색을 입은 작은 이퀄라이저가 남습니다.</p>
-        <div class="shot"><img src="images/home.png" alt="Now playing and calendar in the notch" width="643" height="208" loading="lazy"></div>
-      </article>
-      <article class="tile t-third reveal">
-        <div class="ico">📅</div>
-        <h3><span class="en">Calendar &amp; reminders</span><span class="ko">캘린더와 미리 알림</span></h3>
-        <p class="en">This week, today's events and what's due — tick reminders off without leaving what you're doing.</p>
-        <p class="ko">이번 주, 오늘 일정, 기한이 다가온 일. 하던 일을 멈추지 않고 미리 알림을 완료하세요.</p>
-      </article>
-      <article class="tile t-third reveal">
-        <div class="ico">👀</div>
-        <h3><span class="en">Sneak peek</span><span class="ko">미리보기</span></h3>
-        <p class="en">Track changed? The title slides out under the notch for a moment, then gets out of your way.</p>
-        <p class="ko">곡이 바뀌면 제목이 노치 아래로 잠깐 나왔다가 조용히 사라집니다.</p>
-      </article>
-      <article class="tile t-half reveal">
-        <div class="ico">📥</div>
-        <h3><span class="en">A shelf for your files</span><span class="ko">파일을 위한 선반</span></h3>
-        <p class="en">Drop files on the notch, drag them out later. Drop on the AirDrop tile to send them straight away.</p>
-        <p class="ko">파일을 노치에 놓아 두고 나중에 끌어내세요. AirDrop 칸에 놓으면 바로 보내집니다.</p>
-        <div class="shot"><img src="images/shelf.png" alt="File shelf with AirDrop tile" width="643" height="208" loading="lazy"></div>
-      </article>
       <article class="tile t-half reveal">
         <div class="ico">🔊</div>
         <h3><span class="en">System HUDs, reimagined</span><span class="ko">새로워진 시스템 HUD</span></h3>
-        <p class="en">Volume, brightness (even external displays over DDC), keyboard backlight, charging and AirPods battery.</p>
-        <p class="ko">볼륨, 밝기(DDC 외부 모니터 포함), 키보드 백라이트, 충전, AirPods 배터리까지.</p>
+        <p class="en">Volume, brightness (even external displays over DDC), keyboard backlight, charging and AirPods battery, right in the notch.</p>
+        <p class="ko">볼륨, 밝기(DDC 외부 모니터 포함), 키보드 백라이트, 충전, AirPods 배터리까지 노치 안에서.</p>
         <div class="hud-stack">
           <img src="images/hud-headphones.png" alt="Headphone battery HUD" width="405" height="66" loading="lazy">
           <img src="images/hud-brightness.png" alt="Brightness HUD" width="405" height="42" loading="lazy">
         </div>
       </article>
+      <article class="tile t-half reveal">
+        <div class="ico">✳️</div>
+        <h3><span class="en">Claude Code, in your notch</span><span class="ko">노치로 오는 Claude Code 알림</span></h3>
+        <p class="en">Paste one hook and the notch tells you when Claude Code is waiting for you. Any local script can send a message the same way.</p>
+        <p class="ko">훅 하나만 붙여 넣으면 Claude Code가 기다릴 때 노치가 알려 줍니다. 어떤 로컬 스크립트든 같은 방식으로 보낼 수 있어요.</p>
+        <div class="mini-note"><div class="dot">✳︎</div><div><b>Claude Code</b><span class="en">Needs your permission to run a command</span><span class="ko">명령을 실행하려면 허락이 필요해요</span></div></div>
+      </article>
       <article class="tile t-third reveal">
-        <div class="ico">⏱️</div>
-        <h3><span class="en">Timers</span><span class="ko">타이머</span></h3>
-        <p class="en">Countdown, Pomodoro and stopwatch, with the time left right on the collapsed notch.</p>
-        <p class="ko">카운트다운, 뽀모도로, 스톱워치. 접힌 노치에 남은 시간이 그대로 보입니다.</p>
+        <div class="ico">🎤</div>
+        <h3><span class="en">Sneak peek &amp; lyrics</span><span class="ko">미리보기와 가사</span></h3>
+        <p class="en">When the track changes the title slides out for a moment, and the line being sung can stay under the notch while you work.</p>
+        <p class="ko">곡이 바뀌면 제목이 잠깐 나왔다 사라지고, 원하면 지금 부르는 가사가 작업 중에도 노치 아래에 흐릅니다.</p>
+      </article>
+      <article class="tile t-third reveal">
+        <div class="ico">📅</div>
+        <h3><span class="en">Calendar &amp; reminders</span><span class="ko">캘린더와 미리 알림</span></h3>
+        <p class="en">This week, today's events and what's due. Tick reminders off without leaving what you're doing.</p>
+        <p class="ko">이번 주, 오늘 일정, 기한이 다가온 일. 하던 일을 멈추지 않고 미리 알림을 완료하세요.</p>
+      </article>
+      <article class="tile t-third reveal">
+        <div class="ico">🟢</div>
+        <h3><span class="en">Camera &amp; mic indicator</span><span class="ko">카메라·마이크 표시</span></h3>
+        <p class="en">A dot on the notch whenever any app is using your camera or microphone, so nothing listens in unnoticed.</p>
+        <p class="ko">어떤 앱이든 카메라나 마이크를 쓰는 동안 노치에 표시가 뜹니다. 몰래 듣는 앱은 없어요.</p>
+      </article>
+      <article class="tile t-third reveal">
+        <div class="ico">⏺️</div>
+        <h3><span class="en">Screen recording</span><span class="ko">화면 녹화</span></h3>
+        <p class="en">Start it from Tools; a red dot and timer stay on the notch, and the video lands on the shelf when you stop.</p>
+        <p class="ko">도구 탭에서 시작하면 노치에 빨간 점과 시간이 남고, 멈추면 영상이 선반에 들어갑니다.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">📋</div>
@@ -279,58 +350,22 @@
         <p class="ko">복사한 내용을 검색해 한 번에 다시 복사하고, 다른 앱 없이 바로 메모하세요.</p>
       </article>
       <article class="tile t-third reveal">
-        <div class="ico">🎛️</div>
-        <h3><span class="en">Quick tools</span><span class="ko">빠른 도구</span></h3>
-        <p class="en">Switch speakers, mute the mic, keep the Mac awake, record the screen, eject drives — and screenshots land on the shelf.</p>
-        <p class="ko">스피커 전환, 마이크 음소거, 잠자기 방지, 화면 녹화, 드라이브 꺼내기. 스크린샷은 선반에 자동으로 들어갑니다.</p>
-      </article>
-      <article class="tile t-half reveal">
-        <div class="ico">✳️</div>
-        <h3><span class="en">Claude Code, in your notch</span><span class="ko">노치로 오는 Claude Code 알림</span></h3>
-        <p class="en">Add one hook and the notch tells you when Claude Code is waiting for you. Any local script can do the same.</p>
-        <p class="ko">훅 하나만 추가하면 Claude Code가 기다릴 때 노치가 알려 줍니다. 어떤 로컬 스크립트든 같은 방식으로 보낼 수 있어요.</p>
-      </article>
-      <article class="tile t-third reveal">
-        <div class="ico">🎤</div>
-        <h3><span class="en">Synced lyrics</span><span class="ko">실시간 가사</span></h3>
-        <p class="en">The line being sung, right under the title — or under the notch while you work.</p>
-        <p class="ko">지금 부르는 가사가 제목 아래에, 원하면 작업 중에도 노치 아래에 흐릅니다.</p>
-      </article>
-      <article class="tile t-third reveal">
-        <div class="ico">📊</div>
-        <h3><span class="en">System at a glance</span><span class="ko">한눈에 보는 시스템</span></h3>
-        <p class="en">CPU, memory, disk, network, mouse and keyboard batteries, and your Claude Code and Codex usage, plus your Dock apps one click away.</p>
-        <p class="ko">CPU, 메모리, 디스크, 네트워크, 마우스·키보드 배터리, Claude Code·Codex 사용량. Dock 앱도 클릭 한 번이면 실행됩니다.</p>
-      </article>
-      <article class="tile t-third reveal">
         <div class="ico">⛅</div>
         <h3><span class="en">Weather &amp; downloads</span><span class="ko">날씨와 다운로드</span></h3>
-        <p class="en">Today's weather in the header, and a nudge when a download finishes.</p>
-        <p class="ko">헤더에 오늘 날씨를, 다운로드가 끝나면 살짝 알려 줍니다.</p>
+        <p class="en">Today's weather in the header, and a nudge when a download finishes. Screenshots drop onto the shelf by themselves.</p>
+        <p class="ko">헤더에 오늘 날씨를, 다운로드가 끝나면 살짝 알려 줍니다. 스크린샷은 알아서 선반에 들어가요.</p>
       </article>
-      <article class="tile t-half reveal">
+      <article class="tile t-third reveal">
         <div class="ico">🔋</div>
         <h3><span class="en">Little heads-ups</span><span class="ko">작은 알림들</span></h3>
-        <p class="en">Low battery, fully charged, Caps Lock on — glanceable, then gone.</p>
-        <p class="ko">배터리 부족, 충전 완료, Caps Lock 켜짐. 한눈에 보이고 금방 사라집니다.</p>
+        <p class="en">Low battery on the Mac, mouse or keyboard, fully charged, Caps Lock on. Glanceable, then gone.</p>
+        <p class="ko">Mac·마우스·키보드 배터리 부족, 충전 완료, Caps Lock 켜짐. 한눈에 보이고 금방 사라집니다.</p>
       </article>
       <article class="tile t-third reveal">
-        <div class="ico">🔍</div>
-        <h3><span class="en">Quick search</span><span class="ko">빠른 검색</span></h3>
-        <p class="en">⌃⌥Space from anywhere: open an app, search the web, or work out 12*(3+4).</p>
-        <p class="ko">어디서든 ⌃⌥Space. 앱 실행, 웹 검색, 12*(3+4) 같은 계산까지.</p>
-      </article>
-      <article class="tile t-third reveal">
-        <div class="ico">😀</div>
-        <h3><span class="en">Emoji picker</span><span class="ko">이모지 선택기</span></h3>
-        <p class="en">Every emoji, searchable by name, recent picks first. One click copies it.</p>
-        <p class="ko">모든 이모지를 이름으로 검색하고, 최근에 쓴 것부터. 클릭하면 복사됩니다.</p>
-      </article>
-      <article class="tile t-third reveal">
-        <div class="ico">🟢</div>
-        <h3><span class="en">Camera &amp; mic indicator</span><span class="ko">카메라·마이크 표시</span></h3>
-        <p class="en">A dot on the notch whenever any app is using your camera or microphone.</p>
-        <p class="ko">어떤 앱이든 카메라나 마이크를 쓰는 동안 노치에 표시가 뜹니다.</p>
+        <div class="ico">👆</div>
+        <h3><span class="en">Gestures</span><span class="ko">제스처</span></h3>
+        <p class="en">Swipe down to open, up to close, sideways on Home to skip the track.</p>
+        <p class="ko">아래로 쓸면 열기, 위로 쓸면 닫기, 홈 탭에서 옆으로 쓸면 다음 곡.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">📷</div>
@@ -338,22 +373,17 @@
         <p class="en">Check your hair before the call. The camera runs only while the tab is open.</p>
         <p class="ko">통화 전에 머리 한 번 확인. 카메라는 탭이 열려 있을 때만 켜집니다.</p>
       </article>
-      <article class="tile t-third reveal">
-        <div class="ico">👆</div>
-        <h3><span class="en">Gestures</span><span class="ko">제스처</span></h3>
-        <p class="en">Swipe down to open, up to close, sideways to skip the track.</p>
-        <p class="ko">아래로 쓸면 열기, 위로 쓸면 닫기, 옆으로 쓸면 다음 곡.</p>
-      </article>
-      <article class="tile t-third reveal">
+      <article class="tile t-half reveal">
         <div class="ico">🧩</div>
-        <h3><span class="en">Make it yours</span><span class="ko">내 맞게 구성</span></h3>
-        <p class="en">Pick your tabs and their order, what the header and collapsed notch show, and which pop-ups you get. Whatever you turn off stops running.</p>
-        <p class="ko">탭과 순서, 헤더와 접힌 노치에 보일 것, 받을 알림을 직접 고르세요. 꺼 둔 기능은 동작하지 않습니다.</p>
+        <h3><span class="en">Make it yours</span><span class="ko">내게 맞게 구성</span></h3>
+        <p class="en">Pick your tabs and their order, what the header and the collapsed notch show, and which pop-ups you get. Anything you turn off stops running. Hide it while the lid is closed, too.</p>
+        <p class="ko">탭과 순서, 헤더와 접힌 노치에 보일 것, 받을 알림을 직접 고르세요. 꺼 둔 기능은 동작하지 않습니다. 덮개를 닫았을 때 숨길 수도 있어요.</p>
       </article>
-      <article class="tile t-third reveal">
+      <article class="tile t-half reveal">
         <div class="ico">🌏</div>
         <h3><span class="en">Speaks your language</span><span class="ko">7개 언어</span></h3>
-        <p class="en">Follows your Mac's language.</p><p class="ko">Mac 언어 설정을 따릅니다.</p>
+        <p class="en">Follows your Mac's language. Screens without a notch get a neat pill at the top instead.</p>
+        <p class="ko">Mac 언어 설정을 따릅니다. 노치가 없는 화면에는 위쪽 가운데에 작은 알약 모양으로 나타나요.</p>
         <div class="langs"><span>English</span><span>한국어</span><span>日本語</span><span>简体中文</span><span>Español</span><span>Deutsch</span><span>Français</span></div>
       </article>
     </div>
@@ -364,6 +394,11 @@
       <div class="kicker en">Install</div><div class="kicker ko">설치</div>
       <h2 class="en">Up and running in a minute.</h2><h2 class="ko">1분이면 충분합니다.</h2>
       <p class="en">macOS 14 Sonoma or later, on Apple silicon or Intel.</p><p class="ko">macOS 14 Sonoma 이상, Apple 실리콘과 Intel 모두.</p>
+    </div>
+    <div class="steps reveal">
+      <div class="step"><div class="n">1</div><h3><span class="en">Install</span><span class="ko">설치</span></h3><p class="en">One Homebrew line, or drag it from the dmg. It lives in the notch, not the Dock.</p><p class="ko">Homebrew 한 줄, 또는 dmg에서 끌어다 놓기. Dock이 아니라 노치에 삽니다.</p></div>
+      <div class="step"><div class="n">2</div><h3><span class="en">Hover the notch</span><span class="ko">노치에 마우스 올리기</span></h3><p class="en">It opens. Move away and it tucks itself back. Play some music and watch it come alive.</p><p class="ko">열립니다. 마우스를 떼면 다시 접혀요. 음악을 틀면 살아 움직입니다.</p></div>
+      <div class="step"><div class="n">3</div><h3><span class="en">Make it yours</span><span class="ko">내 맞게 고르기</span></h3><p class="en">Right-click the notch and open Settings to choose tabs, pop-ups and size.</p><p class="ko">노치를 우클릭해 설정을 열고 탭, 알림, 크기를 고르세요.</p></div>
     </div>
     <div class="install reveal">
       <div class="tabs" role="tablist">
@@ -405,8 +440,8 @@ open build/Nunsseop.app</pre></div>
         <p class="ko">macOS 15.4부터 비공개 MediaRemote 프레임워크는 Apple이 서명한 앱에만 응답합니다. Nunsseop은 시스템의 <code>/usr/bin/perl</code> 안에서 작은 헬퍼를 실행해 재생 정보를 읽고 재생·일시정지·건너뛰기·위치 이동을 보냅니다.</p>
         <p class="en">If a future macOS update blocks it, Nunsseop falls back to AppleScript for Music and Spotify and to reading media tabs in browsers.</p>
         <p class="ko">이후 macOS 업데이트로 막히면 Music·Spotify는 AppleScript로, 브라우저는 미디어 탭 읽기로 자동 전환됩니다.</p>
-        <p class="en">No personal data is collected or sent. Network use is limited to a daily release check, lyrics from LRCLIB, weather from Open-Meteo for the city you choose, and fallback artwork — each can be turned off.</p>
-        <p class="ko">개인 정보는 수집하거나 전송하지 않습니다. 네트워크는 하루 한 번 새 버전 확인, LRCLIB 가사, 지정한 도시의 Open-Meteo 날씨, 대체 경로의 앨범아트에만 쓰며 모두 끌 수 있습니다.</p>
+        <p class="en">No personal data is collected or sent. Network use is limited to a daily release check, lyrics from LRCLIB, weather from Open-Meteo for the city you choose, and fallback artwork — each can be turned off. AI usage is read from files Claude Code and Codex already keep on your Mac.</p>
+        <p class="ko">개인 정보는 수집하거나 전송하지 않습니다. 네트워크는 하루 한 번 새 버전 확인, LRCLIB 가사, 지정한 도시의 Open-Meteo 날씨, 대체 경로의 앨범아트에만 쓰며 모두 끌 수 있습니다. AI 사용량은 Claude Code와 Codex가 이 Mac에 이미 남기는 파일에서 읽습니다.</p>
       </div>
       <div class="plain reveal">
         <h3><span class="en">Permissions, only when you ask</span><span class="ko">권한은 필요할 때만</span></h3>
@@ -417,9 +452,41 @@ open build/Nunsseop.app</pre></div>
           <div><span class="en">Reminders</span><span class="ko">미리 알림</span></div><div><span class="en">Reminders</span><span class="ko">미리 알림</span></div>
           <div><span class="en">Mirror</span><span class="ko">미러</span></div><div><span class="en">Camera</span><span class="ko">카메라</span></div>
           <div><span class="en">Replacing system HUDs</span><span class="ko">시스템 HUD 대체</span></div><div><span class="en">Accessibility</span><span class="ko">손쉬운 사용</span></div>
+          <div><span class="en">Screen recording</span><span class="ko">화면 녹화</span></div><div><span class="en">Screen Recording</span><span class="ko">화면 기록</span></div>
+          <div><span class="en">Recording with sound</span><span class="ko">소리와 함께 녹화</span></div><div><span class="en">Microphone</span><span class="ko">마이크</span></div>
           <div><span class="en">Launch at login</span><span class="ko">로그인 시 실행</span></div><div><span class="en">Login Items</span><span class="ko">로그인 항목</span></div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section class="block" id="faq">
+    <div class="section-head reveal">
+      <div class="kicker">FAQ</div>
+      <h2 class="en">Good questions.</h2><h2 class="ko">자주 묻는 질문.</h2>
+    </div>
+    <div class="faq reveal">
+      <details><summary><span class="en">Is it really free?</span><span class="ko">정말 무료인가요?</span></summary>
+        <div class="a en">Yes. Free, open source under the MIT license, with no account, subscription or trial.</div>
+        <div class="a ko">네. MIT 라이선스의 오픈소스이고, 계정·구독·체험 기간이 없습니다.</div></details>
+      <details><summary><span class="en">My Mac doesn't have a notch. Does it work?</span><span class="ko">노치가 없는 Mac에서도 되나요?</span></summary>
+        <div class="a en">Yes. On a screen without a notch, Nunsseop shows a small pill at the top centre that opens the same way. You can choose which display it appears on.</div>
+        <div class="a ko">네. 노치가 없는 화면에서는 위쪽 가운데에 작은 알약 모양으로 나타나고, 똑같이 열립니다. 어느 화면에 띄울지도 고를 수 있어요.</div></details>
+      <details><summary><span class="en">macOS says the app can't be opened.</span><span class="ko">"앱을 열 수 없습니다"라고 나와요.</span></summary>
+        <div class="a en">The app isn't notarized yet. Install with Homebrew, which handles this for you, or run <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code> once after copying it from the dmg.</div>
+        <div class="a ko">아직 공증되지 않은 앱이라 그렇습니다. Homebrew로 설치하면 알아서 처리되고, dmg로 설치했다면 <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code>을 한 번 실행하세요.</div></details>
+      <details><summary><span class="en">Nothing shows up when I play music.</span><span class="ko">음악을 틀어도 아무것도 안 나와요.</span></summary>
+        <div class="a en">Nunsseop reads whatever macOS lists as Now Playing, so the player has to report to Control Center. Most apps and browsers do. If a future macOS update blocks this, Nunsseop asks for Automation access and falls back to AppleScript for Music, Spotify and browsers.</div>
+        <div class="a ko">Nunsseop은 macOS가 '지금 재생 중'으로 아는 것을 읽습니다. 그래서 제어 센터에 재생 정보가 뜨는 앱이어야 하는데, 대부분의 앱과 브라우저가 그렇습니다. 이후 macOS 업데이트로 막히면 자동화 권한을 받아 Music, Spotify, 브라우저를 AppleScript로 읽습니다.</div></details>
+      <details><summary><span class="en">There are too many tabs for me.</span><span class="ko">탭이 너무 많아요.</span></summary>
+        <div class="a en">Right-click the notch, open Settings › Notch, and switch off what you don't need. Turned-off features stop running, so they cost nothing.</div>
+        <div class="a ko">노치를 우클릭해 설정 › 노치에서 필요 없는 탭을 끄세요. 꺼 둔 기능은 아예 동작하지 않아서 자원도 쓰지 않습니다.</div></details>
+      <details><summary><span class="en">Does AI usage need my login?</span><span class="ko">AI 사용량을 보려면 로그인이 필요한가요?</span></summary>
+        <div class="a en">No. It reads files Claude Code and Codex already keep on your Mac, and sends nothing anywhere. Claude's limits come from the oh-my-claudecode HUD cache when you have it; otherwise you see recent token use.</div>
+        <div class="a ko">아니요. Claude Code와 Codex가 이 Mac에 이미 남기는 파일만 읽고, 어디로도 보내지 않습니다. Claude 한도는 oh-my-claudecode HUD가 있으면 그 캐시에서 읽고, 없으면 최근 토큰 사용량을 보여 줍니다.</div></details>
+      <details><summary><span class="en">Will it slow my Mac down?</span><span class="ko">Mac이 느려지지 않나요?</span></summary>
+        <div class="a en">It's a small native app that mostly sleeps. Stats, usage and similar tabs refresh only while they're open.</div>
+        <div class="a ko">대부분 쉬고 있는 작은 네이티브 앱입니다. 시스템 상태나 사용량 같은 탭은 열려 있을 때만 새로 읽어요.</div></details>
     </div>
   </section>
 
@@ -491,6 +558,48 @@ open build/Nunsseop.app</pre></div>
   notch.addEventListener('focus', function () { take(); open(true); });
   notch.addEventListener('blur', function () { open(false); });
   notch.addEventListener('click', function () { take(); open(!notch.classList.contains('open')); });
+
+
+  var tourData = [
+    { e: '🏠', img: 'home.png', en: ['Home', 'What’s playing from any app or browser, with artwork, controls and a seekable bar, next to your week and today’s events.'], ko: ['홈', '어떤 앱이나 브라우저에서 재생하든 앨범아트, 컨트롤, 진행바가 나오고, 옆에는 이번 주와 오늘 일정이 보입니다.'] },
+    { e: '🔍', img: 'tab-search.png', en: ['Quick search', 'Press <kbd>⌃⌥Space</kbd> anywhere. Open an app, search the web, or type a sum and press Return to copy the answer.'], ko: ['빠른 검색', '어디서든 <kbd>⌃⌥Space</kbd>. 앱을 열고, 웹을 검색하고, 계산식을 치고 Return을 누르면 결과가 복사됩니다.'] },
+    { e: '📥', img: 'shelf.png', en: ['Shelf', 'Drop files on the notch and drag them out later. Drop them on the AirDrop tile to send them straight away.'], ko: ['선반', '파일을 노치에 놓아 두고 나중에 끌어내세요. AirDrop 칸에 놓으면 바로 보내집니다.'] },
+    { e: '✨', img: 'tab-ai.png', en: ['AI usage', 'Claude Code and Codex limits with reset times, plus Claude Code’s recent token use. No login, nothing to set up.'], ko: ['AI 사용량', 'Claude Code와 Codex의 한도와 초기화 시각, Claude Code의 최근 토큰 사용량. 로그인도 설정도 필요 없습니다.'] },
+    { e: '⏱️', img: 'tab-timer.png', en: ['Timer', 'Countdown, Pomodoro and stopwatch. The time left stays on the collapsed notch.'], ko: ['타이머', '카운트다운, 뽀모도로, 스톱워치. 접힌 노치에 남은 시간이 그대로 보입니다.'] },
+    { e: '🎛️', img: 'tab-tools.png', en: ['Tools', 'Switch speakers, mute the mic, keep the Mac awake, record the screen and eject drives.'], ko: ['도구', '스피커 전환, 마이크 음소거, 잠자기 방지, 화면 녹화, 드라이브 꺼내기.'] },
+    { e: '📊', img: 'tab-system.png', en: ['System', 'CPU, memory, disk and network at a glance, plus your mouse and keyboard batteries.'], ko: ['시스템', 'CPU, 메모리, 디스크, 네트워크를 한눈에. 마우스와 키보드 배터리도 함께.'] },
+    { e: '😀', img: 'tab-emoji.png', en: ['Emoji', 'Every emoji, searchable by name, with your recent picks first. Click to copy.'], ko: ['이모지', '모든 이모지를 이름으로 검색하고, 최근에 쓴 것부터. 클릭하면 복사됩니다.'] }
+  ];
+  var list = document.getElementById('tourList'), screen = document.getElementById('tourScreen');
+  var tTitle = document.getElementById('tourTitle'), tText = document.getElementById('tourText');
+  var current = 0, tourTimer = null, tourTouched = false, DUR = 5000;
+  tourData.forEach(function (d, i) {
+    var b = document.createElement('button');
+    b.className = 'tour-btn'; b.type = 'button'; b.setAttribute('role', 'tab');
+    b.innerHTML = '<span class="e">' + d.e + '</span><span class="en">' + d.en[0] + '</span><span class="ko">' + d.ko[0] + '</span><span class="bar"></span>';
+    b.addEventListener('click', function () { tourTouched = true; show(i); });
+    list.appendChild(b);
+    var img = new Image(); img.src = 'images/' + d.img; img.alt = d.en[0]; img.loading = i ? 'lazy' : 'eager';
+    screen.appendChild(img);
+  });
+  function show(i) {
+    current = i;
+    var lang = document.body.dataset.lang === 'ko' ? 'ko' : 'en';
+    list.querySelectorAll('.tour-btn').forEach(function (b, j) {
+      b.setAttribute('aria-selected', String(j === i));
+      var bar = b.querySelector('.bar'); bar.classList.remove('run'); void bar.offsetWidth;
+      if (j === i && !tourTouched && !reduce) bar.classList.add('run');
+    });
+    screen.querySelectorAll('img').forEach(function (im, j) { im.classList.toggle('on', j === i); });
+    var active = list.children[i];
+    if (list.scrollWidth > list.clientWidth) list.scrollTo({ left: active.offsetLeft - 20, behavior: reduce ? 'auto' : 'smooth' });
+    tTitle.textContent = tourData[i][lang][0]; tText.innerHTML = tourData[i][lang][1];
+    clearTimeout(tourTimer);
+    if (!tourTouched && !reduce) tourTimer = setTimeout(function () { show((current + 1) % tourData.length); }, DUR);
+  }
+  list.style.setProperty('--dur', DUR + 'ms');
+  langButtons.forEach(function (b) { b.addEventListener('click', function () { show(current); }); });
+  show(0);
 
   var clock = document.getElementById('clock');
   function tick() { clock.textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
