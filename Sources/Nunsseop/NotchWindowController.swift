@@ -22,6 +22,11 @@ final class NotchPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
+/// The panel never becomes active, so the first click must reach SwiftUI gestures directly.
+final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
 @MainActor
 final class NotchWindowController {
     private let model: NotchViewModel
@@ -38,7 +43,7 @@ final class NotchWindowController {
         model = NotchViewModel(geometry: geometry, settings: .shared)
         panel = NotchPanel(frame: geometry.panelFrame)
 
-        let hosting = NSHostingView(rootView: NotchView(model: model))
+        let hosting = FirstMouseHostingView(rootView: NotchView(model: model))
         hosting.sizingOptions = []
         panel.contentView = hosting
 

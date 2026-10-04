@@ -83,6 +83,8 @@ struct BrowserMedia {
             return clickJS(["ytmusic-player-bar .next-button", ".ytp-next-button",
                             "[data-testid=control-button-skip-forward]", ".skipControl__next"],
                            fallback: "\(media) if (m && isFinite(m.duration)) { m.currentTime = Math.min(m.duration, m.currentTime + 10); }")
+        case .seek(let seconds):
+            return "(() => { \(media) if (m) { m.currentTime = \(max(0, seconds)); } })()"
         case .previous:
             return clickJS(["ytmusic-player-bar .previous-button", ".ytp-prev-button",
                             "[data-testid=control-button-skip-back]", ".skipControl__previous"],

@@ -62,6 +62,7 @@ final class MediaRemoteBridge {
         case .playPause: word = "toggle"
         case .next: word = "next"
         case .previous: word = "previous"
+        case .seek(let seconds): word = "seek \(max(0, seconds))"
         }
         try? input?.write(contentsOf: Data((word + "\n").utf8))
     }

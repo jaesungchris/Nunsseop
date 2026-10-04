@@ -350,7 +350,7 @@ private struct HomeTab: View {
                             .frame(width: 18, height: 14)
                     }
                     Spacer(minLength: 6)
-                    ProgressRow(track: track, tint: nowPlaying.tint)
+                    ProgressRow(track: track, tint: nowPlaying.tint) { nowPlaying.send(.seek($0)) }
                     Spacer(minLength: 6)
                     HStack(spacing: 30) {
                         ControlButton(symbol: "backward.fill") { nowPlaying.send(.previous) }
@@ -422,19 +422,37 @@ private struct GlowingArtwork: View {
 private struct ProgressRow: View {
     let track: NowPlayingTrack
     let tint: Color
+    let onSeek: (Double) -> Void
+    @State private var dragFraction: Double?
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.5)) { context in
-            let position = track.position(at: context.date)
-            let fraction = track.duration > 0 ? position / track.duration : 0
+            let live = track.duration > 0 ? track.position(at: context.date) / track.duration : 0
+            let fraction = min(1, max(0, dragFraction ?? live))
+            let position = fraction * track.duration
             VStack(spacing: 3) {
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
                         Capsule().fill(.white.opacity(0.18))
                         Capsule().fill(tint).frame(width: max(5, proxy.size.width * fraction))
                     }
+                    .frame(height: dragFraction == nil ? 5 : 7)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                guard track.duration > 0 else { return }
+                                dragFraction = min(1, max(0, value.location.x / proxy.size.width))
+                            }
+                            .onEnded { _ in
+                                if let dragFraction, track.duration > 0 { onSeek(dragFraction * track.duration) }
+                                dragFraction = nil
+                            }
+                    )
                 }
-                .frame(height: 5)
+                .frame(height: 12)
+                .animation(.easeOut(duration: 0.12), value: dragFraction == nil)
                 HStack {
                     Text(Self.format(position))
                     Spacer()

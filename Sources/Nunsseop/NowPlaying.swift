@@ -22,6 +22,7 @@ struct NowPlayingTrack: Equatable {
 
 enum NowPlayingCommand {
     case playPause, next, previous
+    case seek(Double)
 }
 
 /// Reads playback state from apps that expose it over AppleScript. Each source
@@ -39,6 +40,7 @@ private struct ScriptSource {
         case .playPause: verb = "playpause"
         case .next: verb = "next track"
         case .previous: verb = "previous track"
+        case .seek(let seconds): verb = "set player position to \(Int(max(0, seconds)))"
         }
         return "tell application id \"\(bundleID)\" to \(verb)"
     }
@@ -122,6 +124,11 @@ final class NowPlayingController: ObservableObject {
     }
 
     func send(_ command: NowPlayingCommand) {
+        if case .seek(let seconds) = command, var current = track {
+            current.position = seconds
+            current.fetchedAt = Date()
+            track = current
+        }
         if mediaRemoteActive {
             mediaRemote.send(command)
             return

@@ -22,7 +22,8 @@ struct NotchGeometry: Equatable {
         if screen.safeAreaInsets.top > 0,
            let left = screen.auxiliaryTopLeftArea,
            let right = screen.auxiliaryTopRightArea {
-            let width = screen.frame.width - left.width - right.width
+            // The shape's top corners flare outward, so widen it to keep the body as wide as the housing.
+            let width = screen.frame.width - left.width - right.width + 12
             collapsedSize = CGSize(width: width, height: screen.safeAreaInsets.top)
             hasNotch = true
         } else {

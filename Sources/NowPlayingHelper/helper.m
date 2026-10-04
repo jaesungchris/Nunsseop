@@ -7,6 +7,7 @@
 typedef void (*GetInfoFn)(dispatch_queue_t, void (^)(NSDictionary *));
 typedef void (*GetPIDFn)(dispatch_queue_t, void (^)(int));
 typedef Boolean (*SendFn)(int, NSDictionary *);
+typedef void (*SetElapsedFn)(double);
 typedef void (*GetClientFn)(dispatch_queue_t, void (^)(id));
 typedef NSString *(*ClientStringFn)(id);
 
@@ -34,6 +35,7 @@ void nunsseop_nowplaying_run(void *perl, void *cv) {
     GetInfoFn getInfo = (GetInfoFn)dlsym(mr, "MRMediaRemoteGetNowPlayingInfo");
     GetPIDFn getPID = (GetPIDFn)dlsym(mr, "MRMediaRemoteGetNowPlayingApplicationPID");
     SendFn send = (SendFn)dlsym(mr, "MRMediaRemoteSendCommand");
+    SetElapsedFn setElapsed = (SetElapsedFn)dlsym(mr, "MRMediaRemoteSetElapsedTime");
     GetClientFn getClient = (GetClientFn)dlsym(mr, "MRMediaRemoteGetNowPlayingClient");
     ClientStringFn clientBundle = (ClientStringFn)dlsym(mr, "MRNowPlayingClientGetBundleIdentifier");
     ClientStringFn clientParentBundle = (ClientStringFn)dlsym(mr, "MRNowPlayingClientGetParentAppBundleIdentifier");
@@ -42,6 +44,11 @@ void nunsseop_nowplaying_run(void *perl, void *cv) {
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         char line[64];
         while (fgets(line, sizeof line, stdin)) {
+            if (strncmp(line, "seek ", 5) == 0) {
+                double seconds = atof(line + 5);
+                if (setElapsed && isfinite(seconds) && seconds >= 0) setElapsed(seconds);
+                continue;
+            }
             int code = commandCode(line);
             if (code >= 0) send(code, nil);
         }
