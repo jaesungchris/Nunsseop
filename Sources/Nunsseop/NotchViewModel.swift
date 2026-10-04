@@ -126,7 +126,34 @@ final class NotchViewModel: ObservableObject {
     }
 
     var expandedSize: CGSize {
-        CGSize(width: settings.expandedWidth, height: settings.expandedHeight)
+        var width = settings.expandedWidth
+        if settings.widenForTabs { width = max(width, min(widthFittingTabs, geometry.maxExpandedWidth)) }
+        return CGSize(width: width, height: settings.expandedHeight)
+    }
+
+    static let tabSlot: CGFloat = 36
+    /// Horizontal inset of the expanded content from the shape's edge.
+    static let headerInset: CGFloat = 18 + 14
+
+    /// Battery, weather, Settings and Quit at the right end of the header.
+    var headerStatusWidth: CGFloat {
+        var width: CGFloat = 2 * (26 + 6)
+        if settings.batteryInHeader && hud.power != nil { width += 58 }
+        if settings.headerWeather && weather.current != nil { width += 50 }
+        return width
+    }
+
+    /// The width that shows every tab in one row, left of the camera on notched displays.
+    private var widthFittingTabs: CGFloat {
+        let tabs = CGFloat(settings.visibleTabs.count) * Self.tabSlot - 6
+        let content: CGFloat
+        if geometry.hasNotch {
+            let side = max(tabs + 2, headerStatusWidth)
+            content = 2 * side + geometry.collapsedSize.width + 8 + 12
+        } else {
+            content = tabs + 6 + headerStatusWidth
+        }
+        return content + 2 * Self.headerInset
     }
 
     var showsSneakPeek: Bool {

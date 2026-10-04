@@ -183,10 +183,8 @@ private struct HeaderBar: View {
 
     /// Room for the tab strip: left of the camera on notched displays, otherwise up to the status icons.
     private var layout: (strip: CGFloat, camera: CGFloat, side: CGFloat) {
-        let content = model.expandedSize.width - 2 * (18 + 14)
-        var status: CGFloat = 2 * (26 + 6)
-        if model.settings.batteryInHeader && model.hud.power != nil { status += 58 }
-        if model.settings.headerWeather && model.weather.current != nil { status += 50 }
+        let content = model.expandedSize.width - 2 * NotchViewModel.headerInset
+        let status = model.headerStatusWidth
         guard model.geometry.hasNotch else { return (content - status - 6, 0, content) }
         let camera = model.geometry.collapsedSize.width + 8
         let side = (content - camera - 12) / 2

@@ -60,9 +60,12 @@ struct NotchGeometry: Equatable {
         }
     }
 
+    /// Widest the expanded shape may grow to fit every tab.
+    var maxExpandedWidth: CGFloat { max(AppSettings.expandedWidthRange.upperBound, min(screenFrame.width - 80, 1200)) }
+
     /// The panel is sized for the largest allowed shape; only the drawn shape changes.
     var panelFrame: NSRect {
-        let size = CGSize(width: AppSettings.expandedWidthRange.upperBound + 40,
+        let size = CGSize(width: maxExpandedWidth + 40,
                           height: AppSettings.expandedHeightRange.upperBound + 20)
         return NSRect(x: screenFrame.midX - size.width / 2,
                       y: screenFrame.maxY - size.height,
