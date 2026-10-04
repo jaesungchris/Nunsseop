@@ -89,6 +89,19 @@ final class NotchWindowController {
         updateVisibility()
         installMonitors()
         #if DEBUG
+        if let i = CommandLine.arguments.firstIndex(of: "--demo-tab"), i + 1 < CommandLine.arguments.count,
+           let tab = NotchTab(rawValue: CommandLine.arguments[i + 1]) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self else { return }
+                self.model.tab = tab
+                self.model.expand()
+                self.model.pinned = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    self.model.expand()
+                    self.snapshotter?.capture(label: "tab")
+                }
+            }
+        }
         if let i = CommandLine.arguments.firstIndex(of: "--demo-search"), i + 1 < CommandLine.arguments.count {
             let query = CommandLine.arguments[i + 1]
             model.search.loadApps()
@@ -282,6 +295,9 @@ final class NotchWindowController {
         guard settings.swipeToOpen || settings.swipeForTracks else { return }
         // Only trackpad swipes over the panel; not scrolling in other windows, wheels or momentum.
         guard event.window === panel, event.hasPreciseScrollingDeltas, event.momentumPhase.isEmpty else { return }
+        // The expanded header scrolls its tabs sideways, so swipes there are left to it.
+        let fromTop = panel.frame.height - event.locationInWindow.y
+        if model.isExpanded && fromTop < max(model.geometry.collapsedSize.height, 24) + 6 { return }
         if event.phase == .began || event.phase == .mayBegin {
             swipe = .zero
             swipeFired = false

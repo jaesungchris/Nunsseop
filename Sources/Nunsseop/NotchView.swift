@@ -181,48 +181,37 @@ private struct HeaderBar: View {
 
     private static let slot: CGFloat = 36
 
-    /// Which tabs sit left of the camera, which go to its right, and which only fit in the overflow menu.
-    private var plan: (side: CGFloat, camera: CGFloat, left: [NotchTab], right: [NotchTab], overflow: [NotchTab], menuOnLeft: Bool) {
-        let tabs = model.settings.visibleTabs
+    /// Room for the tab strip: left of the camera on notched displays, otherwise up to the status icons.
+    private var layout: (strip: CGFloat, camera: CGFloat, side: CGFloat) {
         let content = model.expandedSize.width - 2 * (18 + 14)
         var status: CGFloat = 2 * (26 + 6)
         if model.settings.batteryInHeader && model.hud.power != nil { status += 58 }
         if model.settings.headerWeather && model.weather.current != nil { status += 50 }
-        let camera = model.geometry.hasNotch ? model.geometry.collapsedSize.width + 8 : 0
-        let side = model.geometry.hasNotch ? (content - camera - 12) / 2 : content
-        var leftCount = max(1, Int(((model.geometry.hasNotch ? side : side - status) + 6) / Self.slot))
-        var rightCount = model.geometry.hasNotch ? max(0, Int((side - status + 6) / Self.slot)) : 0
-        var menuOnLeft = false
-        if tabs.count > leftCount + rightCount {
-            if rightCount > 0 { rightCount -= 1 } else { leftCount -= 1; menuOnLeft = true }
-        }
-        let left = Array(tabs.prefix(leftCount))
-        let right = Array(tabs.dropFirst(left.count).prefix(rightCount))
-        return (side, camera, left, right, Array(tabs.dropFirst(left.count + right.count)), menuOnLeft)
+        guard model.geometry.hasNotch else { return (content - status - 6, 0, content) }
+        let camera = model.geometry.collapsedSize.width + 8
+        let side = (content - camera - 12) / 2
+        return (side, camera, side)
     }
 
     var body: some View {
-        let plan = plan
+        let layout = layout
+        let tabs = model.settings.visibleTabs
+        let needed = CGFloat(tabs.count) * Self.slot - 6
         HStack(spacing: 6) {
             if model.geometry.hasNotch {
+                tabStrip(tabs, overflowing: needed > layout.strip)
+                    .frame(width: layout.strip, alignment: .leading)
+                Color.clear.frame(width: layout.camera)
                 HStack(spacing: 6) {
-                    tabButtons(plan.left)
-                    if plan.menuOnLeft { overflowMenu(plan.overflow) }
-                }
-                .frame(width: plan.side, alignment: .leading)
-                Color.clear.frame(width: plan.camera)
-                HStack(spacing: 6) {
-                    tabButtons(plan.right)
-                    if !plan.menuOnLeft { overflowMenu(plan.overflow) }
                     Spacer(minLength: 0)
                     status
                 }
-                .frame(width: plan.side)
+                .frame(width: layout.side)
             } else {
-                tabButtons(plan.left)
-                overflowMenu(plan.overflow)
+                tabStrip(tabs, overflowing: needed > layout.strip)
+                    .frame(width: min(needed, layout.strip), alignment: .leading)
                 Spacer()
-                if model.settings.headerDate && model.settings.visibleTabs.count <= 7 {
+                if model.settings.headerDate && needed + 110 < layout.strip {
                     Text(Date.now, format: .dateTime.month().day().weekday(.abbreviated))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.white.opacity(0.45))
@@ -236,32 +225,31 @@ private struct HeaderBar: View {
         .frame(height: max(height, 24))
     }
 
-    private func tabButtons(_ tabs: [NotchTab]) -> some View {
-        ForEach(tabs) { tab in
-            TabButton(symbol: tab.symbol, selected: model.tab == tab,
-                      badge: tab == .shelf ? shelf.items.count : 0) { model.tab = tab }
-                .help(tab.title)
-        }
-    }
-
-    @ViewBuilder private func overflowMenu(_ tabs: [NotchTab]) -> some View {
-        if !tabs.isEmpty {
-            let current = tabs.contains(model.tab)
-            Menu {
-                ForEach(tabs) { tab in
-                    Button { model.tab = tab } label: { Label(tab.title, systemImage: tab.symbol) }
+    /// Tabs that don't fit scroll sideways; the selected one is kept in view.
+    private func tabStrip(_ tabs: [NotchTab], overflowing: Bool) -> some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(tabs) { tab in
+                        TabButton(symbol: tab.symbol, selected: model.tab == tab,
+                                  badge: tab == .shelf ? shelf.items.count : 0) { model.tab = tab }
+                            .help(tab.title)
+                            .id(tab)
+                    }
                 }
-            } label: {
-                Image(systemName: current ? model.tab.symbol : "ellipsis")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(current ? .white : .white.opacity(0.45))
-                    .frame(width: 30, height: 22)
-                    .background(Capsule().fill(.white.opacity(current ? 0.16 : 0)))
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help(Text("More tabs"))
+            .scrollDisabled(!overflowing)
+            .mask {
+                HStack(spacing: 0) {
+                    Color.black
+                    LinearGradient(colors: [.black, overflowing ? .clear : .black], startPoint: .leading, endPoint: .trailing)
+                        .frame(width: 16)
+                }
+            }
+            .onAppear { proxy.scrollTo(model.tab) }
+            .onChange(of: model.tab) { _, tab in
+                withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(tab) }
+            }
         }
     }
 

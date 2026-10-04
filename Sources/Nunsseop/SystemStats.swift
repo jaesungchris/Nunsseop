@@ -18,8 +18,15 @@ final class SystemStats: ObservableObject {
 
     func start() {
         guard timer == nil else { return }
+        lastTicks = nil
+        lastBytes = nil
         sample()
-        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+        // CPU and network are rates, so take a second reading right away rather than showing zero until the next tick.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self, self.timer != nil else { return }
+            self.sample()
+        }
+        timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.sample() }
         }
     }
@@ -27,8 +34,6 @@ final class SystemStats: ObservableObject {
     func stop() {
         timer?.invalidate()
         timer = nil
-        lastTicks = nil
-        lastBytes = nil
     }
 
     private func sample() {
