@@ -29,7 +29,7 @@
 - **System HUDs.** Volume, brightness (built-in and DDC-capable external displays), keyboard backlight, power connected or disconnected, low battery and full charge, Caps Lock, and headphone battery (left, right and case) appear in the notch. New screenshots drop onto the shelf automatically.
 - **Claude Code notifications.** Claude Code (or any local script) can show a message in the notch when it needs you; see below. Nunsseop can take over the volume and brightness keys so the system HUD no longer appears.
 - **Gestures.** Swipe down on the notch to open it, up to close it, and left or right on the Home tab to skip tracks.
-- **Settings.** Which display to use, size, hover delay, sneak peek, launch at login, update checks and every HUD can be adjusted.
+- **Make it yours.** Choose which tabs appear and in what order, what the header and the collapsed notch show, and which pop-ups you want. Anything you turn off stops running in the background. Display, size, hover delay, launch at login and update checks are adjustable too.
 - **Seven languages.** English, Korean, Japanese, Simplified Chinese, Spanish, German and French, following your macOS language.
 
 Screens without a notch get a pill at the top centre instead.

@@ -150,3 +150,34 @@
 "Disk" = "ディスク";
 "%lld cores" = "%lld コア";
 "%@ free" = "空き %@";
+
+/* Settings layout */
+"Notch" = "ノッチ";
+"Alerts" = "通知";
+"Services" = "サービス";
+"Tabs" = "タブ";
+"Turned-off tabs disappear from the notch and stop running in the background." = "オフにしたタブはノッチから消え、バックグラウンドでも動作しません。";
+"Home tab" = "ホームタブ";
+"Calendar" = "カレンダー";
+"Header" = "ヘッダ";
+"Date" = "日付";
+"Weather" = "天気";
+"Collapsed notch" = "折りたたみ時のノッチ";
+"Artwork and visualizer while music plays" = "音楽再生中のアートワークとビジュアライザ";
+"Time left while a timer runs" = "タイマー作動中の残り時間";
+"Title under the notch when the track changes" = "曲が変わったらノッチの下にタイトル";
+"Always show the title while something is playing" = "再生中は常にタイトルを表示";
+"Current lyric under the notch while playing" = "再生中はノッチの下に現在の歌詞";
+"Move up" = "上へ移動";
+"Move down" = "下へ移動";
+"Volume and brightness" = "音量と明るさ";
+"Power and devices" = "電源とデバイス";
+"Files" = "ファイル";
+"Lyrics" = "歌詞";
+"Mirror" = "ミラー";
+"Shelf" = "シェルフ";
+"Clipboard" = "クリップボード";
+"Notes" = "メモ";
+"Tools" = "ツール";
+"System" = "システム";
+"Apps" = "アプリ";

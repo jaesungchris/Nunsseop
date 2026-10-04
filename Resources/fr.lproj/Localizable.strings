@@ -150,3 +150,34 @@
 "Disk" = "Disque";
 "%lld cores" = "%lld cœurs";
 "%@ free" = "%@ libres";
+
+/* Settings layout */
+"Notch" = "Encoche";
+"Alerts" = "Alertes";
+"Services" = "Services";
+"Tabs" = "Onglets";
+"Turned-off tabs disappear from the notch and stop running in the background." = "Les onglets désactivés disparaissent de l’encoche et ne tournent plus en arrière-plan.";
+"Home tab" = "Onglet Accueil";
+"Calendar" = "Calendrier";
+"Header" = "En-tête";
+"Date" = "Date";
+"Weather" = "Météo";
+"Collapsed notch" = "Encoche repliée";
+"Artwork and visualizer while music plays" = "Pochette et visualiseur pendant la musique";
+"Time left while a timer runs" = "Temps restant du minuteur";
+"Title under the notch when the track changes" = "Titre sous l’encoche au changement de morceau";
+"Always show the title while something is playing" = "Toujours afficher le titre pendant la lecture";
+"Current lyric under the notch while playing" = "Ligne de paroles sous l’encoche pendant la lecture";
+"Move up" = "Monter";
+"Move down" = "Descendre";
+"Volume and brightness" = "Volume et luminosité";
+"Power and devices" = "Alimentation et appareils";
+"Files" = "Fichiers";
+"Lyrics" = "Paroles";
+"Mirror" = "Miroir";
+"Shelf" = "Étagère";
+"Clipboard" = "Presse-papiers";
+"Notes" = "Notes";
+"Tools" = "Outils";
+"System" = "Système";
+"Apps" = "Apps";

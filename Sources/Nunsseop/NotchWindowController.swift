@@ -71,7 +71,6 @@ final class NotchWindowController {
         installMonitors()
         model.nowPlaying.start()
         model.hud.start()
-        model.clipboard.start()
         model.tools.start()
         model.screenshots.onScreenshot = { [weak self] url in
             guard let self else { return }
@@ -86,7 +85,6 @@ final class NotchWindowController {
                                         title: on ? String(localized: "Caps Lock on") : String(localized: "Caps Lock off"),
                                         detail: nil), duration: 1.2)
         }
-        model.capsLock.start()
         model.downloads.onStart = { [weak self] name in
             guard let self, self.model.settings.downloadAlerts else { return }
             self.model.hud.show(.notice(symbol: "arrow.down.circle", title: String(localized: "Downloading"), detail: name), duration: 3)
@@ -100,9 +98,9 @@ final class NotchWindowController {
             }
         }
         model.downloads.start()
-        settingsObservers.append(model.settings.$weatherCity
+        settingsObservers.append(model.settings.$weatherCity.combineLatest(model.settings.$headerWeather)
             .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
-            .sink { [weak self] in self?.model.weather.setCity($0) })
+            .sink { [weak self] city, shown in self?.model.weather.setCity(shown ? city : "") })
         settingsObservers.append(model.settings.$lyricsEnabled.sink { [weak self] enabled in
             guard let self else { return }
             self.model.lyrics.isEnabled = enabled
@@ -120,9 +118,11 @@ final class NotchWindowController {
         }
         clipboardObserver = model.settings.$clipboardTab
             .sink { [weak self] enabled in
-                self?.model.clipboard.isEnabled = enabled
-                if !enabled { self?.model.clipboard.clear() }
+                if enabled { self?.model.clipboard.start() } else { self?.model.clipboard.stop() }
             }
+        settingsObservers.append(model.settings.$capsLockHUD.sink { [weak self] enabled in
+            if enabled { self?.model.capsLock.start() } else { self?.model.capsLock.stop() }
+        })
         updatesObserver = model.settings.$checkForUpdates
             .removeDuplicates()
             .sink { UpdateChecker.shared.startAutomaticChecks(enabled: $0) }

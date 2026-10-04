@@ -40,6 +40,13 @@ final class AppSettings: ObservableObject {
     @Published var screenshotsToShelf: Bool { didSet { defaults.set(screenshotsToShelf, forKey: "screenshotsToShelf") } }
     @Published var localNotifications: Bool { didSet { defaults.set(localNotifications, forKey: "localNotifications") } }
     @Published var timerTab: Bool { didSet { defaults.set(timerTab, forKey: "timerTab") } }
+    @Published var shelfTab: Bool { didSet { defaults.set(shelfTab, forKey: "shelfTab") } }
+    /// Order of the tabs after Home, as NotchTab raw values.
+    @Published var tabOrder: [String] { didSet { defaults.set(tabOrder, forKey: "tabOrder") } }
+    @Published var headerDate: Bool { didSet { defaults.set(headerDate, forKey: "headerDate") } }
+    @Published var headerWeather: Bool { didSet { defaults.set(headerWeather, forKey: "headerWeather") } }
+    @Published var collapsedMusic: Bool { didSet { defaults.set(collapsedMusic, forKey: "collapsedMusic") } }
+    @Published var collapsedTimer: Bool { didSet { defaults.set(collapsedTimer, forKey: "collapsedTimer") } }
     @Published var systemTab: Bool { didSet { defaults.set(systemTab, forKey: "systemTab") } }
     @Published var appsTab: Bool { didSet { defaults.set(appsTab, forKey: "appsTab") } }
     @Published var lyricsEnabled: Bool { didSet { defaults.set(lyricsEnabled, forKey: "lyricsEnabled") } }
@@ -80,6 +87,12 @@ final class AppSettings: ObservableObject {
             "remindersEnabled": true,
             "mirrorEnabled": true,
             "timerTab": true,
+            "shelfTab": true,
+            "tabOrder": NotchTab.allCases.filter { $0 != .home }.map(\.rawValue),
+            "headerDate": true,
+            "headerWeather": true,
+            "collapsedMusic": true,
+            "collapsedTimer": true,
             "systemTab": true,
             "appsTab": true,
             "lyricsEnabled": true,
@@ -117,6 +130,12 @@ final class AppSettings: ObservableObject {
         remindersEnabled = defaults.bool(forKey: "remindersEnabled")
         mirrorEnabled = defaults.bool(forKey: "mirrorEnabled")
         timerTab = defaults.bool(forKey: "timerTab")
+        shelfTab = defaults.bool(forKey: "shelfTab")
+        tabOrder = defaults.stringArray(forKey: "tabOrder") ?? []
+        headerDate = defaults.bool(forKey: "headerDate")
+        headerWeather = defaults.bool(forKey: "headerWeather")
+        collapsedMusic = defaults.bool(forKey: "collapsedMusic")
+        collapsedTimer = defaults.bool(forKey: "collapsedTimer")
         systemTab = defaults.bool(forKey: "systemTab")
         appsTab = defaults.bool(forKey: "appsTab")
         lyricsEnabled = defaults.bool(forKey: "lyricsEnabled")
@@ -136,6 +155,52 @@ final class AppSettings: ObservableObject {
         mirrorCameraID = defaults.string(forKey: "mirrorCameraID") ?? ""
         swipeToOpen = defaults.bool(forKey: "swipeToOpen")
         swipeForTracks = defaults.bool(forKey: "swipeForTracks")
+    }
+
+    /// Every tab after Home in the user's order, including tabs added in newer versions.
+    var orderedTabs: [NotchTab] {
+        let saved = tabOrder.compactMap(NotchTab.init(rawValue:)).filter { $0 != .home }
+        let missing = NotchTab.allCases.filter { $0 != .home && !saved.contains($0) }
+        return saved + missing
+    }
+
+    var visibleTabs: [NotchTab] { [.home] + orderedTabs.filter(isVisible) }
+
+    func isVisible(_ tab: NotchTab) -> Bool {
+        switch tab {
+        case .home: return true
+        case .shelf: return shelfTab
+        case .timer: return timerTab
+        case .clipboard: return clipboardTab
+        case .notes: return notesTab
+        case .tools: return toolsTab
+        case .system: return systemTab
+        case .apps: return appsTab
+        case .mirror: return mirrorEnabled
+        }
+    }
+
+    func setVisible(_ tab: NotchTab, _ visible: Bool) {
+        switch tab {
+        case .home: break
+        case .shelf: shelfTab = visible
+        case .timer: timerTab = visible
+        case .clipboard: clipboardTab = visible
+        case .notes: notesTab = visible
+        case .tools: toolsTab = visible
+        case .system: systemTab = visible
+        case .apps: appsTab = visible
+        case .mirror: mirrorEnabled = visible
+        }
+    }
+
+    func moveTab(_ tab: NotchTab, by offset: Int) {
+        var order = orderedTabs
+        guard let index = order.firstIndex(of: tab) else { return }
+        let target = index + offset
+        guard order.indices.contains(target) else { return }
+        order.swapAt(index, target)
+        tabOrder = order.map(\.rawValue)
     }
 
     func resetSizes() {

@@ -63,7 +63,14 @@ final class CapsLockWatcher {
     private var timer: Timer?
     private var last = NSEvent.modifierFlags.contains(.capsLock)
 
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+    }
+
     func start() {
+        guard timer == nil else { return }
+        last = NSEvent.modifierFlags.contains(.capsLock)
         timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }

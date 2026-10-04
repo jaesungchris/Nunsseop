@@ -67,7 +67,8 @@ struct NotchView: View {
                 } else if model.showsLiveActivity || model.showsSneakPeek {
                     VStack(spacing: 0) {
                         if model.showsLiveActivity {
-                            CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, height: notchHeight, earWidth: model.earWidth)
+                            CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, height: notchHeight, earWidth: model.earWidth,
+                                              showsMusic: model.settings.collapsedMusic, showsTimer: model.settings.collapsedTimer)
                         } else {
                             Color.clear.frame(height: notchHeight)
                         }
@@ -163,12 +164,6 @@ private struct HeaderBar: View {
     @ObservedObject private var updates = UpdateChecker.shared
     let height: CGFloat
 
-    private var visibleTabCount: Int {
-        let settings = model.settings
-        return 2 + [settings.timerTab, settings.clipboardTab, settings.notesTab, settings.toolsTab,
-                    settings.systemTab, settings.appsTab, settings.mirrorEnabled].filter { $0 }.count
-    }
-
     init(model: NotchViewModel, height: CGFloat) {
         self.model = model
         self.shelf = model.shelf
@@ -178,34 +173,14 @@ private struct HeaderBar: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            TabButton(symbol: "house.fill", selected: model.tab == .home) { model.tab = .home }
-            TabButton(symbol: "tray.fill", selected: model.tab == .shelf,
-                      badge: shelf.items.count) { model.tab = .shelf }
-            if model.settings.timerTab {
-                TabButton(symbol: "timer", selected: model.tab == .timer) { model.tab = .timer }
-            }
-            if model.settings.clipboardTab {
-                TabButton(symbol: "doc.on.clipboard", selected: model.tab == .clipboard) { model.tab = .clipboard }
-            }
-            if model.settings.notesTab {
-                TabButton(symbol: "note.text", selected: model.tab == .notes) { model.tab = .notes }
-            }
-            if model.settings.toolsTab {
-                TabButton(symbol: "switch.2", selected: model.tab == .tools) { model.tab = .tools }
-            }
-            if model.settings.systemTab {
-                TabButton(symbol: "cpu", selected: model.tab == .system) { model.tab = .system }
-            }
-            if model.settings.appsTab {
-                TabButton(symbol: "square.grid.3x3.fill", selected: model.tab == .apps) { model.tab = .apps }
-            }
-            if model.settings.mirrorEnabled {
-                TabButton(symbol: "camera.fill", selected: model.tab == .mirror) { model.tab = .mirror }
+            ForEach(model.settings.visibleTabs) { tab in
+                TabButton(symbol: tab.symbol, selected: model.tab == tab,
+                          badge: tab == .shelf ? shelf.items.count : 0) { model.tab = tab }
+                    .help(tab.title)
             }
             Spacer()
-            // The middle of the header sits under the camera housing on notched displays.
             // The middle sits under the camera on notched displays, and gets crowded with many tabs.
-            if !model.geometry.hasNotch && visibleTabCount <= 6 {
+            if model.settings.headerDate && !model.geometry.hasNotch && model.settings.visibleTabs.count <= 7 {
                 Text(Date.now, format: .dateTime.month().day().weekday(.abbreviated))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.white.opacity(0.45))
@@ -213,7 +188,7 @@ private struct HeaderBar: View {
                     .fixedSize()
             }
             Spacer()
-            if let weather = model.weather.current {
+            if model.settings.headerWeather, let weather = model.weather.current {
                 HStack(spacing: 4) {
                     Image(systemName: WeatherModel.symbol(for: weather.code)).symbolRenderingMode(.multicolor)
                     Text("\(Int(weather.temperature.rounded()))°").monospacedDigit()
@@ -404,10 +379,12 @@ private struct CollapsedActivity: View {
     @ObservedObject var timer: TimerModel
     let height: CGFloat
     let earWidth: CGFloat
+    let showsMusic: Bool
+    let showsTimer: Bool
 
     var body: some View {
         let art = min(height - 10, 32)
-        let playing = nowPlaying.track?.isPlaying == true
+        let playing = showsMusic && nowPlaying.track?.isPlaying == true
         HStack {
             if playing {
                 ArtworkView(image: nowPlaying.artwork, cornerRadius: art > 16 ? 5 : 3)
@@ -418,7 +395,7 @@ private struct CollapsedActivity: View {
                     .foregroundStyle(timer.mode == .pomodoro && timer.phase == .rest ? .green : .orange)
             }
             Spacer()
-            if timer.isRunning {
+            if showsTimer && timer.isRunning {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(TimerModel.format(timer.value(at: context.date)))
                         .font(.system(size: 11, weight: .semibold).monospacedDigit())

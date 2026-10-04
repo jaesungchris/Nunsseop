@@ -28,9 +28,17 @@ final class ClipboardHistory: ObservableObject {
     }
 
     func start() {
+        guard timer == nil else { return }
+        lastChange = pasteboard.changeCount
         timer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.check() }
         }
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+        items.removeAll()
     }
 
     private func check() {

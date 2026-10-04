@@ -175,3 +175,34 @@
 "Disk" = "디스크";
 "%lld cores" = "코어 %lld개";
 "%@ free" = "%@ 남음";
+
+/* Settings layout */
+"Notch" = "노치 구성";
+"Alerts" = "알림";
+"Services" = "서비스";
+"Tabs" = "탭";
+"Turned-off tabs disappear from the notch and stop running in the background." = "꺼 둔 탭은 노치에서 사라지고 백그라운드에서도 동작하지 않습니다.";
+"Home tab" = "홈 탭";
+"Calendar" = "캘린더";
+"Header" = "헤더";
+"Date" = "날짜";
+"Weather" = "날씨";
+"Collapsed notch" = "접힌 노치";
+"Artwork and visualizer while music plays" = "음악 재생 중 앨범아트와 이퀄라이저";
+"Time left while a timer runs" = "타이머 작동 중 남은 시간";
+"Title under the notch when the track changes" = "곡이 바뀌면 노치 아래에 제목";
+"Always show the title while something is playing" = "재생 중에는 제목을 항상 표시";
+"Current lyric under the notch while playing" = "재생 중 노치 아래에 현재 가사";
+"Move up" = "위로 이동";
+"Move down" = "아래로 이동";
+"Volume and brightness" = "볼륨과 밝기";
+"Power and devices" = "전원과 기기";
+"Files" = "파일";
+"Lyrics" = "가사";
+"Mirror" = "미러";
+"Shelf" = "선반";
+"Clipboard" = "클립보드";
+"Notes" = "메모";
+"Tools" = "도구";
+"System" = "시스템";
+"Apps" = "앱";

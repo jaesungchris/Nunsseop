@@ -1,8 +1,38 @@
 import AppKit
 import Combine
 
-enum NotchTab {
+enum NotchTab: String, CaseIterable, Identifiable {
     case home, shelf, timer, clipboard, notes, tools, system, apps, mirror
+
+    var id: String { rawValue }
+
+    var symbol: String {
+        switch self {
+        case .home: return "house.fill"
+        case .shelf: return "tray.fill"
+        case .timer: return "timer"
+        case .clipboard: return "doc.on.clipboard"
+        case .notes: return "note.text"
+        case .tools: return "switch.2"
+        case .system: return "cpu"
+        case .apps: return "square.grid.3x3.fill"
+        case .mirror: return "camera.fill"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .home: return String(localized: "Home")
+        case .shelf: return String(localized: "Shelf")
+        case .timer: return String(localized: "Timer")
+        case .clipboard: return String(localized: "Clipboard")
+        case .notes: return String(localized: "Notes")
+        case .tools: return String(localized: "Tools")
+        case .system: return String(localized: "System")
+        case .apps: return String(localized: "Apps")
+        case .mirror: return String(localized: "Mirror")
+        }
+    }
 }
 
 @MainActor
@@ -40,9 +70,9 @@ final class NotchViewModel: ObservableObject {
         self.geometry = geometry
         self.settings = settings
         self.hud = HUDCenter(settings: settings)
-        nowPlaying.$track.map { $0?.isPlaying == true }
-            .combineLatest(timer.$anchor.map { $0 != nil })
-            .map { $0 || $1 }
+        Publishers.CombineLatest4(nowPlaying.$track.map { $0?.isPlaying == true }, timer.$anchor.map { $0 != nil },
+                                  settings.$collapsedMusic, settings.$collapsedTimer)
+            .map { music, timer, showMusic, showTimer in (music && showMusic) || (timer && showTimer) }
             .removeDuplicates()
             .sink { [weak self] in self?.showsLiveActivity = $0 }
             .store(in: &cancellables)
@@ -121,7 +151,7 @@ final class NotchViewModel: ObservableObject {
         let height = geometry.collapsedSize.height
         let base = settings.compactLiveActivity ? height * 0.7 : height + 6
         // Room for "12:34" when a timer is running.
-        return timer.isRunning ? max(base, 50) : base
+        return timer.isRunning && settings.collapsedTimer ? max(base, 50) : base
     }
 
     var currentSize: CGSize {
@@ -129,18 +159,7 @@ final class NotchViewModel: ObservableObject {
     }
 
     private func leaveHiddenTab() {
-        let visible: Bool
-        switch tab {
-        case .home, .shelf: visible = true
-        case .timer: visible = settings.timerTab
-        case .clipboard: visible = settings.clipboardTab
-        case .notes: visible = settings.notesTab
-        case .tools: visible = settings.toolsTab
-        case .system: visible = settings.systemTab
-        case .apps: visible = settings.appsTab
-        case .mirror: visible = settings.mirrorEnabled
-        }
-        if !visible { tab = .home }
+        if !settings.isVisible(tab) { tab = .home }
     }
 
     func expand() {

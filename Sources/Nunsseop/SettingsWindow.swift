@@ -9,7 +9,7 @@ final class SettingsWindowController {
 
     func show() {
         if window == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 600),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 600),
                                   styleMask: [.titled, .closable],
                                   backing: .buffered, defer: false)
             window.title = String(localized: "Nunsseop Settings")
@@ -24,6 +24,30 @@ final class SettingsWindowController {
 }
 
 struct SettingsView: View {
+    @ObservedObject var settings: AppSettings
+    /// Reopens on the pane used last.
+    @AppStorage("settingsPane") private var pane = "general"
+
+    var body: some View {
+        TabView(selection: $pane) {
+            GeneralPane(settings: settings)
+                .tabItem { Label("General", systemImage: "gearshape") }
+                .tag("general")
+            LayoutPane(settings: settings)
+                .tabItem { Label("Notch", systemImage: "rectangle.topthird.inset.filled") }
+                .tag("layout")
+            AlertsPane(settings: settings)
+                .tabItem { Label("Alerts", systemImage: "bell.badge") }
+                .tag("alerts")
+            ServicesPane(settings: settings)
+                .tabItem { Label("Services", systemImage: "puzzlepiece.extension") }
+                .tag("services")
+        }
+        .frame(width: 500, height: 600)
+    }
+}
+
+private struct GeneralPane: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject private var updates = UpdateChecker.shared
     @StateObject private var launchAtLogin = LaunchAtLogin()
@@ -93,26 +117,91 @@ struct SettingsView: View {
                 Toggle("Swipe down on the notch to open, up to close", isOn: $settings.swipeToOpen)
                 Toggle("Swipe left or right on the Home tab to skip tracks", isOn: $settings.swipeForTracks)
             }
-            Section("Home") {
-                Toggle("Show calendar on the Home tab", isOn: $settings.calendarEnabled)
-                Toggle("Show reminders under the calendar", isOn: $settings.remindersEnabled)
-                    .disabled(!settings.calendarEnabled)
-                Toggle("Show the Timer tab", isOn: $settings.timerTab)
-                Toggle("Show the Clipboard tab and keep clipboard history", isOn: $settings.clipboardTab)
-                Toggle("Show the Notes tab", isOn: $settings.notesTab)
-                Toggle("Show the Tools tab", isOn: $settings.toolsTab)
-                Toggle("Show the System tab", isOn: $settings.systemTab)
-                Toggle("Show the Apps tab", isOn: $settings.appsTab)
-                Toggle("Show the Mirror tab", isOn: $settings.mirrorEnabled)
-                Picker("Camera", selection: $settings.mirrorCameraID) {
-                    Text("System default").tag("")
-                    ForEach(MirrorModel.cameras, id: \.uniqueID) { camera in
-                        Text(camera.localizedName).tag(camera.uniqueID)
-                    }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+/// What the notch shows: which tabs and in what order, the header, and the collapsed notch.
+private struct LayoutPane: View {
+    @ObservedObject var settings: AppSettings
+
+    var body: some View {
+        Form {
+            Section {
+                TabRow(tab: .home, settings: settings, canMoveUp: false, canMoveDown: false)
+                let tabs = settings.orderedTabs
+                ForEach(Array(tabs.enumerated()), id: \.element) { index, tab in
+                    TabRow(tab: tab, settings: settings, canMoveUp: index > 0, canMoveDown: index < tabs.count - 1)
                 }
-                .disabled(!settings.mirrorEnabled)
+            } header: {
+                Text("Tabs")
+            } footer: {
+                Text("Turned-off tabs disappear from the notch and stop running in the background.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
-            Section("System HUD") {
+            Section("Home tab") {
+                Toggle("Calendar", isOn: $settings.calendarEnabled)
+                Toggle("Reminders", isOn: $settings.remindersEnabled)
+                    .disabled(!settings.calendarEnabled)
+            }
+            Section("Header") {
+                Toggle("Date", isOn: $settings.headerDate)
+                Toggle("Weather", isOn: $settings.headerWeather)
+                Toggle("Battery", isOn: $settings.batteryInHeader)
+            }
+            Section("Collapsed notch") {
+                Toggle("Artwork and visualizer while music plays", isOn: $settings.collapsedMusic)
+                Toggle("Time left while a timer runs", isOn: $settings.collapsedTimer)
+                Toggle("Title under the notch when the track changes", isOn: $settings.sneakPeekEnabled)
+                Toggle("Always show the title while something is playing", isOn: $settings.sneakPeekAlways)
+                    .disabled(!settings.sneakPeekEnabled)
+                SliderRow(title: "Duration", value: $settings.sneakPeekDuration,
+                          range: 1...10, unit: String(localized: "sec"), format: "%.1f")
+                    .disabled(!settings.sneakPeekEnabled || settings.sneakPeekAlways)
+                Toggle("Current lyric under the notch while playing", isOn: $settings.lyricsUnderNotch)
+                    .disabled(!settings.lyricsEnabled)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct TabRow: View {
+    let tab: NotchTab
+    @ObservedObject var settings: AppSettings
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: tab.symbol).frame(width: 20).foregroundStyle(.secondary)
+            Text(tab.title)
+            Spacer()
+            if tab != .home {
+                Button { settings.moveTab(tab, by: -1) } label: { Image(systemName: "chevron.up") }
+                    .buttonStyle(.borderless).disabled(!canMoveUp)
+                    .help(Text("Move up"))
+                Button { settings.moveTab(tab, by: 1) } label: { Image(systemName: "chevron.down") }
+                    .buttonStyle(.borderless).disabled(!canMoveDown)
+                    .help(Text("Move down"))
+            }
+            Toggle("", isOn: Binding(get: { settings.isVisible(tab) }, set: { settings.setVisible(tab, $0) }))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .disabled(tab == .home)
+        }
+    }
+}
+
+/// Pop-ups the notch can show.
+private struct AlertsPane: View {
+    @ObservedObject var settings: AppSettings
+
+    var body: some View {
+        Form {
+            Section("Volume and brightness") {
                 Toggle("Show volume changes in the notch", isOn: $settings.volumeHUDEnabled)
                 Toggle("Replace the system volume and brightness HUD", isOn: $settings.replaceSystemHUD)
                 if settings.replaceSystemHUD && !MediaKeyInterceptor.isTrusted {
@@ -121,12 +210,17 @@ struct SettingsView: View {
                 }
                 Text("Brightness keys adjust the display under the pointer, including external displays that support DDC. Keyboard backlight keys work on keyboards that have them.")
                     .font(.caption).foregroundStyle(.secondary)
-                Toggle("Show battery level in the header", isOn: $settings.batteryInHeader)
+            }
+            Section("Power and devices") {
                 Toggle("Show when power is connected or disconnected", isOn: $settings.chargingHUDEnabled)
-                Toggle("Show headphone battery when they connect", isOn: $settings.headphoneHUDEnabled)
                 Toggle("Warn at 20% battery and when fully charged", isOn: $settings.batteryAlerts)
+                Toggle("Show headphone battery when they connect", isOn: $settings.headphoneHUDEnabled)
                 Toggle("Show Caps Lock changes", isOn: $settings.capsLockHUD)
+            }
+            Section("Files") {
                 Toggle("Add new screenshots to the shelf", isOn: $settings.screenshotsToShelf)
+                Toggle("Show when downloads start and finish", isOn: $settings.downloadAlerts)
+                Toggle("Add finished downloads to the shelf", isOn: $settings.downloadsToShelf)
             }
             Section("Notifications from local tools") {
                 Toggle("Let tools on this Mac show notifications in the notch", isOn: $settings.localNotifications)
@@ -138,29 +232,36 @@ struct SettingsView: View {
                 }
                 .disabled(!settings.localNotifications)
             }
-            Section("Lyrics & weather") {
+        }
+        .formStyle(.grouped)
+    }
+}
+
+/// Features that use the network, the camera or other apps' data.
+private struct ServicesPane: View {
+    @ObservedObject var settings: AppSettings
+
+    var body: some View {
+        Form {
+            Section("Lyrics") {
                 Toggle("Show synced lyrics (from LRCLIB)", isOn: $settings.lyricsEnabled)
-                Toggle("Keep the current lyric under the notch while playing", isOn: $settings.lyricsUnderNotch)
-                    .disabled(!settings.lyricsEnabled)
+            }
+            Section("Weather") {
                 TextField("Weather city (e.g. Seoul)", text: $settings.weatherCity)
                 Text("Weather comes from Open-Meteo. Leave the city empty to hide it.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Section("Downloads") {
-                Toggle("Show when downloads start and finish", isOn: $settings.downloadAlerts)
-                Toggle("Add finished downloads to the shelf", isOn: $settings.downloadsToShelf)
-            }
-            Section("Sneak Peek") {
-                Toggle("Show the title under the notch when the track or play state changes", isOn: $settings.sneakPeekEnabled)
-                Toggle("Always show while something is playing", isOn: $settings.sneakPeekAlways)
-                    .disabled(!settings.sneakPeekEnabled)
-                SliderRow(title: "Duration", value: $settings.sneakPeekDuration,
-                          range: 1...10, unit: String(localized: "sec"), format: "%.1f")
-                    .disabled(!settings.sneakPeekEnabled || settings.sneakPeekAlways)
+            Section("Mirror") {
+                Picker("Camera", selection: $settings.mirrorCameraID) {
+                    Text("System default").tag("")
+                    ForEach(MirrorModel.cameras, id: \.uniqueID) { camera in
+                        Text(camera.localizedName).tag(camera.uniqueID)
+                    }
+                }
+                .disabled(!settings.mirrorEnabled)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460, height: 600)
     }
 }
 

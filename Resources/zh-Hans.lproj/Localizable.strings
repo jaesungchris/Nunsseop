@@ -150,3 +150,34 @@
 "Disk" = "磁盘";
 "%lld cores" = "%lld 核";
 "%@ free" = "可用 %@";
+
+/* Settings layout */
+"Notch" = "刘海";
+"Alerts" = "提醒";
+"Services" = "服务";
+"Tabs" = "标签";
+"Turned-off tabs disappear from the notch and stop running in the background." = "关闭的标签会从刘海中消失，并停止在后台运行。";
+"Home tab" = "主页标签";
+"Calendar" = "日历";
+"Header" = "顶部栏";
+"Date" = "日期";
+"Weather" = "天气";
+"Collapsed notch" = "收起时的刘海";
+"Artwork and visualizer while music plays" = "播放音乐时的封面和可视化";
+"Time left while a timer runs" = "计时器运行时的剩余时间";
+"Title under the notch when the track changes" = "曲目变化时在刘海下方显示标题";
+"Always show the title while something is playing" = "播放时始终显示标题";
+"Current lyric under the notch while playing" = "播放时在刘海下方显示当前歌词";
+"Move up" = "上移";
+"Move down" = "下移";
+"Volume and brightness" = "音量与亮度";
+"Power and devices" = "电源与设备";
+"Files" = "文件";
+"Lyrics" = "歌词";
+"Mirror" = "镜子";
+"Shelf" = "架子";
+"Clipboard" = "剪贴板";
+"Notes" = "便笺";
+"Tools" = "工具";
+"System" = "系统";
+"Apps" = "应用";
