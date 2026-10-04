@@ -3,7 +3,7 @@ import CoreAudio
 import IOKit.pwr_mgt
 import SwiftUI
 
-/// Output device switching, microphone mute, keep-awake and drive ejection.
+/// Output device switching, microphone mute, keep-awake, drive ejection, color picking and text capture.
 @MainActor
 final class ToolsModel: ObservableObject {
     struct AudioDevice: Identifiable, Hashable {
@@ -22,6 +22,11 @@ final class ToolsModel: ObservableObject {
     @Published private(set) var keepAwake = false
     @Published private(set) var drives: [Drive] = []
     @Published private(set) var ejectError: String?
+    /// Hex codes of recently picked colors, newest first.
+    @Published private(set) var pickedColors: [String] = []
+    @Published private(set) var isCapturingText = false
+    /// Confirms a copy in the notch: symbol, title, detail.
+    var onNotice: ((String, String, String?) -> Void)?
 
     private var assertionID: IOPMAssertionID = 0
     private var savedInputVolume: Float32?
@@ -135,6 +140,74 @@ final class ToolsModel: ObservableObject {
         }
     }
 
+    // MARK: Color picker
+
+    func pickColor() {
+        NSColorSampler().show { [weak self] color in
+            guard let color = color?.usingColorSpace(.sRGB) else { return }
+            let channel = { (value: CGFloat) in Int((min(1, max(0, value)) * 255).rounded()) }
+            let hex = String(format: "#%02X%02X%02X", channel(color.redComponent), channel(color.greenComponent),
+                             channel(color.blueComponent))
+            Task { @MainActor in self?.copyColor(hex) }
+        }
+    }
+
+    func copyColor(_ hex: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(hex, forType: .string)
+        pickedColors.removeAll { $0 == hex }
+        pickedColors.insert(hex, at: 0)
+        if pickedColors.count > 5 { pickedColors.removeLast(pickedColors.count - 5) }
+        onNotice?("eyedropper", String(localized: "Copied \(hex)"), nil)
+    }
+
+    // MARK: Text capture
+
+    /// Lets the user select a screen region, reads its text and copies it. Cancelling does nothing.
+    func captureText() {
+        guard !isCapturingText else { return }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("nunsseop-text-\(UUID().uuidString).png")
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        process.arguments = ["-i", "-x", url.path]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        process.terminationHandler = { [weak self] _ in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let captured = FileManager.default.fileExists(atPath: url.path)
+                let text = captured ? TextRecognizer.recognize(imageAt: url) : ""
+                try? FileManager.default.removeItem(at: url)
+                DispatchQueue.main.async { self?.finishCapture(text, captured: captured) }
+            }
+        }
+        do {
+            try process.run()
+            isCapturingText = true
+        } catch {
+            return
+        }
+    }
+
+    private func finishCapture(_ text: String, captured: Bool) {
+        isCapturingText = false
+        guard captured else { return }
+        guard !text.isEmpty else {
+            // Without Screen Recording, other apps' windows come out blank, so nothing is read.
+            if ScreenRecorder.hasPermission {
+                onNotice?("text.viewfinder", String(localized: "No text found"), nil)
+            } else {
+                onNotice?("text.viewfinder", String(localized: "No text found"),
+                          String(localized: "Allow Screen Recording to read other apps’ windows"))
+                CGRequestScreenCaptureAccess()
+            }
+            return
+        }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        let flat = text.replacingOccurrences(of: "\n", with: " ")
+        onNotice?("text.viewfinder", String(localized: "Text copied"), flat.count > 40 ? flat.prefix(40) + "…" : flat)
+    }
+
     // MARK: Drives
 
     func refreshDrives() {
@@ -208,30 +281,109 @@ struct ToolsTab: View {
                 }
             } action: { recorder.toggle(withAudio: recordAudio) }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Label("Drives", systemImage: "externaldrive.fill").font(.system(size: 11, weight: .semibold))
-                if tools.drives.isEmpty {
-                    Text("No external drives").font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+            // At the narrowest notch widths only the two capture buttons fit, stacked.
+            ViewThatFits(in: .horizontal) {
+                VStack(spacing: 8) {
+                    captureStrip
+                    drivesCard
                 }
-                ForEach(tools.drives) { drive in
-                    HStack {
-                        Text(drive.name).font(.system(size: 11)).lineLimit(1)
-                        Spacer()
-                        Button { tools.eject(drive) } label: { Image(systemName: "eject.fill").font(.system(size: 10)) }
-                            .buttonStyle(.plain)
-                            .help(Text("Eject"))
-                    }
+                VStack(spacing: 6) {
+                    pickColorButton
+                    captureTextButton
+                    drivesCard
                 }
-                if let error = tools.ejectError {
-                    Text(error).font(.system(size: 9)).foregroundStyle(.red.opacity(0.8)).lineLimit(2)
-                }
-                Spacer(minLength: 0)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .surface(RoundedRectangle(cornerRadius: 14))
         }
         .foregroundStyle(.white)
+    }
+
+    /// Color picker and text capture, with the recently picked colors.
+    private var captureStrip: some View {
+        HStack(spacing: 6) {
+            pickColorButton
+            captureTextButton
+            Spacer(minLength: 0)
+            // Only as many swatches as fit, newest first.
+            ViewThatFits(in: .horizontal) {
+                ForEach((0...tools.pickedColors.count).reversed(), id: \.self) { count in
+                    HStack(spacing: 4) {
+                        ForEach(tools.pickedColors.prefix(count), id: \.self) { hex in
+                            Circle()
+                                .fill(Color(hex: hex))
+                                .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+                                .frame(width: 14, height: 14)
+                                .contentShape(Circle())
+                                .onTapGesture { tools.copyColor(hex) }
+                                .help(Text(hex))
+                        }
+                    }
+                }
+            }
+        }
+        .padding(8)
+        .surface(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var pickColorButton: some View {
+        CaptureButton(symbol: "eyedropper", help: String(localized: "Pick a color from the screen")) { tools.pickColor() }
+    }
+
+    private var captureTextButton: some View {
+        CaptureButton(symbol: "text.viewfinder", help: String(localized: "Capture text from the screen"),
+                      active: tools.isCapturingText) { tools.captureText() }
+    }
+
+    private var drivesCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Drives", systemImage: "externaldrive.fill").font(.system(size: 11, weight: .semibold))
+            if tools.drives.isEmpty {
+                Text("No external drives").font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+            }
+            ForEach(tools.drives) { drive in
+                HStack {
+                    Text(drive.name).font(.system(size: 11)).lineLimit(1)
+                    Spacer()
+                    Button { tools.eject(drive) } label: { Image(systemName: "eject.fill").font(.system(size: 10)) }
+                        .buttonStyle(.plain)
+                        .help(Text("Eject"))
+                }
+            }
+            if let error = tools.ejectError {
+                Text(error).font(.system(size: 9)).foregroundStyle(.red.opacity(0.8)).lineLimit(2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .surface(RoundedRectangle(cornerRadius: 14))
+    }
+}
+
+private struct CaptureButton: View {
+    let symbol: String
+    let help: String
+    var active = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: 26, height: 26)
+                .background(Circle().fill(active ? Color.accentColor : .white.opacity(0.12)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(Text(help))
+    }
+}
+
+private extension Color {
+    /// From "#RRGGBB".
+    init(hex: String) {
+        let value = Int(hex.dropFirst(), radix: 16) ?? 0
+        self.init(red: Double((value >> 16) & 0xFF) / 255, green: Double((value >> 8) & 0xFF) / 255,
+                  blue: Double(value & 0xFF) / 255)
     }
 }
 

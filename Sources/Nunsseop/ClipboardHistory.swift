@@ -13,6 +13,8 @@ final class ClipboardHistory: ObservableObject {
 
     @Published private(set) var items: [Item] = []
     var isEnabled = true
+    /// Strips tracking parameters from a copied link and puts the clean link back on the pasteboard.
+    var cleansLinks = false
 
     private let pasteboard = NSPasteboard.general
     private var lastChange: Int
@@ -47,8 +49,24 @@ final class ClipboardHistory: ObservableObject {
         guard isEnabled else { return }
         let types = Set(pasteboard.types?.map(\.rawValue) ?? [])
         guard types.isDisjoint(with: Self.ignoredTypes),
-              let text = pasteboard.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              var text = pasteboard.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
               !text.isEmpty else { return }
+        if cleansLinks, let cleaned = LinkCleaner.clean(text), let items = pasteboard.pasteboardItems, items.count == 1 {
+            // Keep every other flavour (link title, image, rich text); only the text and URL change.
+            let copy = NSPasteboardItem()
+            for type in items[0].types {
+                if type == .string || type == .URL {
+                    copy.setString(cleaned, forType: type)
+                } else if let data = items[0].data(forType: type) {
+                    copy.setData(data, forType: type)
+                }
+            }
+            pasteboard.clearContents()
+            pasteboard.writeObjects([copy])
+            // Our own write must not count as a new copy.
+            lastChange = pasteboard.changeCount
+            text = cleaned
+        }
         items.removeAll { $0.text == text }
         items.insert(Item(text: text, date: .now), at: 0)
         if items.count > Self.limit { items.removeLast(items.count - Self.limit) }

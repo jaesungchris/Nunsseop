@@ -298,6 +298,12 @@ private struct ServicesPane: View {
                 Text("To use Search in place of Spotlight, record ⌘Space here and turn off Spotlight’s shortcut in Keyboard Shortcuts.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Section("Clipboard") {
+                Toggle("Remove tracking parameters from copied links", isOn: $settings.cleanLinks)
+                    .disabled(!settings.clipboardTab)
+                Text("Removes utm_ and similar tracking parameters when you copy a single link. Works while the Clipboard tab is on.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Screen recording") {
                 Toggle("Record microphone audio", isOn: $settings.recordAudio)
                 Text("Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time.")

@@ -129,6 +129,7 @@ final class QuickSearchModel: ObservableObject {
     var onFinish: (() -> Void)?
 
     private weak var clipboard: ClipboardHistory?
+    private weak var tools: ToolsModel?
     private let emoji: EmojiModel
     private(set) var apps: [AppItem] = []
     private var files: [SearchResult] = []
@@ -137,9 +138,10 @@ final class QuickSearchModel: ObservableObject {
     private var observers: [NSObjectProtocol] = []
     private let defaults = UserDefaults.standard
 
-    init(clipboard: ClipboardHistory, emoji: EmojiModel) {
+    init(clipboard: ClipboardHistory, emoji: EmojiModel, tools: ToolsModel) {
         self.clipboard = clipboard
         self.emoji = emoji
+        self.tools = tools
     }
 
     // MARK: Sources
@@ -227,6 +229,12 @@ final class QuickSearchModel: ObservableObject {
             },
             Command(id: "trash", title: String(localized: "Open Trash"), keywords: "trash bin", symbol: "trash.fill") {
                 NSWorkspace.shared.open(URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".Trash"))
+            },
+            Command(id: "capture-text", title: String(localized: "Capture text from the screen"), keywords: "ocr text capture scan copy", symbol: "text.viewfinder") { [weak self] in
+                self?.tools?.captureText()
+            },
+            Command(id: "pick-color", title: String(localized: "Pick a color from the screen"), keywords: "color picker eyedropper hex", symbol: "eyedropper") { [weak self] in
+                self?.tools?.pickColor()
             },
             Command(id: "nunsseop-settings", title: String(localized: "Nunsseop Settings"), keywords: "nunsseop settings preferences", symbol: "gearshape.fill") {
                 SettingsWindowController.shared.show()

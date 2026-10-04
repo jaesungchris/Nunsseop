@@ -124,6 +124,9 @@ final class NotchWindowController {
         model.nowPlaying.start()
         model.hud.start()
         model.tools.start()
+        model.tools.onNotice = { [weak self] symbol, title, detail in
+            self?.model.hud.show(.notice(symbol: symbol, title: title, detail: detail), duration: 2.5)
+        }
         model.screenshots.onScreenshot = { [weak self] url in
             guard let self else { return }
             self.model.shelf.add([url])
@@ -227,6 +230,7 @@ final class NotchWindowController {
         model.notifyServer.onNotify = { [weak self] title, message in
             self?.model.hud.show(.notice(symbol: "sparkles", title: title, detail: message), duration: 6)
         }
+        settingsObservers.append(model.settings.$cleanLinks.sink { [weak self] in self?.model.clipboard.cleansLinks = $0 })
         settingsObservers.append(model.settings.$screenshotsToShelf.sink { [weak self] in self?.model.screenshots.isEnabled = $0 })
         settingsObservers.append(model.settings.$localNotifications.sink { [weak self] enabled in
             if enabled && self?.panel.isVisible == true { self?.model.notifyServer.start() } else { self?.model.notifyServer.stop() }

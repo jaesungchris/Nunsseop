@@ -283,3 +283,15 @@
 "Widen the notch when needed so every tab fits" = "탭이 모두 보이도록 필요하면 노치를 넓히기";
 "Liquid Glass look" = "Liquid Glass 스타일";
 "Glass tint" = "유리 농도";
+
+/* Media skip and speed, color picker, text capture, link cleaning */
+"Playback speed" = "재생 속도";
+"Back 15 seconds" = "15초 뒤로";
+"Forward 15 seconds" = "15초 앞으로";
+"Remove tracking parameters from copied links" = "복사한 링크에서 추적 매개변수 제거";
+"Removes utm_ and similar tracking parameters when you copy a single link. Works while the Clipboard tab is on." = "링크 하나를 복사하면 utm_ 같은 추적 매개변수를 지웁니다. 클립보드 탭이 켜져 있을 때만 동작합니다.";
+"Pick a color from the screen" = "화면에서 색상 추출";
+"Capture text from the screen" = "화면에서 텍스트 추출";
+"No text found" = "텍스트를 찾지 못했습니다";
+"Allow Screen Recording to read other apps’ windows" = "다른 앱 창의 글자를 읽으려면 화면 기록 권한을 허용하세요";
+"Text copied" = "텍스트 복사됨";

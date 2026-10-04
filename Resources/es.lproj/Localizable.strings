@@ -258,3 +258,15 @@
 "Widen the notch when needed so every tab fits" = "Ensanchar el notch cuando haga falta para que quepan todas las pestañas";
 "Liquid Glass look" = "Aspecto Liquid Glass";
 "Glass tint" = "Tono del cristal";
+
+/* Media skip and speed, color picker, text capture, link cleaning */
+"Playback speed" = "Velocidad de reproducción";
+"Back 15 seconds" = "Retroceder 15 segundos";
+"Forward 15 seconds" = "Avanzar 15 segundos";
+"Remove tracking parameters from copied links" = "Quitar parámetros de seguimiento de los enlaces copiados";
+"Removes utm_ and similar tracking parameters when you copy a single link. Works while the Clipboard tab is on." = "Quita utm_ y parámetros de seguimiento similares al copiar un solo enlace. Funciona mientras la pestaña Portapapeles está activada.";
+"Pick a color from the screen" = "Tomar un color de la pantalla";
+"Capture text from the screen" = "Capturar texto de la pantalla";
+"No text found" = "No se encontró texto";
+"Allow Screen Recording to read other apps’ windows" = "Permite la grabación de pantalla para leer las ventanas de otras apps";
+"Text copied" = "Texto copiado";

@@ -59,7 +59,8 @@ struct BrowserMedia {
     return JSON.stringify({ title: md && md.title ? md.title : document.title, \
     artist: md ? md.artist : '', album: md ? md.album : '', art: art, \
     playing: m ? !m.paused : navigator.mediaSession.playbackState === 'playing', \
-    pos: m ? m.currentTime : 0, dur: m && isFinite(m.duration) ? m.duration : 0 }); })()
+    pos: m ? m.currentTime : 0, dur: m && isFinite(m.duration) ? m.duration : 0, \
+    el: !!m, rate: m ? m.playbackRate : 1 }); })()
     """
 
     private static func clickJS(_ selectors: [String], fallback: String) -> String {
@@ -85,6 +86,8 @@ struct BrowserMedia {
                            fallback: "\(media) if (m && isFinite(m.duration)) { m.currentTime = Math.min(m.duration, m.currentTime + 10); }")
         case .seek(let seconds):
             return "(() => { \(media) if (m) { m.currentTime = \(max(0, seconds)); } })()"
+        case .rate(let rate):
+            return "(() => { \(media) if (m) { m.playbackRate = \(rate); } })()"
         case .previous:
             return clickJS(["ytmusic-player-bar .previous-button", ".ytp-prev-button",
                             "[data-testid=control-button-skip-back]", ".skipControl__previous"],
@@ -192,6 +195,7 @@ struct BrowserMedia {
         guard let json = jsonString?.data(using: .utf8),
               let info = try? JSONSerialization.jsonObject(with: json) as? [String: Any] else { return nil }
 
+        let hasElement = info["el"] as? Bool ?? false
         let track = NowPlayingTrack(
             title: info["title"] as? String ?? "",
             artist: info["artist"] as? String ?? "",
@@ -200,7 +204,10 @@ struct BrowserMedia {
             position: info["pos"] as? Double ?? 0,
             isPlaying: info["playing"] as? Bool ?? false,
             sourceBundleID: bundleID,
-            fetchedAt: Date()
+            fetchedAt: Date(),
+            rate: info["rate"] as? Double ?? 1,
+            canSeek: hasElement,
+            canChangeRate: hasElement
         )
         let artworkURL = (info["art"] as? String).flatMap(URL.init(string:))
         return Hit(track: track, artworkURL: artworkURL, location: location)

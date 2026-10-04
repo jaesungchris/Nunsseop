@@ -258,3 +258,15 @@
 "Widen the notch when needed so every tab fits" = "Notch bei Bedarf verbreitern, damit alle Tabs passen";
 "Liquid Glass look" = "Liquid-Glass-Look";
 "Glass tint" = "Glastönung";
+
+/* Media skip and speed, color picker, text capture, link cleaning */
+"Playback speed" = "Wiedergabegeschwindigkeit";
+"Back 15 seconds" = "15 Sekunden zurück";
+"Forward 15 seconds" = "15 Sekunden vor";
+"Remove tracking parameters from copied links" = "Tracking-Parameter aus kopierten Links entfernen";
+"Removes utm_ and similar tracking parameters when you copy a single link. Works while the Clipboard tab is on." = "Entfernt utm_ und ähnliche Tracking-Parameter, wenn du einen einzelnen Link kopierst. Funktioniert, solange der Tab „Zwischenablage“ aktiv ist.";
+"Pick a color from the screen" = "Farbe vom Bildschirm aufnehmen";
+"Capture text from the screen" = "Text vom Bildschirm erfassen";
+"No text found" = "Kein Text gefunden";
+"Allow Screen Recording to read other apps’ windows" = "Erlaube die Bildschirmaufnahme, um Fenster anderer Apps zu lesen";
+"Text copied" = "Text kopiert";

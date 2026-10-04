@@ -258,3 +258,15 @@
 "Widen the notch when needed so every tab fits" = "Élargir l’encoche si nécessaire pour afficher tous les onglets";
 "Liquid Glass look" = "Apparence Liquid Glass";
 "Glass tint" = "Teinte du verre";
+
+/* Media skip and speed, color picker, text capture, link cleaning */
+"Playback speed" = "Vitesse de lecture";
+"Back 15 seconds" = "Reculer de 15 secondes";
+"Forward 15 seconds" = "Avancer de 15 secondes";
+"Remove tracking parameters from copied links" = "Retirer les paramètres de suivi des liens copiés";
+"Removes utm_ and similar tracking parameters when you copy a single link. Works while the Clipboard tab is on." = "Retire utm_ et les paramètres de suivi similaires quand vous copiez un seul lien. Fonctionne quand l’onglet Presse-papiers est activé.";
+"Pick a color from the screen" = "Prélever une couleur à l’écran";
+"Capture text from the screen" = "Capturer le texte à l’écran";
+"No text found" = "Aucun texte trouvé";
+"Allow Screen Recording to read other apps’ windows" = "Autorisez l’enregistrement de l’écran pour lire les fenêtres des autres apps";
+"Text copied" = "Texte copié";

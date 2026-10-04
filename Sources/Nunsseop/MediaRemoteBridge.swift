@@ -63,6 +63,7 @@ final class MediaRemoteBridge {
         case .next: word = "next"
         case .previous: word = "previous"
         case .seek(let seconds): word = "seek \(max(0, seconds))"
+        case .rate(let rate): word = "rate \(rate)"
         }
         try? input?.write(contentsOf: Data((word + "\n").utf8))
     }
@@ -103,8 +104,10 @@ final class MediaRemoteBridge {
         let rate = info["rate"] as? Double ?? 0
         var position = info["elapsed"] as? Double ?? 0
         if let timestamp = info["timestamp"] as? Double, rate > 0 {
-            position += Date().timeIntervalSince1970 - timestamp
+            position += (Date().timeIntervalSince1970 - timestamp) * rate
         }
+        // MRMediaRemoteCommand codes: 19 changes the playback rate, 24 seeks. Nil when the helper could not read them.
+        let commands = info["commands"] as? [Int]
         let track = NowPlayingTrack(
             title: title,
             artist: info["artist"] as? String ?? "",
@@ -113,7 +116,10 @@ final class MediaRemoteBridge {
             position: position,
             isPlaying: rate > 0,
             sourceBundleID: info["bundleID"] as? String ?? "",
-            fetchedAt: Date()
+            fetchedAt: Date(),
+            rate: rate > 0 ? rate : 1,
+            canSeek: commands?.contains(24) ?? true,
+            canChangeRate: commands?.contains(19) ?? false
         )
         let artwork = (info["artwork"] as? String).flatMap { Data(base64Encoded: $0) }
         onUpdate?(MediaRemoteUpdate(track: track, artwork: artwork))

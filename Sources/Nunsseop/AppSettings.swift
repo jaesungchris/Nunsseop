@@ -89,6 +89,8 @@ final class AppSettings: ObservableObject {
     @Published var downloadsToShelf: Bool { didSet { defaults.set(downloadsToShelf, forKey: "downloadsToShelf") } }
     /// Also controls whether copied text is recorded at all.
     @Published var clipboardTab: Bool { didSet { defaults.set(clipboardTab, forKey: "clipboardTab") } }
+    /// Removes tracking parameters from copied links while the clipboard is watched.
+    @Published var cleanLinks: Bool { didSet { defaults.set(cleanLinks, forKey: "cleanLinks") } }
     @Published var notesTab: Bool { didSet { defaults.set(notesTab, forKey: "notesTab") } }
     @Published var toolsTab: Bool { didSet { defaults.set(toolsTab, forKey: "toolsTab") } }
     @Published var mirrorEnabled: Bool { didSet { defaults.set(mirrorEnabled, forKey: "mirrorEnabled") } }
@@ -148,6 +150,7 @@ final class AppSettings: ObservableObject {
             "screenshotsToShelf": true,
             "localNotifications": true,
             "clipboardTab": true,
+            "cleanLinks": true,
             "notesTab": true,
             "toolsTab": true,
             "checkForUpdates": true,
@@ -210,6 +213,7 @@ final class AppSettings: ObservableObject {
         screenshotsToShelf = defaults.bool(forKey: "screenshotsToShelf")
         localNotifications = defaults.bool(forKey: "localNotifications")
         clipboardTab = defaults.bool(forKey: "clipboardTab")
+        cleanLinks = defaults.bool(forKey: "cleanLinks")
         notesTab = defaults.bool(forKey: "notesTab")
         toolsTab = defaults.bool(forKey: "toolsTab")
         checkForUpdates = defaults.bool(forKey: "checkForUpdates")

@@ -49,23 +49,35 @@ struct CalendarPanel: View {
     }
 }
 
+/// The month, then today in large accent digits followed by the next few days.
 private struct WeekStrip: View {
     @ObservedObject var calendar: CalendarModel
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(calendar.week, id: \.self) { day in
+        HStack(alignment: .lastTextBaseline, spacing: 0) {
+            Text(calendar.week.first ?? .now, format: .dateTime.month(.abbreviated))
+                .font(.system(size: 18, weight: .bold))
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.trailing, 4)
+            ForEach(calendar.week.prefix(5), id: \.self) { day in
+                let today = Calendar.current.isDateInToday(day)
                 let selected = Calendar.current.isDate(day, inSameDayAs: calendar.selectedDay)
+                let weekend = Calendar.current.isDateInWeekend(day)
                 Button { calendar.selectedDay = day } label: {
-                    VStack(spacing: 1) {
-                        Text(day, format: .dateTime.weekday(.narrow))
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(.white.opacity(selected ? 0.9 : 0.4))
-                        Text("\(Calendar.current.component(.day, from: day))")
-                            .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    VStack(spacing: 0) {
+                        Text(day, format: .dateTime.weekday(.abbreviated))
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(.white.opacity(selected ? 0.85 : 0.4))
+                        Text(String(format: "%02d", Calendar.current.component(.day, from: day)))
+                            .font(.system(size: today ? 19 : 13, weight: today ? .heavy : .semibold).monospacedDigit())
+                            .foregroundStyle(today ? Color.blue : (weekend ? Color.red.opacity(0.8) : .white.opacity(selected ? 1 : 0.55)))
+                            .fixedSize()
                     }
-                    .frame(width: 22, height: 32)
-                    .background(RoundedRectangle(cornerRadius: 7).fill(.white.opacity(selected ? 0.18 : 0)))
+                    .frame(maxWidth: today ? nil : .infinity)
+                    .padding(.horizontal, today ? 2 : 0)
+                    .padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 7).fill(.white.opacity(selected && !today ? 0.15 : 0)))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

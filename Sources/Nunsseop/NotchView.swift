@@ -672,6 +672,22 @@ private struct HomeTab: View {
         return String(localized: "Play something in any app or browser and it shows up here")
     }
 
+    /// Podcasts, videos and long mixes, where skipping and speed matter.
+    private func isLong(_ track: NowPlayingTrack) -> Bool { track.duration > 600 }
+
+    static func rateLabel(_ rate: Double) -> String {
+        rate.formatted(.number.precision(.fractionLength(0...2))) + "×"
+    }
+
+    @ViewBuilder
+    private func transportButtons(_ track: NowPlayingTrack) -> some View {
+        ControlButton(symbol: "backward.fill") { nowPlaying.send(.previous) }
+        ControlButton(symbol: track.isPlaying ? "pause.fill" : "play.fill", size: 24) {
+            nowPlaying.send(.playPause)
+        }
+        ControlButton(symbol: "forward.fill") { nowPlaying.send(.next) }
+    }
+
     var body: some View {
         if let track = nowPlaying.track {
             HStack(spacing: 18) {
@@ -698,18 +714,34 @@ private struct HomeTab: View {
                             }
                         }
                         Spacer(minLength: 8)
+                        if track.canChangeRate && (isLong(track) || track.rate != 1) {
+                            Button { nowPlaying.cycleRate() } label: {
+                                Text(Self.rateLabel(track.rate))
+                                    .font(.system(size: 10, weight: .semibold).monospacedDigit())
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(Capsule().fill(.white.opacity(track.rate == 1 ? 0.1 : 0.22)))
+                            }
+                            .buttonStyle(.plain)
+                            .help(Text("Playback speed"))
+                        }
                         SpectrumBars(isPlaying: track.isPlaying, tint: nowPlaying.tint)
                             .frame(width: 18, height: 14)
                     }
                     Spacer(minLength: 6)
                     ProgressRow(track: track, tint: nowPlaying.tint) { nowPlaying.send(.seek($0)) }
                     Spacer(minLength: 6)
-                    HStack(spacing: 30) {
-                        ControlButton(symbol: "backward.fill") { nowPlaying.send(.previous) }
-                        ControlButton(symbol: track.isPlaying ? "pause.fill" : "play.fill", size: 24) {
-                            nowPlaying.send(.playPause)
+                    // Skip buttons only for long tracks, and only where they fit beside the calendar.
+                    ViewThatFits(in: .horizontal) {
+                        if track.canSeek && isLong(track) {
+                            HStack(spacing: 14) {
+                                ControlButton(symbol: "gobackward.15", size: 13) { nowPlaying.skip(by: -15) }
+                                    .help(Text("Back 15 seconds"))
+                                transportButtons(track)
+                                ControlButton(symbol: "goforward.15", size: 13) { nowPlaying.skip(by: 15) }
+                                    .help(Text("Forward 15 seconds"))
+                            }
                         }
-                        ControlButton(symbol: "forward.fill") { nowPlaying.send(.next) }
+                        HStack(spacing: 30) { transportButtons(track) }
                     }
                     .frame(maxWidth: .infinity)
                 }

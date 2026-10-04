@@ -10,6 +10,13 @@ typedef Boolean (*SendFn)(int, NSDictionary *);
 typedef void (*SetElapsedFn)(double);
 typedef void (*GetClientFn)(dispatch_queue_t, void (^)(id));
 typedef NSString *(*ClientStringFn)(id);
+typedef void *(*GetOriginFn)(void);
+typedef void (*GetCommandsFn)(void *, dispatch_queue_t, void (^)(CFArrayRef));
+typedef uint32_t (*CommandInfoCommandFn)(void *);
+typedef Boolean (*CommandInfoEnabledFn)(void *);
+
+// MRMediaRemoteCommand values beyond the transport ones in commandCode().
+enum { kChangePlaybackRate = 19 };
 
 static void emit(NSDictionary *obj) {
     if (![NSJSONSerialization isValidJSONObject:obj]) return;
@@ -39,14 +46,28 @@ void nunsseop_nowplaying_run(void *perl, void *cv) {
     GetClientFn getClient = (GetClientFn)dlsym(mr, "MRMediaRemoteGetNowPlayingClient");
     ClientStringFn clientBundle = (ClientStringFn)dlsym(mr, "MRNowPlayingClientGetBundleIdentifier");
     ClientStringFn clientParentBundle = (ClientStringFn)dlsym(mr, "MRNowPlayingClientGetParentAppBundleIdentifier");
+    GetOriginFn localOrigin = (GetOriginFn)dlsym(mr, "MRMediaRemoteGetLocalOrigin");
+    GetCommandsFn getCommands = (GetCommandsFn)dlsym(mr, "MRMediaRemoteGetSupportedCommandsForOrigin");
+    CommandInfoCommandFn infoCommand = (CommandInfoCommandFn)dlsym(mr, "MRMediaRemoteCommandInfoGetCommand");
+    CommandInfoEnabledFn infoEnabled = (CommandInfoEnabledFn)dlsym(mr, "MRMediaRemoteCommandInfoGetEnabled");
+    CFStringRef *rateOption = (CFStringRef *)dlsym(mr, "kMRMediaRemoteOptionPlaybackRate");
     if (!getInfo || !getPID || !send) { emit(@{@"error": @"MediaRemote symbols missing"}); return; }
 
+    // Set after a rate change so the next poll reports the real rate even if the app ignored it.
+    static volatile BOOL forceEmit = NO;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         char line[64];
         while (fgets(line, sizeof line, stdin)) {
             if (strncmp(line, "seek ", 5) == 0) {
                 double seconds = atof(line + 5);
                 if (setElapsed && isfinite(seconds) && seconds >= 0) setElapsed(seconds);
+                continue;
+            }
+            if (strncmp(line, "rate ", 5) == 0) {
+                double rate = atof(line + 5);
+                if (rateOption && isfinite(rate) && rate > 0 && rate <= 4)
+                    send(kChangePlaybackRate, @{(__bridge NSString *)*rateOption: @(rate)});
+                forceEmit = YES;
                 continue;
             }
             int code = commandCode(line);
@@ -64,6 +85,7 @@ void nunsseop_nowplaying_run(void *perl, void *cv) {
             NSString *clientID = nil;
             if (client && clientParentBundle) clientID = clientParentBundle(client);
             if (!clientID && client && clientBundle) clientID = clientBundle(client);
+            void (^withCommands)(NSArray *) = ^(NSArray *commands) {
             getPID(queue, ^(int pid) {
                 NSMutableDictionary *out = [NSMutableDictionary dictionary];
                 NSString *title = info[@"kMRMediaRemoteNowPlayingInfoTitle"];
@@ -87,14 +109,27 @@ void nunsseop_nowplaying_run(void *perl, void *cv) {
                 if (timestamp) out[@"timestamp"] = @(timestamp.timeIntervalSince1970);
                 if (bundleID) out[@"bundleID"] = bundleID;
                 if (info) out[@"active"] = @YES;
+                if (commands) out[@"commands"] = commands;
 
-                NSString *signature = [NSString stringWithFormat:@"%@|%@|%@|%@|%@|%@|%@|%lu|%d",
+                NSString *signature = [NSString stringWithFormat:@"%@|%@|%@|%@|%@|%@|%@|%lu|%d|%@",
                                        title, artist, album, duration, rate, elapsed, timestamp,
-                                       (unsigned long)artwork.length, pid];
-                if ([signature isEqualToString:lastSignature]) return;
+                                       (unsigned long)artwork.length, pid, [commands componentsJoinedByString:@","]];
+                if (!forceEmit && [signature isEqualToString:lastSignature]) return;
+                forceEmit = NO;
                 lastSignature = signature;
                 if (artwork) out[@"artwork"] = [artwork base64EncodedStringWithOptions:0];
                 emit(out);
+            });
+            };
+            // Enabled command codes of the now-playing app, so the notch only offers what it accepts.
+            if (!localOrigin || !getCommands || !infoCommand || !infoEnabled) { withCommands(nil); return; }
+            getCommands(localOrigin(), queue, ^(CFArrayRef list) {
+                NSMutableArray *codes = [NSMutableArray array];
+                for (CFIndex i = 0; list && i < CFArrayGetCount(list); i++) {
+                    void *item = (void *)CFArrayGetValueAtIndex(list, i);
+                    if (infoEnabled(item)) [codes addObject:@(infoCommand(item))];
+                }
+                withCommands(codes);
             });
           };
           if (getClient) getClient(queue, withClient); else withClient(nil);

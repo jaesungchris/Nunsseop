@@ -11,10 +11,14 @@ struct NowPlayingTrack: Equatable {
     var isPlaying: Bool
     var sourceBundleID: String
     var fetchedAt: Date
+    /// Playback speed while playing; kept while paused so the speed control shows it.
+    var rate: Double = 1
+    var canSeek = true
+    var canChangeRate = false
 
     func position(at date: Date) -> Double {
         guard isPlaying else { return position }
-        return min(duration, position + date.timeIntervalSince(fetchedAt))
+        return min(duration, position + date.timeIntervalSince(fetchedAt) * rate)
     }
 
     var identity: String { "\(sourceBundleID)|\(title)|\(artist)|\(album)" }
@@ -23,6 +27,7 @@ struct NowPlayingTrack: Equatable {
 enum NowPlayingCommand {
     case playPause, next, previous
     case seek(Double)
+    case rate(Double)
 }
 
 /// Reads playback state from apps that expose it over AppleScript. Each source
@@ -34,13 +39,15 @@ private struct ScriptSource {
     let artworkScript: String
     let artworkIsURL: Bool
 
-    func command(_ command: NowPlayingCommand) -> String {
+    /// Nil for commands these apps have no AppleScript for.
+    func command(_ command: NowPlayingCommand) -> String? {
         let verb: String
         switch command {
         case .playPause: verb = "playpause"
         case .next: verb = "next track"
         case .previous: verb = "previous track"
-        case .seek(let seconds): verb = "set player position to \(Int(max(0, seconds)))"
+        case .seek(let seconds): verb = "set player position to \(max(0, seconds))"
+        case .rate: return nil
         }
         return "tell application id \"\(bundleID)\" to \(verb)"
     }
@@ -130,6 +137,12 @@ final class NowPlayingController: ObservableObject {
             current.fetchedAt = Date()
             track = current
         }
+        if case .rate(let rate) = command, var current = track {
+            current.position = current.position(at: Date())
+            current.fetchedAt = Date()
+            current.rate = rate
+            track = current
+        }
         if mediaRemoteActive {
             mediaRemote.send(command)
             return
@@ -137,7 +150,7 @@ final class NowPlayingController: ObservableObject {
         guard let bundleID = track?.sourceBundleID else { return }
         let work: () -> Void
         if let source = sources.first(where: { $0.bundleID == bundleID }) {
-            let script = source.command(command)
+            guard let script = source.command(command) else { return }
             work = { _ = Self.run(script) }
         } else if let hit = browserHit, hit.track.sourceBundleID == bundleID,
                   let browser = BrowserMedia.all.first(where: { $0.bundleID == bundleID }) {
@@ -151,6 +164,21 @@ final class NowPlayingController: ObservableObject {
                 self?.poll()
             }
         }
+    }
+
+    /// Jumps by `seconds` from the current position, within the track.
+    func skip(by seconds: Double) {
+        guard let track, track.canSeek, track.duration > 0 else { return }
+        // Stop just short of the end so players don't jump to the next track.
+        send(.seek(min(max(0, track.duration - 1), max(0, track.position(at: Date()) + seconds))))
+    }
+
+    /// Steps through 1×, 1.25×, 1.5× and 2×, then back to 1×.
+    func cycleRate() {
+        guard let track, track.canChangeRate else { return }
+        let rates: [Double] = [1, 1.25, 1.5, 2]
+        let next = rates.first { $0 > track.rate + 0.01 } ?? 1
+        send(.rate(next))
     }
 
     private func poll() {
@@ -196,8 +224,13 @@ final class NowPlayingController: ObservableObject {
         browserHit = nil
         needsAutomationPermission = false
         browserNeedingJavaScript = nil
-        if track != update.track { track = update.track }
-        guard let newTrack = update.track else {
+        var newTrack = update.track
+        if let current = track, var paused = newTrack, !paused.isPlaying, current.identity == paused.identity {
+            paused.rate = current.rate
+            newTrack = paused
+        }
+        if track != newTrack { track = newTrack }
+        guard let newTrack else {
             artwork = nil
             artworkIdentity = nil
             return
@@ -285,9 +318,13 @@ final class NowPlayingController: ObservableObject {
 
     /// Fixed track with generated artwork, for checking the layout without a player.
     private func showDemoTrack() {
-        track = NowPlayingTrack(title: "Midnight Drive", artist: "The Demo Band", album: "Night Roads",
-                                duration: 214, position: 71, isPlaying: true,
-                                sourceBundleID: "com.apple.Music", fetchedAt: Date())
+        // --demo-long-track shows a podcast-length track, which adds the skip and speed controls.
+        let long = CommandLine.arguments.contains("--demo-long-track")
+        track = NowPlayingTrack(title: long ? "Episode 112: Long Conversations" : "Midnight Drive",
+                                artist: "The Demo Band", album: "Night Roads",
+                                duration: long ? 3_720 : 214, position: long ? 1_250 : 71, isPlaying: true,
+                                sourceBundleID: "com.apple.Music", fetchedAt: Date(),
+                                rate: long ? 1.5 : 1, canChangeRate: long)
         artwork = NSImage(size: NSSize(width: 300, height: 300), flipped: false) { rect in
             NSGradient(colors: [.systemPink, .systemPurple, .systemIndigo])?.draw(in: rect, angle: -45)
             return true

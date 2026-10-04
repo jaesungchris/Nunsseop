@@ -258,3 +258,15 @@
 "Widen the notch when needed so every tab fits" = "需要时加宽刘海，以显示所有标签页";
 "Liquid Glass look" = "Liquid Glass 外观";
 "Glass tint" = "玻璃浓度";
+
+/* Media skip and speed, color picker, text capture, link cleaning */
+"Playback speed" = "播放速度";
+"Back 15 seconds" = "后退 15 秒";
+"Forward 15 seconds" = "前进 15 秒";
+"Remove tracking parameters from copied links" = "移除拷贝链接中的跟踪参数";
+"Removes utm_ and similar tracking parameters when you copy a single link. Works while the Clipboard tab is on." = "拷贝单个链接时移除 utm_ 等跟踪参数。仅在“剪贴板”标签页开启时有效。";
+"Pick a color from the screen" = "从屏幕取色";
+"Capture text from the screen" = "从屏幕提取文本";
+"No text found" = "未找到文本";
+"Allow Screen Recording to read other apps’ windows" = "允许“屏幕录制”以读取其他应用的窗口";
+"Text copied" = "已拷贝文本";

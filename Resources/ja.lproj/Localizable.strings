@@ -258,3 +258,15 @@
 "Widen the notch when needed so every tab fits" = "すべてのタブが収まるよう必要に応じてノッチを広げる";
 "Liquid Glass look" = "Liquid Glass スタイル";
 "Glass tint" = "ガラスの濃さ";
+
+/* Media skip and speed, color picker, text capture, link cleaning */
+"Playback speed" = "再生速度";
+"Back 15 seconds" = "15秒戻る";
+"Forward 15 seconds" = "15秒進む";
+"Remove tracking parameters from copied links" = "コピーしたリンクからトラッキングパラメータを削除";
+"Removes utm_ and similar tracking parameters when you copy a single link. Works while the Clipboard tab is on." = "リンクを1つコピーしたとき、utm_ などのトラッキングパラメータを取り除きます。クリップボードタブがオンのときに動作します。";
+"Pick a color from the screen" = "画面から色を取得";
+"Capture text from the screen" = "画面からテキストを取得";
+"No text found" = "テキストが見つかりません";
+"Allow Screen Recording to read other apps’ windows" = "ほかのアプリのウインドウを読み取るには画面収録を許可してください";
+"Text copied" = "テキストをコピーしました";
