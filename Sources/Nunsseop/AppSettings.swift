@@ -48,9 +48,17 @@ final class AppSettings: ObservableObject {
     @Published var aiTab: Bool { didSet { defaults.set(aiTab, forKey: "aiTab") } }
     /// A system-wide shortcut opens the Search tab from anywhere.
     @Published var searchHotkey: Bool { didSet { defaults.set(searchHotkey, forKey: "searchHotkey") } }
-    @Published var searchShortcut: SearchShortcut { didSet { defaults.set(searchShortcut.rawValue, forKey: "searchShortcut") } }
+    @Published var searchHotKey: HotKeyCombo {
+        didSet {
+            defaults.set(Int(searchHotKey.keyCode), forKey: "searchHotKeyCode")
+            defaults.set(Int(searchHotKey.modifiers), forKey: "searchHotKeyModifiers")
+            defaults.set(searchHotKey.key, forKey: "searchHotKeyName")
+        }
+    }
     /// Set when another app already holds the chosen shortcut.
     @Published var searchShortcutTaken = false
+    /// While a new shortcut is being recorded the current one is released.
+    @Published var recordingShortcut = false
     @Published var peripheralBatteries: Bool { didSet { defaults.set(peripheralBatteries, forKey: "peripheralBatteries") } }
     /// Shows when any app uses the camera or microphone.
     @Published var privacyIndicator: Bool { didSet { defaults.set(privacyIndicator, forKey: "privacyIndicator") } }
@@ -106,7 +114,6 @@ final class AppSettings: ObservableObject {
             "emojiTab": true,
             "aiTab": true,
             "searchHotkey": true,
-            "searchShortcut": SearchShortcut.shiftCommandSpace.rawValue,
             "peripheralBatteries": true,
             "privacyIndicator": true,
             "recordAudio": false,
@@ -158,7 +165,12 @@ final class AppSettings: ObservableObject {
         emojiTab = defaults.bool(forKey: "emojiTab")
         aiTab = defaults.bool(forKey: "aiTab")
         searchHotkey = defaults.bool(forKey: "searchHotkey")
-        searchShortcut = SearchShortcut(rawValue: defaults.string(forKey: "searchShortcut") ?? "") ?? .shiftCommandSpace
+        if let name = defaults.string(forKey: "searchHotKeyName") {
+            searchHotKey = HotKeyCombo(keyCode: UInt32(defaults.integer(forKey: "searchHotKeyCode")),
+                                       modifiers: UInt32(defaults.integer(forKey: "searchHotKeyModifiers")), key: name)
+        } else {
+            searchHotKey = .defaultSearch
+        }
         peripheralBatteries = defaults.bool(forKey: "peripheralBatteries")
         privacyIndicator = defaults.bool(forKey: "privacyIndicator")
         recordAudio = defaults.bool(forKey: "recordAudio")

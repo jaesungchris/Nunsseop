@@ -4,7 +4,7 @@
 
 <p align="center">
   <b>Your MacBook notch, finally useful.</b><br>
-  Music, files, quick search, AI usage, your calendar and system HUDs, one hover away.
+  Music, files, a Spotlight-style launcher, AI usage, your calendar and system HUDs, one hover away.
 </p>
 
 <p align="center">
@@ -57,7 +57,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 
 | | |
 | :---: | :---: |
-| <img src="docs/images/tab-search.png" alt="Quick search with a calculation"><br>**Quick search.** <kbd>⇧⌘Space</kbd> from anywhere: open apps, search the web, calculate. | <img src="docs/images/tab-ai.png" alt="AI usage for Claude Code and Codex"><br>**AI usage.** Claude Code and Codex limits, no login needed. |
+| <img src="docs/images/tab-search.png" alt="Search showing an app, a command and a setting"><br>**Search.** A launcher for apps, files, commands, clipboard, emoji and sums, on any shortcut you like. | <img src="docs/images/tab-ai.png" alt="AI usage for Claude Code and Codex"><br>**AI usage.** Claude Code and Codex limits, no login needed. |
 | <img src="docs/images/shelf.png" alt="File shelf with AirDrop tile"><br>**Shelf.** Park files in the notch, or drop them on AirDrop. | <img src="docs/images/tab-timer.png" alt="Timer tab"><br>**Timer.** Countdown, Pomodoro and stopwatch. |
 | <img src="docs/images/tab-tools.png" alt="Tools tab"><br>**Tools.** Audio output, mic mute, keep awake, screen recording. | <img src="docs/images/tab-system.png" alt="System tab with device batteries"><br>**System.** CPU, memory, disk, network and device batteries. |
 | <img src="docs/images/tab-emoji.png" alt="Emoji picker"><br>**Emoji.** Every emoji, searchable, one click to copy. | <img src="docs/images/hud-headphones.png" alt="Headphone battery HUD"><br>**HUDs.** Volume, brightness, AirPods battery and more. |
@@ -72,7 +72,8 @@ There's no Dock icon. Nunsseop lives in the notch.
 **🗂️ Get things done**
 - **Shelf.** Drag files onto the notch and back out later. Screenshots and finished downloads can land there automatically.
 - **Calendar and reminders.** Your week, today's events, and reminders you can tick off.
-- **Quick search.** <kbd>⇧⌘Space</kbd> opens apps, searches the web, and works out sums like `12*(3+4)`. You can switch the shortcut to <kbd>⌥Space</kbd> or <kbd>⌃⌥Space</kbd> in Settings.
+- **Search that can replace Spotlight or Raycast.** Apps (even ones outside Applications), files, system commands and settings, clipboard history, emoji (start with `:`) and sums like `12*(3+4)`, ranked by what you open most. Initials work: `vsc` finds Visual Studio Code. Arrow keys pick, Return opens.
+- **Your shortcut.** <kbd>⇧⌘Space</kbd> by default, or record any combination in Settings. Nunsseop tells you when macOS or another app already uses it.
 - **Timer, clipboard history, notes and an emoji picker.** Clipboard history stays in memory and skips anything a password manager marks as secret.
 
 **💻 Your Mac**
@@ -104,6 +105,12 @@ The app isn't notarized yet. Install with Homebrew, or run `xattr -dr com.apple.
 <summary><b>Nothing shows up when I play music.</b></summary>
 
 Nunsseop shows whatever macOS lists as Now Playing, so the player has to appear in Control Center. Most apps and browsers do. See [how now playing works](#how-now-playing-works) for the fallback.
+</details>
+
+<details>
+<summary><b>Can Search replace Spotlight?</b></summary>
+
+Yes. Open Settings → Services, click the shortcut and press <kbd>⌘Space</kbd>. Nunsseop will point out that Spotlight uses it and open Keyboard Shortcuts, where you untick *Show Spotlight search*. Search also opens when its tab is hidden.
 </details>
 
 <details>

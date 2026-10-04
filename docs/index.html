@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nunsseop — your notch, finally useful</title>
-<meta name="description" content="Nunsseop turns the MacBook notch into a space for what's playing, a file shelf, quick search, AI usage, your calendar and system HUDs. Free and open source.">
+<meta name="description" content="Nunsseop turns the MacBook notch into a space for what's playing, a file shelf, a Spotlight-style launcher, AI usage, your calendar and system HUDs. Free and open source.">
 <meta property="og:title" content="Nunsseop — your notch, finally useful">
 <meta property="og:description" content="Now playing, file shelf with AirDrop, calendar, reminders, mirror and system HUDs in your MacBook notch. Free and open source.">
 <meta property="og:image" content="https://namekun.github.io/Nunsseop/images/home.png">
@@ -234,7 +234,7 @@
 <header class="hero">
   <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
   <div class="wrap">
-    <span class="eyebrow"><b>v0.6.2</b> <span class="en">Free &amp; open source · macOS 14+</span><span class="ko">무료 오픈소스 · macOS 14 이상</span></span>
+    <span class="eyebrow"><b>v0.7.0</b> <span class="en">Free &amp; open source · macOS 14+</span><span class="ko">무료 오픈소스 · macOS 14 이상</span></span>
     <h1 class="en">Your notch,<br><span class="grad-text">finally useful.</span></h1>
     <h1 class="ko">노치,<br><span class="grad-text">이제 쓸모 있게.</span></h1>
     <p class="lead en">Music, files, your calendar and system HUDs live right where the camera sits. Hover to open. That's it.</p>
@@ -478,6 +478,9 @@ open build/Nunsseop.app</pre></div>
       <details><summary><span class="en">Nothing shows up when I play music.</span><span class="ko">음악을 틀어도 아무것도 안 나와요.</span></summary>
         <div class="a en">Nunsseop reads whatever macOS lists as Now Playing, so the player has to report to Control Center. Most apps and browsers do. If a future macOS update blocks this, Nunsseop asks for Automation access and falls back to AppleScript for Music, Spotify and browsers.</div>
         <div class="a ko">Nunsseop은 macOS가 '지금 재생 중'으로 아는 것을 읽습니다. 그래서 제어 센터에 재생 정보가 뜨는 앱이어야 하는데, 대부분의 앱과 브라우저가 그렇습니다. 이후 macOS 업데이트로 막히면 자동화 권한을 받아 Music, Spotify, 브라우저를 AppleScript로 읽습니다.</div></details>
+      <details><summary><span class="en">Can Search replace Spotlight or Raycast?</span><span class="ko">Spotlight나 Raycast 대신 쓸 수 있나요?</span></summary>
+        <div class="a en">That's the idea. It finds apps, files, commands, settings, clipboard entries, emoji and sums, and learns what you open most. To put it on <code>⌘Space</code>, record that shortcut in Settings › Services and Nunsseop will take you to Keyboard Shortcuts to switch Spotlight's off.</div>
+        <div class="a ko">그걸 목표로 만들었습니다. 앱, 파일, 명령, 설정, 클립보드, 이모지, 계산을 찾고, 자주 여는 것을 먼저 보여 줍니다. <code>⌘Space</code>로 쓰려면 설정 › 서비스에서 그 단축키를 녹화하세요. Spotlight 단축키를 끌 수 있도록 키보드 단축키 화면으로 안내합니다.</div></details>
       <details><summary><span class="en">There are too many tabs for me.</span><span class="ko">탭이 너무 많아요.</span></summary>
         <div class="a en">Right-click the notch, open Settings › Notch, and switch off what you don't need. Turned-off features stop running, so they cost nothing.</div>
         <div class="a ko">노치를 우클릭해 설정 › 노치에서 필요 없는 탭을 끄세요. 꺼 둔 기능은 아예 동작하지 않아서 자원도 쓰지 않습니다.</div></details>
@@ -562,7 +565,7 @@ open build/Nunsseop.app</pre></div>
 
   var tourData = [
     { e: '🏠', img: 'home.png', en: ['Home', 'What’s playing from any app or browser, with artwork, controls and a seekable bar, next to your week and today’s events.'], ko: ['홈', '어떤 앱이나 브라우저에서 재생하든 앨범아트, 컨트롤, 진행바가 나오고, 옆에는 이번 주와 오늘 일정이 보입니다.'] },
-    { e: '🔍', img: 'tab-search.png', en: ['Quick search', 'Press <kbd>⇧⌘Space</kbd> anywhere, even when the tab is hidden. Open an app, search the web, or type a sum and press Return to copy the answer. Pick another shortcut in Settings if you like.'], ko: ['빠른 검색', '어디서든 <kbd>⇧⌘Space</kbd>. 탭을 숨겨 둬도 열립니다. 앱을 열고, 웹을 검색하고, 계산식을 치고 Return을 누르면 결과가 복사됩니다. 단축키는 설정에서 바꿀 수 있어요.'] },
+    { e: '🔍', img: 'tab-search.png', en: ['Search', 'A launcher that can stand in for Spotlight or Raycast: apps, files, commands, settings, clipboard, emoji and sums. <kbd>⇧⌘Space</kbd> by default, or record your own, even <kbd>⌘Space</kbd>.'], ko: ['검색', 'Spotlight나 Raycast 대신 쓸 수 있는 검색. 앱, 파일, 명령, 설정, 클립보드, 이모지, 계산까지. 기본 단축키는 <kbd>⇧⌘Space</kbd>이고, <kbd>⌘Space</kbd>를 포함해 원하는 키로 바꿀 수 있습니다.'] },
     { e: '📥', img: 'shelf.png', en: ['Shelf', 'Drop files on the notch and drag them out later. Drop them on the AirDrop tile to send them straight away.'], ko: ['선반', '파일을 노치에 놓아 두고 나중에 끌어내세요. AirDrop 칸에 놓으면 바로 보내집니다.'] },
     { e: '✨', img: 'tab-ai.png', en: ['AI usage', 'Claude Code and Codex limits with reset times, plus Claude Code’s recent token use. No login, nothing to set up.'], ko: ['AI 사용량', 'Claude Code와 Codex의 한도와 초기화 시각, Claude Code의 최근 토큰 사용량. 로그인도 설정도 필요 없습니다.'] },
     { e: '⏱️', img: 'tab-timer.png', en: ['Timer', 'Countdown, Pomodoro and stopwatch. The time left stays on the collapsed notch.'], ko: ['타이머', '카운트다운, 뽀모도로, 스톱워치. 접힌 노치에 남은 시간이 그대로 보입니다.'] },

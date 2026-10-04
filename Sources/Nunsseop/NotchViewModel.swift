@@ -71,7 +71,7 @@ final class NotchViewModel: ObservableObject {
     let privacy = PrivacyMonitor()
     let emoji = EmojiModel()
     let aiUsage = AIUsageModel()
-    let search = QuickSearchModel()
+    lazy var search = QuickSearchModel(clipboard: clipboard, emoji: emoji)
     let recorder = ScreenRecorder()
     /// Set when opened by the hotkey; the notch then stays open until the pointer visits it or Escape is pressed.
     @Published var pinned = false

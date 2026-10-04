@@ -260,17 +260,29 @@ private struct ServicesPane: View {
             }
             Section("Quick search") {
                 Toggle("Open Search from anywhere with a shortcut", isOn: $settings.searchHotkey)
-                Picker("Shortcut", selection: $settings.searchShortcut) {
-                    ForEach(SearchShortcut.allCases) { Text($0.label).tag($0) }
+                LabeledContent("Shortcut") {
+                    ShortcutRecorder(settings: settings)
                 }
                 .disabled(!settings.searchHotkey)
-                if settings.searchShortcutTaken {
-                    Text("Another app is already using this shortcut. Pick a different one.")
-                        .font(.caption).foregroundStyle(.orange)
-                } else if settings.searchHotkey && settings.searchShortcut == .controlOptionSpace {
-                    Text("macOS also uses ⌃⌥Space to switch input sources, so it may change your keyboard language instead.")
-                        .font(.caption).foregroundStyle(.secondary)
+                if settings.searchHotkey && !settings.recordingShortcut {
+                    if let conflict = settings.searchHotKey.systemConflict {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("macOS uses this shortcut for “\(conflict)”. Turn that off in Keyboard Shortcuts so Nunsseop gets it.")
+                                .font(.caption).foregroundStyle(.orange)
+                            Button("Open Keyboard Shortcuts") {
+                                if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension") {
+                                    NSWorkspace.shared.open(url)
+                                }
+                            }
+                            .controlSize(.small)
+                        }
+                    } else if settings.searchShortcutTaken {
+                        Text("Another app is already using this shortcut. Pick a different one.")
+                            .font(.caption).foregroundStyle(.orange)
+                    }
                 }
+                Text("To use Search in place of Spotlight, record ⌘Space here and turn off Spotlight’s shortcut in Keyboard Shortcuts.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Screen recording") {
                 Toggle("Record microphone audio", isOn: $settings.recordAudio)
@@ -307,5 +319,41 @@ private struct SliderRow: View {
             }
             Slider(value: $value, in: range)
         }
+    }
+}
+
+/// Click, then press the keys to use. Escape cancels.
+private struct ShortcutRecorder: View {
+    @ObservedObject var settings: AppSettings
+    @State private var monitor: Any?
+
+    var body: some View {
+        Button {
+            settings.recordingShortcut ? stop() : start()
+        } label: {
+            Text(settings.recordingShortcut ? String(localized: "Press keys…") : settings.searchHotKey.label)
+                .font(.system(size: 12, weight: .medium).monospaced())
+                .frame(minWidth: 96)
+        }
+        .onDisappear { stop() }
+    }
+
+    private func start() {
+        settings.recordingShortcut = true
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 53 {
+                stop()
+            } else if let combo = HotKeyCombo(event: event) {
+                settings.searchHotKey = combo
+                stop()
+            }
+            return nil
+        }
+    }
+
+    private func stop() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        settings.recordingShortcut = false
     }
 }

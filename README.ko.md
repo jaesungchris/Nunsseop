@@ -4,7 +4,7 @@
 
 <p align="center">
   <b>MacBook 노치, 이제 쓸모 있게.</b><br>
-  음악, 파일, 빠른 검색, AI 사용량, 일정, 시스템 HUD가 마우스만 올리면 열립니다.
+  음악, 파일, Spotlight 같은 검색, AI 사용량, 일정, 시스템 HUD가 마우스만 올리면 열립니다.
 </p>
 
 <p align="center">
@@ -57,7 +57,7 @@ Dock 아이콘은 없습니다. Nunsseop은 노치에 삽니다.
 
 | | |
 | :---: | :---: |
-| <img src="docs/images/tab-search.png" alt="계산 결과가 보이는 빠른 검색"><br>**빠른 검색.** 어디서든 <kbd>⇧⌘Space</kbd>. 앱 실행, 웹 검색, 계산까지. | <img src="docs/images/tab-ai.png" alt="Claude Code와 Codex 사용량"><br>**AI 사용량.** Claude Code와 Codex 한도. 로그인 필요 없음. |
+| <img src="docs/images/tab-search.png" alt="앱, 명령, 설정이 보이는 검색"><br>**검색.** 앱, 파일, 명령, 클립보드, 이모지, 계산을 한 곳에서. 단축키는 원하는 대로. | <img src="docs/images/tab-ai.png" alt="Claude Code와 Codex 사용량"><br>**AI 사용량.** Claude Code와 Codex 한도. 로그인 필요 없음. |
 | <img src="docs/images/shelf.png" alt="AirDrop 칸이 있는 선반"><br>**선반.** 파일을 노치에 놓아 두거나 AirDrop으로 바로 보내기. | <img src="docs/images/tab-timer.png" alt="타이머 탭"><br>**타이머.** 카운트다운, 뽀모도로, 스톱워치. |
 | <img src="docs/images/tab-tools.png" alt="도구 탭"><br>**도구.** 오디오 출력, 마이크 음소거, 잠자기 방지, 화면 녹화. | <img src="docs/images/tab-system.png" alt="기기 배터리가 보이는 시스템 탭"><br>**시스템.** CPU, 메모리, 디스크, 네트워크, 기기 배터리. |
 | <img src="docs/images/tab-emoji.png" alt="이모지 선택기"><br>**이모지.** 모든 이모지를 검색하고 클릭 한 번으로 복사. | <img src="docs/images/hud-headphones.png" alt="헤드폰 배터리 HUD"><br>**HUD.** 볼륨, 밝기, AirPods 배터리 등. |
@@ -72,7 +72,8 @@ Dock 아이콘은 없습니다. Nunsseop은 노치에 삽니다.
 **🗂️ 일 처리**
 - **선반.** 파일을 노치에 끌어다 두고 나중에 꺼내세요. 스크린샷과 다 받은 파일이 알아서 들어오게 할 수도 있습니다.
 - **캘린더와 미리 알림.** 이번 주, 오늘 일정, 노치에서 바로 완료하는 미리 알림.
-- **빠른 검색.** <kbd>⇧⌘Space</kbd>로 앱을 열고, 웹을 검색하고, `12*(3+4)` 같은 계산을 합니다. 설정에서 단축키를 <kbd>⌥Space</kbd>나 <kbd>⌃⌥Space</kbd>로 바꿀 수 있습니다.
+- **Spotlight·Raycast를 대신하는 검색.** 앱(응용 프로그램 폴더 밖에 있는 앱까지), 파일, 시스템 명령과 설정, 클립보드 기록, 이모지(`:`로 시작), `12*(3+4)` 같은 계산을 자주 연 순서로 보여 줍니다. 머리글자도 됩니다. `vsc`라고 치면 Visual Studio Code가 나와요. 화살표로 고르고 Return으로 엽니다.
+- **내 단축키.** 기본은 <kbd>⇧⌘Space</kbd>이고, 설정에서 원하는 키 조합을 직접 눌러 바꿀 수 있습니다. macOS나 다른 앱이 이미 쓰는 조합이면 알려 줍니다.
 - **타이머, 클립보드 기록, 메모, 이모지 선택기.** 클립보드 기록은 메모리에만 두고, 암호 관리자가 비밀로 표시한 항목은 건너뜁니다.
 
 **💻 내 Mac**
@@ -104,6 +105,12 @@ Dock 아이콘은 없습니다. Nunsseop은 노치에 삽니다.
 <summary><b>음악을 틀어도 아무것도 안 나와요.</b></summary>
 
 Nunsseop은 macOS가 '지금 재생 중'으로 아는 것을 보여 줍니다. 제어 센터에 재생 정보가 뜨는 앱이어야 하는데, 대부분의 앱과 브라우저가 그렇습니다. 막혔을 때의 대체 경로는 [재생 정보를 읽는 방법](#재생-정보를-읽는-방법)을 보세요.
+</details>
+
+<details>
+<summary><b>Spotlight 대신 쓸 수 있나요?</b></summary>
+
+네. 설정 → 서비스에서 단축키를 누르고 <kbd>⌘Space</kbd>를 누르세요. Spotlight가 쓰고 있다고 알려 주면서 키보드 단축키를 열어 주는데, 거기서 *Spotlight 검색 보기*를 끄면 됩니다. 검색 탭을 숨겨 둬도 단축키로 열립니다.
 </details>
 
 <details>

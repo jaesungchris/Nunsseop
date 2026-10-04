@@ -51,7 +51,7 @@ struct NotchView: View {
                             case .apps:
                                 AppsTab(launcher: model.launcher)
                             case .search:
-                                SearchTab(model: model.search, shortcut: model.settings.searchHotkey ? model.settings.searchShortcut.label : nil)
+                                SearchTab(model: model.search, shortcut: model.settings.searchHotkey ? model.settings.searchHotKey.label : nil)
                             case .emoji:
                                 EmojiTab(model: model.emoji)
                             case .ai:

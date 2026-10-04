@@ -88,6 +88,23 @@ final class NotchWindowController {
         panel.orderFrontRegardless()
         updateVisibility()
         installMonitors()
+        #if DEBUG
+        if let i = CommandLine.arguments.firstIndex(of: "--demo-search"), i + 1 < CommandLine.arguments.count {
+            let query = CommandLine.arguments[i + 1]
+            model.search.loadApps()
+            model.search.query = query
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self else { return }
+                self.model.tab = .search
+                self.model.expand()
+                self.model.search.query = query
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    self.model.tab = .search
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { self.snapshotter?.capture(label: "search") }
+                }
+            }
+        }
+        #endif
         model.nowPlaying.start()
         model.hud.start()
         model.tools.start()
@@ -147,13 +164,19 @@ final class NotchWindowController {
                 self.panel.ignoresMouseEvents = true
             }
         }
-        settingsObservers.append(model.settings.$searchHotkey.combineLatest(model.settings.$searchShortcut)
-            .sink { [weak self] enabled, shortcut in
+        settingsObservers.append(model.settings.$searchHotkey.combineLatest(model.settings.$searchHotKey, model.settings.$recordingShortcut)
+            .sink { [weak self] enabled, combo, recording in
                 guard let self else { return }
                 self.hotKey = nil
-                self.hotKey = enabled ? GlobalHotKey(shortcut: shortcut) { [weak self] in self?.openSearch() } : nil
-                self.model.settings.searchShortcutTaken = enabled && self.hotKey?.isRegistered != true
+                guard enabled && !recording else { return }
+                self.hotKey = GlobalHotKey(combo: combo) { [weak self] in self?.openSearch() }
+                self.model.settings.searchShortcutTaken = self.hotKey?.isRegistered != true
             })
+        model.search.onFinish = { [weak self] in
+            guard let self, self.model.isExpanded else { return }
+            self.model.collapse()
+            self.panel.ignoresMouseEvents = true
+        }
         if let keys = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
             guard event.keyCode == 53, let self else { return event }
             MainActor.assumeIsolated { self.model.collapse(); self.panel.ignoresMouseEvents = true }

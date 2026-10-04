@@ -40,7 +40,7 @@ final class DebugSnapshotter {
         }
     }
 
-    private func capture(label: String, of target: NSView? = nil) {
+    func capture(label: String, of target: NSView? = nil) {
         guard let view = target ?? view else { return }
         // Always render at 2x so captures stay sharp on any display.
         let scale: CGFloat = 2
