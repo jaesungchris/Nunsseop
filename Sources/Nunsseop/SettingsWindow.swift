@@ -97,6 +97,10 @@ struct SettingsView: View {
                 Toggle("Show calendar on the Home tab", isOn: $settings.calendarEnabled)
                 Toggle("Show reminders under the calendar", isOn: $settings.remindersEnabled)
                     .disabled(!settings.calendarEnabled)
+                Toggle("Show the Timer tab", isOn: $settings.timerTab)
+                Toggle("Show the Clipboard tab and keep clipboard history", isOn: $settings.clipboardTab)
+                Toggle("Show the Notes tab", isOn: $settings.notesTab)
+                Toggle("Show the Tools tab", isOn: $settings.toolsTab)
                 Toggle("Show the Mirror tab", isOn: $settings.mirrorEnabled)
                 Picker("Camera", selection: $settings.mirrorCameraID) {
                     Text("System default").tag("")
@@ -118,6 +122,19 @@ struct SettingsView: View {
                 Toggle("Show battery level in the header", isOn: $settings.batteryInHeader)
                 Toggle("Show when power is connected or disconnected", isOn: $settings.chargingHUDEnabled)
                 Toggle("Show headphone battery when they connect", isOn: $settings.headphoneHUDEnabled)
+                Toggle("Warn at 20% battery and when fully charged", isOn: $settings.batteryAlerts)
+                Toggle("Show Caps Lock changes", isOn: $settings.capsLockHUD)
+                Toggle("Add new screenshots to the shelf", isOn: $settings.screenshotsToShelf)
+            }
+            Section("Notifications from local tools") {
+                Toggle("Let tools on this Mac show notifications in the notch", isOn: $settings.localNotifications)
+                Text("Used by Claude Code hooks and scripts. Only requests from this Mac with the secret token are accepted.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button("Copy Claude Code hook command") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(NotifyServer.hookCommand, forType: .string)
+                }
+                .disabled(!settings.localNotifications)
             }
             Section("Sneak Peek") {
                 Toggle("Show the title under the notch when the track or play state changes", isOn: $settings.sneakPeekEnabled)

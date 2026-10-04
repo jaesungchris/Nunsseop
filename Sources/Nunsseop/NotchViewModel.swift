@@ -2,7 +2,7 @@ import AppKit
 import Combine
 
 enum NotchTab {
-    case home, shelf, mirror
+    case home, shelf, timer, clipboard, notes, tools, mirror
 }
 
 @MainActor
@@ -19,6 +19,13 @@ final class NotchViewModel: ObservableObject {
     let hud: HUDCenter
     let calendar = CalendarModel()
     let mirror = MirrorModel()
+    let timer = TimerModel()
+    let clipboard = ClipboardHistory()
+    let notes = NotesModel()
+    let tools = ToolsModel()
+    let screenshots = ScreenshotWatcher()
+    let capsLock = CapsLockWatcher()
+    let notifyServer = NotifyServer()
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
 
@@ -28,10 +35,14 @@ final class NotchViewModel: ObservableObject {
         self.geometry = geometry
         self.settings = settings
         self.hud = HUDCenter(settings: settings)
-        nowPlaying.$track
-            .map { $0?.isPlaying == true }
+        nowPlaying.$track.map { $0?.isPlaying == true }
+            .combineLatest(timer.$anchor.map { $0 != nil })
+            .map { $0 || $1 }
             .removeDuplicates()
             .sink { [weak self] in self?.showsLiveActivity = $0 }
+            .store(in: &cancellables)
+        timer.objectWillChange
+            .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
         nowPlaying.$track
             .compactMap { $0.map { "\($0.identity)|\($0.isPlaying)" } }
@@ -41,9 +52,9 @@ final class NotchViewModel: ObservableObject {
         hud.$event
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
-        settings.$mirrorEnabled
-            .filter { !$0 }
-            .sink { [weak self] _ in if self?.tab == .mirror { self?.tab = .home } }
+        settings.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.leaveHiddenTab() }
             .store(in: &cancellables)
         settings.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
@@ -69,7 +80,10 @@ final class NotchViewModel: ObservableObject {
         var size = geometry.collapsedSize
         if let event = hud.event {
             size.width += 2 * Self.hudEarWidth
-            if case .headphones = event { size.height += Self.sneakPeekHeight }
+            switch event {
+            case .headphones, .notice: size.height += Self.sneakPeekHeight
+            default: break
+            }
             return size
         }
         if showsLiveActivity { size.width += 2 * earWidth }
@@ -92,11 +106,26 @@ final class NotchViewModel: ObservableObject {
 
     var earWidth: CGFloat {
         let height = geometry.collapsedSize.height
-        return settings.compactLiveActivity ? height * 0.7 : height + 6
+        let base = settings.compactLiveActivity ? height * 0.7 : height + 6
+        // Room for "12:34" when a timer is running.
+        return timer.isRunning ? max(base, 50) : base
     }
 
     var currentSize: CGSize {
         isExpanded ? expandedSize : collapsedSize
+    }
+
+    private func leaveHiddenTab() {
+        let visible: Bool
+        switch tab {
+        case .home, .shelf: visible = true
+        case .timer: visible = settings.timerTab
+        case .clipboard: visible = settings.clipboardTab
+        case .notes: visible = settings.notesTab
+        case .tools: visible = settings.toolsTab
+        case .mirror: visible = settings.mirrorEnabled
+        }
+        if !visible { tab = .home }
     }
 
     func expand() {

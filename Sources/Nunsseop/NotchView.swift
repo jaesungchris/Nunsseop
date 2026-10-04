@@ -38,6 +38,14 @@ struct NotchView: View {
                             case .shelf:
                                 ShelfView(shelf: model.shelf, isDropTargeted: isDropTargeted && !isAirDropTargeted,
                                           isAirDropTargeted: isAirDropTargeted)
+                            case .timer:
+                                TimerTab(timer: model.timer)
+                            case .clipboard:
+                                ClipboardTab(history: model.clipboard)
+                            case .notes:
+                                NotesTab(notes: model.notes)
+                            case .tools:
+                                ToolsTab(tools: model.tools)
                             case .mirror:
                                 MirrorTab(mirror: model.mirror, deviceID: model.settings.mirrorCameraID)
                             }
@@ -55,7 +63,7 @@ struct NotchView: View {
                 } else if model.showsLiveActivity || model.showsSneakPeek {
                     VStack(spacing: 0) {
                         if model.showsLiveActivity {
-                            CollapsedActivity(nowPlaying: nowPlaying, height: notchHeight, earWidth: model.earWidth)
+                            CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, height: notchHeight, earWidth: model.earWidth)
                         } else {
                             Color.clear.frame(height: notchHeight)
                         }
@@ -161,6 +169,18 @@ private struct HeaderBar: View {
             TabButton(symbol: "house.fill", selected: model.tab == .home) { model.tab = .home }
             TabButton(symbol: "tray.fill", selected: model.tab == .shelf,
                       badge: shelf.items.count) { model.tab = .shelf }
+            if model.settings.timerTab {
+                TabButton(symbol: "timer", selected: model.tab == .timer) { model.tab = .timer }
+            }
+            if model.settings.clipboardTab {
+                TabButton(symbol: "doc.on.clipboard", selected: model.tab == .clipboard) { model.tab = .clipboard }
+            }
+            if model.settings.notesTab {
+                TabButton(symbol: "note.text", selected: model.tab == .notes) { model.tab = .notes }
+            }
+            if model.settings.toolsTab {
+                TabButton(symbol: "switch.2", selected: model.tab == .tools) { model.tab = .tools }
+            }
             if model.settings.mirrorEnabled {
                 TabButton(symbol: "camera.fill", selected: model.tab == .mirror) { model.tab = .mirror }
             }
@@ -251,6 +271,13 @@ private struct HUDContent: View {
                     .frame(width: earWidth - 16, alignment: .trailing)
             }
             .frame(height: height)
+            if case .notice(_, let title, let detail) = event {
+                Text(([title] + (detail.map { [$0] } ?? [])).joined(separator: "  ·  "))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .lineLimit(1)
+                    .frame(height: NotchViewModel.sneakPeekHeight, alignment: .top)
+            }
             if case .headphones(let battery) = event {
                 Text(([battery.name] + battery.levels.map { "\($0.label) \($0.percent)%" }).joined(separator: "  ·  "))
                     .font(.system(size: 11, weight: .medium))
@@ -274,6 +301,8 @@ private struct HUDContent: View {
             return state.onAC ? "bolt.fill" : BatteryBadge.symbol(for: state.percent)
         case .headphones:
             return "headphones"
+        case .notice(let symbol, _, _):
+            return symbol
         }
     }
 
@@ -287,6 +316,8 @@ private struct HUDContent: View {
             Text("\(state.percent)%")
                 .font(.system(size: 12, weight: .semibold).monospacedDigit())
                 .foregroundStyle(state.onAC ? .green : .white)
+        case .notice:
+            EmptyView()
         case .headphones(let battery):
             Text("\(battery.levels.map(\.percent).min() ?? 0)%")
                 .font(.system(size: 12, weight: .semibold).monospacedDigit())
@@ -339,17 +370,33 @@ private struct BatteryBadge: View {
 
 private struct CollapsedActivity: View {
     @ObservedObject var nowPlaying: NowPlayingController
+    @ObservedObject var timer: TimerModel
     let height: CGFloat
     let earWidth: CGFloat
 
     var body: some View {
-        let art = min(height - 10, earWidth - 4)
+        let art = min(height - 10, 32)
+        let playing = nowPlaying.track?.isPlaying == true
         HStack {
-            ArtworkView(image: nowPlaying.artwork, cornerRadius: art > 16 ? 5 : 3)
-                .frame(width: art, height: art)
+            if playing {
+                ArtworkView(image: nowPlaying.artwork, cornerRadius: art > 16 ? 5 : 3)
+                    .frame(width: art, height: art)
+            } else {
+                Image(systemName: timer.mode == .stopwatch ? "stopwatch.fill" : "timer")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(timer.mode == .pomodoro && timer.phase == .rest ? .green : .orange)
+            }
             Spacer()
-            SpectrumBars(isPlaying: nowPlaying.track?.isPlaying == true, tint: nowPlaying.tint)
-                .frame(width: art - 2, height: max(8, art - 6))
+            if timer.isRunning {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    Text(TimerModel.format(timer.value(at: context.date)))
+                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(.orange)
+                }
+            } else {
+                SpectrumBars(isPlaying: playing, tint: nowPlaying.tint)
+                    .frame(width: art - 2, height: max(8, art - 6))
+            }
         }
         .frame(height: height)
     }

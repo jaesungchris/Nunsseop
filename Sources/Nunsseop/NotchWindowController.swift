@@ -40,6 +40,8 @@ final class NotchWindowController {
     private var screenObserver: NSObjectProtocol?
     private var pillWidthObserver: AnyCancellable?
     private var updatesObserver: AnyCancellable?
+    private var clipboardObserver: AnyCancellable?
+    private var settingsObservers: [AnyCancellable] = []
 
     init() {
         let geometry = NotchGeometry.pickScreen(preferredName: AppSettings.shared.displayName).map { NotchGeometry(screen: $0, pillWidth: AppSettings.shared.pillWidth) }
@@ -69,6 +71,37 @@ final class NotchWindowController {
         installMonitors()
         model.nowPlaying.start()
         model.hud.start()
+        model.clipboard.start()
+        model.tools.start()
+        model.screenshots.onScreenshot = { [weak self] url in
+            guard let self else { return }
+            self.model.shelf.add([url])
+            self.model.hud.show(.notice(symbol: "camera.viewfinder", title: String(localized: "Screenshot added to the shelf"),
+                                        detail: url.lastPathComponent), duration: 3)
+        }
+        model.screenshots.start()
+        model.capsLock.onChange = { [weak self] on in
+            guard let self, self.model.settings.capsLockHUD else { return }
+            self.model.hud.show(.notice(symbol: on ? "capslock.fill" : "capslock",
+                                        title: on ? String(localized: "Caps Lock on") : String(localized: "Caps Lock off"),
+                                        detail: nil), duration: 1.2)
+        }
+        model.capsLock.start()
+        model.notifyServer.onNotify = { [weak self] title, message in
+            self?.model.hud.show(.notice(symbol: "sparkles", title: title, detail: message), duration: 6)
+        }
+        settingsObservers.append(model.settings.$screenshotsToShelf.sink { [weak self] in self?.model.screenshots.isEnabled = $0 })
+        settingsObservers.append(model.settings.$localNotifications.sink { [weak self] enabled in
+            if enabled { self?.model.notifyServer.start() } else { self?.model.notifyServer.stop() }
+        })
+        model.timer.onFinished = { [weak self] message in
+            self?.model.hud.show(.notice(symbol: "timer", title: message, detail: nil), duration: 4)
+        }
+        clipboardObserver = model.settings.$clipboardTab
+            .sink { [weak self] enabled in
+                self?.model.clipboard.isEnabled = enabled
+                if !enabled { self?.model.clipboard.clear() }
+            }
         updatesObserver = model.settings.$checkForUpdates
             .removeDuplicates()
             .sink { UpdateChecker.shared.startAutomaticChecks(enabled: $0) }

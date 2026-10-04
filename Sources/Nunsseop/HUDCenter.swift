@@ -5,6 +5,7 @@ enum HUDEvent: Equatable {
     case volume(Float, muted: Bool)
     case brightness(Float)
     case keyboard(Float)
+    case notice(symbol: String, title: String, detail: String?)
     case power(PowerState)
     case headphones(HeadphoneBattery)
 }
@@ -46,9 +47,20 @@ final class HUDCenter: ObservableObject {
 
         powerMonitor.onChange = { [weak self] state in
             guard let self else { return }
-            let pluggedChanged = self.power?.onAC != state.onAC
+            let previous = self.power
+            let pluggedChanged = previous?.onAC != state.onAC
             self.power = state
-            if pluggedChanged && self.settings.chargingHUDEnabled { self.show(.power(state), duration: 2.5) }
+            if pluggedChanged && self.settings.chargingHUDEnabled {
+                self.show(.power(state), duration: 2.5)
+            } else if self.settings.batteryAlerts, let previous {
+                if !state.onAC && previous.percent > 20 && state.percent <= 20 {
+                    self.show(.notice(symbol: "battery.25percent", title: String(localized: "Battery low"),
+                                      detail: "\(state.percent)%"), duration: 5)
+                } else if state.onAC && previous.percent < 100 && state.percent >= 100 {
+                    self.show(.notice(symbol: "battery.100percent.bolt", title: String(localized: "Fully charged"),
+                                      detail: nil), duration: 4)
+                }
+            }
         }
         powerMonitor.start()
         power = powerMonitor.state

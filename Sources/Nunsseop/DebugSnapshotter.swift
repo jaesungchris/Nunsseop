@@ -41,7 +41,14 @@ final class DebugSnapshotter {
     }
 
     private func capture(label: String, of target: NSView? = nil) {
-        guard let view = target ?? view, let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+        guard let view = target ?? view else { return }
+        // Always render at 2x so captures stay sharp on any display.
+        let scale: CGFloat = 2
+        guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width * scale),
+                                         pixelsHigh: Int(view.bounds.height * scale), bitsPerSample: 8,
+                                         samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { return }
+        rep.size = view.bounds.size
         view.cacheDisplay(in: view.bounds, to: rep)
         counter += 1
         let url = directory.appendingPathComponent(String(format: "%02d-%@.png", counter, label))

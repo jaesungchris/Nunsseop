@@ -35,6 +35,15 @@ final class AppSettings: ObservableObject {
     /// NSScreen.localizedName of the display to use; empty means automatic.
     @Published var displayName: String { didSet { defaults.set(displayName, forKey: "displayName") } }
     @Published var checkForUpdates: Bool { didSet { defaults.set(checkForUpdates, forKey: "checkForUpdates") } }
+    @Published var batteryAlerts: Bool { didSet { defaults.set(batteryAlerts, forKey: "batteryAlerts") } }
+    @Published var capsLockHUD: Bool { didSet { defaults.set(capsLockHUD, forKey: "capsLockHUD") } }
+    @Published var screenshotsToShelf: Bool { didSet { defaults.set(screenshotsToShelf, forKey: "screenshotsToShelf") } }
+    @Published var localNotifications: Bool { didSet { defaults.set(localNotifications, forKey: "localNotifications") } }
+    @Published var timerTab: Bool { didSet { defaults.set(timerTab, forKey: "timerTab") } }
+    /// Also controls whether copied text is recorded at all.
+    @Published var clipboardTab: Bool { didSet { defaults.set(clipboardTab, forKey: "clipboardTab") } }
+    @Published var notesTab: Bool { didSet { defaults.set(notesTab, forKey: "notesTab") } }
+    @Published var toolsTab: Bool { didSet { defaults.set(toolsTab, forKey: "toolsTab") } }
     @Published var mirrorEnabled: Bool { didSet { defaults.set(mirrorEnabled, forKey: "mirrorEnabled") } }
     /// AVCaptureDevice.uniqueID; empty means the system default camera.
     @Published var mirrorCameraID: String { didSet { defaults.set(mirrorCameraID, forKey: "mirrorCameraID") } }
@@ -61,6 +70,14 @@ final class AppSettings: ObservableObject {
             "calendarEnabled": true,
             "remindersEnabled": true,
             "mirrorEnabled": true,
+            "timerTab": true,
+            "batteryAlerts": true,
+            "capsLockHUD": true,
+            "screenshotsToShelf": true,
+            "localNotifications": true,
+            "clipboardTab": true,
+            "notesTab": true,
+            "toolsTab": true,
             "checkForUpdates": true,
             "displayName": "",
             "mirrorCameraID": "",
@@ -83,6 +100,14 @@ final class AppSettings: ObservableObject {
         calendarEnabled = defaults.bool(forKey: "calendarEnabled")
         remindersEnabled = defaults.bool(forKey: "remindersEnabled")
         mirrorEnabled = defaults.bool(forKey: "mirrorEnabled")
+        timerTab = defaults.bool(forKey: "timerTab")
+        batteryAlerts = defaults.bool(forKey: "batteryAlerts")
+        capsLockHUD = defaults.bool(forKey: "capsLockHUD")
+        screenshotsToShelf = defaults.bool(forKey: "screenshotsToShelf")
+        localNotifications = defaults.bool(forKey: "localNotifications")
+        clipboardTab = defaults.bool(forKey: "clipboardTab")
+        notesTab = defaults.bool(forKey: "notesTab")
+        toolsTab = defaults.bool(forKey: "toolsTab")
         checkForUpdates = defaults.bool(forKey: "checkForUpdates")
         displayName = defaults.string(forKey: "displayName") ?? ""
         mirrorCameraID = defaults.string(forKey: "mirrorCameraID") ?? ""

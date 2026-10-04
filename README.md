@@ -16,8 +16,13 @@
 - **Sneak peek.** When the track or play state changes, the title appears under the notch for a few seconds (or always, if you prefer).
 - **File shelf.** Drag files onto the notch to keep them and drag them back out when you need them. Drop files on the AirDrop tile to send them, or share them from the context menu. The shelf survives restarts.
 - **Calendar and reminders.** A week strip, the selected day's events and the reminders due by then, which you can tick off from the notch.
+- **Timer.** Countdown, Pomodoro and stopwatch, with the time left shown on the collapsed notch.
+- **Clipboard history.** Recent copied text, searchable, one click to copy again. Kept in memory only, and items password managers mark as concealed are skipped.
+- **Notes.** A scratchpad that is always one hover away.
+- **Tools.** Switch the audio output, mute the microphone, keep the Mac awake and eject external drives.
 - **Mirror.** A quick look at yourself through the camera of your choice.
-- **System HUDs.** Volume, brightness (built-in and DDC-capable external displays), keyboard backlight, power connected or disconnected, and headphone battery (left, right and case) appear in the notch. Nunsseop can take over the volume and brightness keys so the system HUD no longer appears.
+- **System HUDs.** Volume, brightness (built-in and DDC-capable external displays), keyboard backlight, power connected or disconnected, low battery and full charge, Caps Lock, and headphone battery (left, right and case) appear in the notch. New screenshots drop onto the shelf automatically.
+- **Claude Code notifications.** Claude Code (or any local script) can show a message in the notch when it needs you; see below. Nunsseop can take over the volume and brightness keys so the system HUD no longer appears.
 - **Gestures.** Swipe down on the notch to open it, up to close it, and left or right on the Home tab to skip tracks.
 - **Settings.** Which display to use, size, hover delay, sneak peek, launch at login, update checks and every HUD can be adjusted.
 - **Seven languages.** English, Korean, Japanese, Simplified Chinese, Spanish, German and French, following your macOS language.
@@ -64,6 +69,30 @@ cd Nunsseop
 
 `scripts/bundle.sh` builds the Swift package and wraps it in an app bundle with an ad-hoc signature.
 
+## Claude Code notifications
+
+Nunsseop listens on `127.0.0.1:47750` for notifications from tools on your Mac. Requests must carry the secret token stored in `~/Library/Application Support/Nunsseop/notify-token`.
+
+To get a notch notification whenever Claude Code is waiting for you, open Nunsseop's Settings, press **Copy Claude Code hook command**, and add it to `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "Notification": [
+      { "hooks": [{ "type": "command", "command": "<paste the copied command here>" }] }
+    ]
+  }
+}
+```
+
+Any script can do the same:
+
+```sh
+curl -X POST http://127.0.0.1:47750/notify \
+  -H "Authorization: Bearer $(cat ~/Library/Application\ Support/Nunsseop/notify-token)" \
+  -d '{"title": "Build", "message": "Finished in 42 s"}'
+```
+
 ## Permissions
 
 | Feature | Permission | When it is asked |
@@ -88,9 +117,10 @@ This relies on private API and on how macOS treats Apple-signed binaries, so a f
 Nunsseop does not collect or send any personal data. Its network use is limited to:
 
 - checking `api.github.com` for a newer release once a day (can be turned off in Settings);
+- accepting notifications from tools on your own Mac on `127.0.0.1:47750` (can be turned off in Settings);
 - downloading artwork over HTTPS from the image servers of known music and video services, only when the MediaRemote helper is unavailable.
 
-The camera preview is shown only while the Mirror tab is open and is never recorded.
+The camera preview is shown only while the Mirror tab is open and is never recorded. Clipboard history stays in memory and is cleared when Nunsseop quits.
 
 ## License
 
