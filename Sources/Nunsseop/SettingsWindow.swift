@@ -93,10 +93,8 @@ struct SettingsView: View {
                     Text("Allow Nunsseop in System Settings › Privacy & Security › Accessibility, then relaunch Nunsseop.")
                         .font(.caption).foregroundStyle(.orange)
                 }
-                if settings.replaceSystemHUD && !BuiltInBrightness.isAvailable {
-                    Text("The built-in display is off, so brightness keys stay with the system.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+                Text("Brightness keys adjust the display under the pointer, including external displays that support DDC. Keyboard backlight keys work on keyboards that have them.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Toggle("Show battery level in the header", isOn: $settings.batteryInHeader)
                 Toggle("Show when power is connected or disconnected", isOn: $settings.chargingHUDEnabled)
                 Toggle("Show headphone battery when they connect", isOn: $settings.headphoneHUDEnabled)

@@ -35,6 +35,7 @@ enum BuiltInBrightness {
 
 enum MediaKey {
     case volumeUp, volumeDown, mute, brightnessUp, brightnessDown
+    case keyboardUp, keyboardDown, keyboardToggle
 }
 
 /// Swallows the hardware volume/brightness keys so the system HUD does not
@@ -45,6 +46,7 @@ final class MediaKeyInterceptor {
     /// Keys are only taken while these return true; otherwise the system handles them.
     var handlesVolume: () -> Bool = { false }
     var handlesBrightness: () -> Bool = { false }
+    var handlesKeyboard: () -> Bool = { false }
 
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
@@ -102,6 +104,9 @@ final class MediaKeyInterceptor {
         case 7 where handlesVolume(): key = .mute
         case 2 where handlesBrightness(): key = .brightnessUp
         case 3 where handlesBrightness(): key = .brightnessDown
+        case 21 where handlesKeyboard(): key = .keyboardUp
+        case 22 where handlesKeyboard(): key = .keyboardDown
+        case 23 where handlesKeyboard(): key = .keyboardToggle
         default: return Unmanaged.passUnretained(event)
         }
         if isDown {

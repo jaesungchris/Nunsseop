@@ -4,6 +4,7 @@ import Combine
 enum HUDEvent: Equatable {
     case volume(Float, muted: Bool)
     case brightness(Float)
+    case keyboard(Float)
     case power(PowerState)
     case headphones(HeadphoneBattery)
 }
@@ -23,6 +24,11 @@ final class HUDCenter: ObservableObject {
     private var dismissWork: DispatchWorkItem?
     private var lastHeadphones: HeadphoneBattery?
     private var headphoneCheckInFlight = false
+    private let ddcQueue = DispatchQueue(label: "nunsseop.ddc")
+    /// External displays answering DDC, with the last known brightness as a fraction of their maximum.
+    private var externalDisplays: [(service: CFTypeRef, max: Int)] = []
+    private var externalLevel: Float?
+    private var lastKeyboardLevel: Float = 0.5
     private var cancellables: Set<AnyCancellable> = []
 
     init(settings: AppSettings) {
@@ -48,7 +54,15 @@ final class HUDCenter: ObservableObject {
 
         // The tap callback runs on the main run loop.
         interceptor.handlesVolume = { [weak self] in MainActor.assumeIsolated { self?.audio.canSetVolume ?? false } }
-        interceptor.handlesBrightness = { BuiltInBrightness.isAvailable }
+        interceptor.handlesBrightness = { [weak self] in
+            MainActor.assumeIsolated { BuiltInBrightness.isAvailable || self?.externalLevel != nil }
+        }
+        interceptor.handlesKeyboard = { KeyboardBacklight.isAvailable }
+        refreshExternalDisplays()
+        NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
+                                               object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshExternalDisplays() }
+        }
         interceptor.onKey = { [weak self] key, fine in self?.handle(key, fine: fine) }
         settings.$replaceSystemHUD
             .removeDuplicates()
@@ -62,6 +76,7 @@ final class HUDCenter: ObservableObject {
             let demo: HUDEvent = switch CommandLine.arguments[i + 1] {
             case "power": .power(PowerState(percent: 76, isCharging: true, onAC: true))
             case "brightness": .brightness(0.6)
+            case "keyboard": .keyboard(0.7)
             default: .headphones(HeadphoneBattery(name: "AirPods Pro", levels: [(String(localized: "Left"), 90), (String(localized: "Right"), 85), (String(localized: "Case"), 60)]))
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { self.show(demo, duration: 30) }
@@ -97,14 +112,63 @@ final class HUDCenter: ObservableObject {
         case .mute:
             audio.setMuted(!audio.isMuted)
         case .brightnessUp, .brightnessDown:
-            guard let level = BuiltInBrightness.level else { return }
-            let new = min(1, max(0, level + (key == .brightnessUp ? step : -step)))
-            BuiltInBrightness.set(new)
-            show(.brightness(new))
+            let delta = key == .brightnessUp ? step : -step
+            if BuiltInBrightness.isAvailable && (pointerIsOnBuiltInDisplay || externalLevel == nil),
+               let level = BuiltInBrightness.level {
+                let new = min(1, max(0, level + delta))
+                BuiltInBrightness.set(new)
+                show(.brightness(new))
+            } else if let level = externalLevel {
+                let new = min(1, max(0, level + delta))
+                externalLevel = new
+                show(.brightness(new))
+                let displays = externalDisplays
+                ddcQueue.async {
+                    for display in displays {
+                        ExternalBrightness.set(Int((Float(display.max) * new).rounded()), on: display.service)
+                    }
+                }
+            }
+        case .keyboardUp, .keyboardDown, .keyboardToggle:
+            guard let level = KeyboardBacklight.level else { return }
+            let new: Float
+            switch key {
+            case .keyboardUp: new = min(1, level + step)
+            case .keyboardDown: new = max(0, level - step)
+            default: new = level > 0 ? 0 : lastKeyboardLevel
+            }
+            if level > 0 { lastKeyboardLevel = level }
+            KeyboardBacklight.set(new)
+            show(.keyboard(new))
         }
         // Volume HUDs come from the audio listener; show one even if it stays silent at the limits.
         if key == .volumeUp || key == .volumeDown || key == .mute {
             show(.volume(audio.volume, muted: audio.isMuted))
+        }
+    }
+
+    private var pointerIsOnBuiltInDisplay: Bool {
+        let point = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { NSMouseInRect(point, $0.frame, false) }),
+              let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+        else { return false }
+        return CGDisplayIsBuiltin(id) != 0
+    }
+
+    /// Finds external displays that answer DDC and reads their brightness once.
+    private func refreshExternalDisplays() {
+        ddcQueue.async { [weak self] in
+            var found: [(service: CFTypeRef, max: Int)] = []
+            var level: Float?
+            for service in ExternalBrightness.services() {
+                guard let reading = ExternalBrightness.level(of: service) else { continue }
+                found.append((service, reading.max))
+                if level == nil { level = Float(reading.current) / Float(reading.max) }
+            }
+            DispatchQueue.main.async {
+                self?.externalDisplays = found
+                self?.externalLevel = level
+            }
         }
     }
 

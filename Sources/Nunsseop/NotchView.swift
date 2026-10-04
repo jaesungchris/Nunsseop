@@ -262,6 +262,8 @@ private struct HUDContent: View {
             return level < 0.34 ? "speaker.wave.1.fill" : level < 0.67 ? "speaker.wave.2.fill" : "speaker.wave.3.fill"
         case .brightness(let level):
             return level < 0.5 ? "sun.min.fill" : "sun.max.fill"
+        case .keyboard(let level):
+            return level == 0 ? "light.min" : "light.max"
         case .power(let state):
             return state.onAC ? "bolt.fill" : BatteryBadge.symbol(for: state.percent)
         case .headphones:
@@ -273,7 +275,7 @@ private struct HUDContent: View {
         switch event {
         case .volume(let level, let muted):
             LevelBar(value: muted ? 0 : Double(level))
-        case .brightness(let level):
+        case .brightness(let level), .keyboard(let level):
             LevelBar(value: Double(level))
         case .power(let state):
             Text("\(state.percent)%")
