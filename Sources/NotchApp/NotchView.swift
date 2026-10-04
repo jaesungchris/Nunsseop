@@ -478,15 +478,16 @@ private struct ArtworkView: View {
     let cornerRadius: CGFloat
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: cornerRadius).fill(.white.opacity(0.12))
-            if let image {
-                Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
-            } else {
-                Image(systemName: "music.note").foregroundStyle(.white.opacity(0.5))
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(.white.opacity(0.12))
+            .overlay {
+                if let image {
+                    Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
+                } else {
+                    Image(systemName: "music.note").foregroundStyle(.white.opacity(0.5))
+                }
             }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
 }
 

@@ -92,6 +92,10 @@ final class NowPlayingController: ObservableObject {
     private var timer: Timer?
     private var artworkIdentity: String?
     private var browserHit: BrowserMedia.Hit?
+    private let mediaRemote = MediaRemoteBridge()
+    /// True while the MediaRemote helper is delivering updates; the AppleScript
+    /// and browser sources are only polled when it is not.
+    private var mediaRemoteActive = false
 
     private struct PollResult {
         var candidates: [NowPlayingTrack] = []
@@ -105,6 +109,9 @@ final class NowPlayingController: ObservableObject {
             showDemoTrack()
             return
         }
+        mediaRemote.onUpdate = { [weak self] update in self?.apply(update) }
+        mediaRemote.onUnavailable = { [weak self] in self?.mediaRemoteActive = false }
+        mediaRemote.start()
         poll()
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.poll() }
@@ -112,6 +119,10 @@ final class NowPlayingController: ObservableObject {
     }
 
     func send(_ command: NowPlayingCommand) {
+        if mediaRemoteActive {
+            mediaRemote.send(command)
+            return
+        }
         guard let bundleID = track?.sourceBundleID else { return }
         let work: () -> Void
         if let source = sources.first(where: { $0.bundleID == bundleID }) {
@@ -132,6 +143,7 @@ final class NowPlayingController: ObservableObject {
     }
 
     private func poll() {
+        guard !mediaRemoteActive else { return }
         let isRunning = { (id: String) in !NSRunningApplication.runningApplications(withBundleIdentifier: id).isEmpty }
         let apps = sources.filter { isRunning($0.bundleID) }
         let browsers = BrowserMedia.all.filter { isRunning($0.bundleID) }
@@ -166,7 +178,28 @@ final class NowPlayingController: ObservableObject {
         }
     }
 
+    private func apply(_ update: MediaRemoteUpdate) {
+        mediaRemoteActive = true
+        browserHit = nil
+        needsAutomationPermission = false
+        browserNeedingJavaScript = nil
+        if track != update.track { track = update.track }
+        guard let newTrack = update.track else {
+            artwork = nil
+            artworkIdentity = nil
+            return
+        }
+        if newTrack.identity != artworkIdentity {
+            artworkIdentity = newTrack.identity
+            artwork = nil
+        }
+        if let data = update.artwork, let image = NSImage(data: data) {
+            artwork = image
+        }
+    }
+
     private func apply(_ result: PollResult) {
+        guard !mediaRemoteActive else { return }
         let newTrack = result.candidates.first(where: \.isPlaying) ?? result.candidates.first
         browserHit = newTrack.flatMap { result.browserHits[$0.sourceBundleID] }
         needsAutomationPermission = result.denied && newTrack == nil
