@@ -64,10 +64,6 @@ This relies on private API and on how macOS treats Apple-signed binaries, so a f
 
 Nunsseop has no network features of its own. When the MediaRemote helper is unavailable it downloads artwork images over HTTPS from the image servers of known music and video services, and it does not collect or send any data.
 
-## Credits
-
-Inspired by [boring.notch](https://github.com/TheBoredTeam/boring.notch). Nunsseop is an independent implementation and contains no boring.notch code.
-
 ## License
 
 [MIT](LICENSE)
