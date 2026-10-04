@@ -181,3 +181,7 @@
 "Tools" = "工具";
 "System" = "系统";
 "Apps" = "应用";
+
+/* Clamshell */
+"Show the notch when the MacBook lid is closed" = "合上 MacBook 时也显示刘海";
+"In clamshell mode the notch appears as a pill on your external display." = "合盖模式下，刘海会以小胶囊形式显示在外接显示器上。";

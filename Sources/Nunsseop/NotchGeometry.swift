@@ -1,9 +1,20 @@
 import AppKit
+import IOKit
 
 struct NotchGeometry: Equatable {
     var screenFrame: NSRect
     var collapsedSize: CGSize
     var hasNotch: Bool
+
+    /// True while a MacBook's lid is closed (clamshell mode with an external display).
+    static var lidIsClosed: Bool {
+        let root = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
+        guard root != 0 else { return false }
+        defer { IOObjectRelease(root) }
+        let value = IORegistryEntryCreateCFProperty(root, "AppleClamshellState" as CFString, kCFAllocatorDefault, 0)?
+            .takeRetainedValue()
+        return (value as? Bool) ?? false
+    }
 
     /// The display named in settings if it is connected; otherwise the built-in display
     /// with a camera housing, then the main screen.

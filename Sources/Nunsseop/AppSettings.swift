@@ -34,6 +34,8 @@ final class AppSettings: ObservableObject {
     @Published var remindersEnabled: Bool { didSet { defaults.set(remindersEnabled, forKey: "remindersEnabled") } }
     /// NSScreen.localizedName of the display to use; empty means automatic.
     @Published var displayName: String { didSet { defaults.set(displayName, forKey: "displayName") } }
+    /// Whether the notch shows on external displays while the MacBook lid is closed.
+    @Published var showInClamshell: Bool { didSet { defaults.set(showInClamshell, forKey: "showInClamshell") } }
     @Published var checkForUpdates: Bool { didSet { defaults.set(checkForUpdates, forKey: "checkForUpdates") } }
     @Published var batteryAlerts: Bool { didSet { defaults.set(batteryAlerts, forKey: "batteryAlerts") } }
     @Published var capsLockHUD: Bool { didSet { defaults.set(capsLockHUD, forKey: "capsLockHUD") } }
@@ -109,6 +111,7 @@ final class AppSettings: ObservableObject {
             "toolsTab": true,
             "checkForUpdates": true,
             "displayName": "",
+            "showInClamshell": true,
             "mirrorCameraID": "",
             "swipeToOpen": true,
             "swipeForTracks": true,
@@ -152,6 +155,7 @@ final class AppSettings: ObservableObject {
         toolsTab = defaults.bool(forKey: "toolsTab")
         checkForUpdates = defaults.bool(forKey: "checkForUpdates")
         displayName = defaults.string(forKey: "displayName") ?? ""
+        showInClamshell = defaults.bool(forKey: "showInClamshell")
         mirrorCameraID = defaults.string(forKey: "mirrorCameraID") ?? ""
         swipeToOpen = defaults.bool(forKey: "swipeToOpen")
         swipeForTracks = defaults.bool(forKey: "swipeForTracks")

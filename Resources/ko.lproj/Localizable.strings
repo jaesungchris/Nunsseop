@@ -206,3 +206,7 @@
 "Tools" = "도구";
 "System" = "시스템";
 "Apps" = "앱";
+
+/* Clamshell */
+"Show the notch when the MacBook lid is closed" = "MacBook 덮개를 닫았을 때도 노치 표시";
+"In clamshell mode the notch appears as a pill on your external display." = "클램쉘 모드에서는 외부 모니터 상단에 작은 막대로 나타납니다.";

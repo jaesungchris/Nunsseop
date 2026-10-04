@@ -181,3 +181,7 @@
 "Tools" = "Herramientas";
 "System" = "Sistema";
 "Apps" = "Apps";
+
+/* Clamshell */
+"Show the notch when the MacBook lid is closed" = "Mostrar el notch con la tapa del MacBook cerrada";
+"In clamshell mode the notch appears as a pill on your external display." = "En modo cerrado, el notch aparece como una píldora en la pantalla externa.";

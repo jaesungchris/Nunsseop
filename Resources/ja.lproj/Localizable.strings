@@ -181,3 +181,7 @@
 "Tools" = "ツール";
 "System" = "システム";
 "Apps" = "アプリ";
+
+/* Clamshell */
+"Show the notch when the MacBook lid is closed" = "MacBook の蓋を閉じているときもノッチを表示";
+"In clamshell mode the notch appears as a pill on your external display." = "クラムシェルモードでは外部ディスプレイの上部に小さなバーとして表示されます。";

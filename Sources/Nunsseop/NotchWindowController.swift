@@ -68,6 +68,7 @@ final class NotchWindowController {
     func show() {
         panel.setFrame(model.geometry.panelFrame, display: true)
         panel.orderFrontRegardless()
+        updateVisibility()
         installMonitors()
         model.nowPlaying.start()
         model.hud.start()
@@ -111,17 +112,17 @@ final class NotchWindowController {
         }
         settingsObservers.append(model.settings.$screenshotsToShelf.sink { [weak self] in self?.model.screenshots.isEnabled = $0 })
         settingsObservers.append(model.settings.$localNotifications.sink { [weak self] enabled in
-            if enabled { self?.model.notifyServer.start() } else { self?.model.notifyServer.stop() }
+            if enabled && self?.panel.isVisible == true { self?.model.notifyServer.start() } else { self?.model.notifyServer.stop() }
         })
         model.timer.onFinished = { [weak self] message in
             self?.model.hud.show(.notice(symbol: "timer", title: message, detail: nil), duration: 4)
         }
         clipboardObserver = model.settings.$clipboardTab
             .sink { [weak self] enabled in
-                if enabled { self?.model.clipboard.start() } else { self?.model.clipboard.stop() }
+                if enabled && self?.panel.isVisible == true { self?.model.clipboard.start() } else { self?.model.clipboard.stop() }
             }
         settingsObservers.append(model.settings.$capsLockHUD.sink { [weak self] enabled in
-            if enabled { self?.model.capsLock.start() } else { self?.model.capsLock.stop() }
+            if enabled && self?.panel.isVisible == true { self?.model.capsLock.start() } else { self?.model.capsLock.stop() }
         })
         updatesObserver = model.settings.$checkForUpdates
             .removeDuplicates()
@@ -133,8 +134,8 @@ final class NotchWindowController {
             MainActor.assumeIsolated { self?.relayout() }
         }
         pillWidthObserver = model.settings.$pillWidth.map { _ in () }
-            .merge(with: model.settings.$displayName.map { _ in () })
-            .dropFirst(2)
+            .merge(with: model.settings.$displayName.map { _ in () }, model.settings.$showInClamshell.map { _ in () })
+            .dropFirst(3)
             .sink { [weak self] _ in
                 DispatchQueue.main.async { self?.relayout() }
             }
@@ -144,6 +145,27 @@ final class NotchWindowController {
         guard let screen = NotchGeometry.pickScreen(preferredName: model.settings.displayName) else { return }
         model.geometry = NotchGeometry(screen: screen, pillWidth: model.settings.pillWidth)
         panel.setFrame(model.geometry.panelFrame, display: true)
+        updateVisibility()
+    }
+
+    /// Hides the notch in clamshell mode when the user turned that off.
+    private func updateVisibility() {
+        let hidden = !model.settings.showInClamshell && NotchGeometry.lidIsClosed
+        let settings = model.settings
+        if hidden {
+            model.collapse()
+            panel.ignoresMouseEvents = true
+            panel.orderOut(nil)
+            // Nothing can be shown while hidden, so stop the watchers that only feed the notch.
+            model.clipboard.stop()
+            model.capsLock.stop()
+            model.notifyServer.stop()
+        } else if !panel.isVisible {
+            panel.orderFrontRegardless()
+            if settings.clipboardTab { model.clipboard.start() }
+            if settings.capsLockHUD { model.capsLock.start() }
+            if settings.localNotifications { model.notifyServer.start() }
+        }
     }
 
     private func installMonitors() {
@@ -206,6 +228,7 @@ final class NotchWindowController {
     }
 
     private func pointerMoved() {
+        guard panel.isVisible else { return }
         let point = NSEvent.mouseLocation
         let collapsedRect = model.geometry.shapeRect(size: model.collapsedSize)
         let expandedRect = model.geometry.shapeRect(size: model.expandedSize)

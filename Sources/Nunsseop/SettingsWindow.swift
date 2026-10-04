@@ -100,6 +100,9 @@ private struct GeneralPane: View {
                         Text(settings.displayName).tag(settings.displayName)
                     }
                 }
+                Toggle("Show the notch when the MacBook lid is closed", isOn: $settings.showInClamshell)
+                Text("In clamshell mode the notch appears as a pill on your external display.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Size") {
                 SliderRow(title: "Expanded width", value: $settings.expandedWidth,
