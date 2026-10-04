@@ -25,15 +25,17 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.5.1</string>
+    <string>0.6.0</string>
     <key>CFBundleVersion</key>
-    <string>7</string>
+    <string>8</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSAppleEventsUsageDescription</key>
     <string>Shows what Music, Spotify and your browsers are playing and controls playback.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Records microphone audio with a screen recording when you turn that on in Settings.</string>
     <key>NSCameraUsageDescription</key>
     <string>Shows your camera in the notch's Mirror tab. Nothing is recorded or sent.</string>
     <key>NSCalendarsFullAccessUsageDescription</key>

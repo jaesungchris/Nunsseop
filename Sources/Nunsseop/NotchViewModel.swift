@@ -2,7 +2,7 @@ import AppKit
 import Combine
 
 enum NotchTab: String, CaseIterable, Identifiable {
-    case home, shelf, timer, clipboard, notes, tools, system, apps, mirror
+    case home, shelf, timer, clipboard, notes, tools, system, apps, search, emoji, mirror
 
     var id: String { rawValue }
 
@@ -16,6 +16,8 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .tools: return "switch.2"
         case .system: return "cpu"
         case .apps: return "square.grid.3x3.fill"
+        case .search: return "magnifyingglass"
+        case .emoji: return "face.smiling"
         case .mirror: return "camera.fill"
         }
     }
@@ -30,6 +32,8 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .tools: return String(localized: "Tools")
         case .system: return String(localized: "System")
         case .apps: return String(localized: "Apps")
+        case .search: return String(localized: "Search")
+        case .emoji: return String(localized: "Emoji")
         case .mirror: return String(localized: "Mirror")
         }
     }
@@ -61,6 +65,13 @@ final class NotchViewModel: ObservableObject {
     let lyrics = LyricsModel()
     let weather = WeatherModel()
     let downloads = DownloadWatcher()
+    let peripherals = PeripheralMonitor()
+    let privacy = PrivacyMonitor()
+    let emoji = EmojiModel()
+    let search = QuickSearchModel()
+    let recorder = ScreenRecorder()
+    /// Set when opened by the hotkey; the notch then stays open until the pointer visits it or Escape is pressed.
+    @Published var pinned = false
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
 
@@ -73,6 +84,9 @@ final class NotchViewModel: ObservableObject {
         Publishers.CombineLatest4(nowPlaying.$track.map { $0?.isPlaying == true }, timer.$anchor.map { $0 != nil },
                                   settings.$collapsedMusic, settings.$collapsedTimer)
             .map { music, timer, showMusic, showTimer in (music && showMusic) || (timer && showTimer) }
+            .combineLatest(recorder.$startedAt.map { $0 != nil },
+                           privacy.$cameraInUse.combineLatest(privacy.$micInUse, settings.$privacyIndicator).map { ($0 || $1) && $2 })
+            .map { $0 || $1 || $2 }
             .removeDuplicates()
             .sink { [weak self] in self?.showsLiveActivity = $0 }
             .store(in: &cancellables)
@@ -80,6 +94,12 @@ final class NotchViewModel: ObservableObject {
             .sink { [weak self] in self?.lyrics.update(for: $0) }
             .store(in: &cancellables)
         lyrics.objectWillChange
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        recorder.objectWillChange
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        privacy.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
         timer.objectWillChange
@@ -151,7 +171,8 @@ final class NotchViewModel: ObservableObject {
         let height = geometry.collapsedSize.height
         let base = settings.compactLiveActivity ? height * 0.7 : height + 6
         // Room for "12:34" when a timer is running.
-        return timer.isRunning && settings.collapsedTimer ? max(base, 50) : base
+        let needsText = (timer.isRunning && settings.collapsedTimer) || recorder.isRecording
+        return needsText ? max(base, 50) : base
     }
 
     var currentSize: CGSize {
@@ -170,6 +191,7 @@ final class NotchViewModel: ObservableObject {
     func collapse() {
         guard isExpanded else { return }
         isExpanded = false
+        pinned = false
         // The camera must only start from an explicit click on the Mirror tab.
         if tab == .mirror { tab = .home }
     }

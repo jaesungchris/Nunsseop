@@ -4,3 +4,4 @@
 "NSCameraUsageDescription" = "Muestra tu cámara en la pestaña Espejo del notch. No se graba ni se envía nada.";
 "NSDesktopFolderUsageDescription" = "Detecta capturas nuevas para añadirlas al estante.";
 "NSDownloadsFolderUsageDescription" = "Avisa cuando las descargas empiezan y terminan.";
+"NSMicrophoneUsageDescription" = "Graba el audio del micrófono con la grabación de pantalla si lo activas en Ajustes.";

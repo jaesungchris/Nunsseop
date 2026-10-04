@@ -43,6 +43,14 @@ final class AppSettings: ObservableObject {
     @Published var localNotifications: Bool { didSet { defaults.set(localNotifications, forKey: "localNotifications") } }
     @Published var timerTab: Bool { didSet { defaults.set(timerTab, forKey: "timerTab") } }
     @Published var shelfTab: Bool { didSet { defaults.set(shelfTab, forKey: "shelfTab") } }
+    @Published var searchTab: Bool { didSet { defaults.set(searchTab, forKey: "searchTab") } }
+    @Published var emojiTab: Bool { didSet { defaults.set(emojiTab, forKey: "emojiTab") } }
+    /// ⌃⌥Space opens the Search tab from anywhere.
+    @Published var searchHotkey: Bool { didSet { defaults.set(searchHotkey, forKey: "searchHotkey") } }
+    @Published var peripheralBatteries: Bool { didSet { defaults.set(peripheralBatteries, forKey: "peripheralBatteries") } }
+    /// Shows when any app uses the camera or microphone.
+    @Published var privacyIndicator: Bool { didSet { defaults.set(privacyIndicator, forKey: "privacyIndicator") } }
+    @Published var recordAudio: Bool { didSet { defaults.set(recordAudio, forKey: "recordAudio") } }
     /// Order of the tabs after Home, as NotchTab raw values.
     @Published var tabOrder: [String] { didSet { defaults.set(tabOrder, forKey: "tabOrder") } }
     @Published var headerDate: Bool { didSet { defaults.set(headerDate, forKey: "headerDate") } }
@@ -90,6 +98,12 @@ final class AppSettings: ObservableObject {
             "mirrorEnabled": true,
             "timerTab": true,
             "shelfTab": true,
+            "searchTab": true,
+            "emojiTab": true,
+            "searchHotkey": true,
+            "peripheralBatteries": true,
+            "privacyIndicator": true,
+            "recordAudio": false,
             "tabOrder": NotchTab.allCases.filter { $0 != .home }.map(\.rawValue),
             "headerDate": true,
             "headerWeather": true,
@@ -134,6 +148,12 @@ final class AppSettings: ObservableObject {
         mirrorEnabled = defaults.bool(forKey: "mirrorEnabled")
         timerTab = defaults.bool(forKey: "timerTab")
         shelfTab = defaults.bool(forKey: "shelfTab")
+        searchTab = defaults.bool(forKey: "searchTab")
+        emojiTab = defaults.bool(forKey: "emojiTab")
+        searchHotkey = defaults.bool(forKey: "searchHotkey")
+        peripheralBatteries = defaults.bool(forKey: "peripheralBatteries")
+        privacyIndicator = defaults.bool(forKey: "privacyIndicator")
+        recordAudio = defaults.bool(forKey: "recordAudio")
         tabOrder = defaults.stringArray(forKey: "tabOrder") ?? []
         headerDate = defaults.bool(forKey: "headerDate")
         headerWeather = defaults.bool(forKey: "headerWeather")
@@ -180,6 +200,8 @@ final class AppSettings: ObservableObject {
         case .tools: return toolsTab
         case .system: return systemTab
         case .apps: return appsTab
+        case .search: return searchTab
+        case .emoji: return emojiTab
         case .mirror: return mirrorEnabled
         }
     }
@@ -194,6 +216,8 @@ final class AppSettings: ObservableObject {
         case .tools: toolsTab = visible
         case .system: systemTab = visible
         case .apps: appsTab = visible
+        case .search: searchTab = visible
+        case .emoji: emojiTab = visible
         case .mirror: mirrorEnabled = visible
         }
     }

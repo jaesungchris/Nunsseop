@@ -4,3 +4,4 @@
 "NSCameraUsageDescription" = "ノッチのミラータブにカメラを表示します。録画や送信はしません。";
 "NSDesktopFolderUsageDescription" = "新しいスクリーンショットをシェルフに追加するために確認します。";
 "NSDownloadsFolderUsageDescription" = "ダウンロードの開始と完了をお知らせします。";
+"NSMicrophoneUsageDescription" = "設定でオンにした場合、画面収録にマイクの音声を録音します。";

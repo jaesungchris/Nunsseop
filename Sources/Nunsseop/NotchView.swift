@@ -45,11 +45,15 @@ struct NotchView: View {
                             case .notes:
                                 NotesTab(notes: model.notes)
                             case .tools:
-                                ToolsTab(tools: model.tools)
+                                ToolsTab(tools: model.tools, recorder: model.recorder, recordAudio: model.settings.recordAudio)
                             case .system:
-                                SystemTab(stats: model.stats)
+                                SystemTab(stats: model.stats, peripherals: model.settings.peripheralBatteries ? model.peripherals : nil)
                             case .apps:
                                 AppsTab(launcher: model.launcher)
+                            case .search:
+                                SearchTab(model: model.search)
+                            case .emoji:
+                                EmojiTab(model: model.emoji)
                             case .mirror:
                                 MirrorTab(mirror: model.mirror, deviceID: model.settings.mirrorCameraID)
                             }
@@ -67,7 +71,9 @@ struct NotchView: View {
                 } else if model.showsLiveActivity || model.showsSneakPeek {
                     VStack(spacing: 0) {
                         if model.showsLiveActivity {
-                            CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, height: notchHeight, earWidth: model.earWidth,
+                            CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, recorder: model.recorder,
+                                              privacy: model.settings.privacyIndicator ? model.privacy : nil,
+                                              height: notchHeight, earWidth: model.earWidth,
                                               showsMusic: model.settings.collapsedMusic, showsTimer: model.settings.collapsedTimer)
                         } else {
                             Color.clear.frame(height: notchHeight)
@@ -377,6 +383,8 @@ private struct BatteryBadge: View {
 private struct CollapsedActivity: View {
     @ObservedObject var nowPlaying: NowPlayingController
     @ObservedObject var timer: TimerModel
+    @ObservedObject var recorder: ScreenRecorder
+    let privacy: PrivacyMonitor?
     let height: CGFloat
     let earWidth: CGFloat
     let showsMusic: Bool
@@ -389,13 +397,32 @@ private struct CollapsedActivity: View {
             if playing {
                 ArtworkView(image: nowPlaying.artwork, cornerRadius: art > 16 ? 5 : 3)
                     .frame(width: art, height: art)
+            } else if recorder.isRecording {
+                Circle().fill(.red).frame(width: 8, height: 8)
+            } else if let privacy, privacy.cameraInUse || privacy.micInUse {
+                HStack(spacing: 3) {
+                    if privacy.cameraInUse { Image(systemName: "video.fill").foregroundStyle(.green) }
+                    if privacy.micInUse { Image(systemName: "mic.fill").foregroundStyle(.orange) }
+                }
+                .font(.system(size: 10, weight: .semibold))
             } else {
                 Image(systemName: timer.mode == .stopwatch ? "stopwatch.fill" : "timer")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(timer.mode == .pomodoro && timer.phase == .rest ? .green : .orange)
             }
             Spacer()
-            if showsTimer && timer.isRunning {
+            if let started = recorder.startedAt {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    Text(TimerModel.format(context.date.timeIntervalSince(started)))
+                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(.red)
+                }
+            } else if let privacy, (privacy.cameraInUse || privacy.micInUse), !(showsTimer && timer.isRunning), playing {
+                HStack(spacing: 3) {
+                    if privacy.cameraInUse { Circle().fill(.green).frame(width: 6, height: 6) }
+                    if privacy.micInUse { Circle().fill(.orange).frame(width: 6, height: 6) }
+                }
+            } else if showsTimer && timer.isRunning {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(TimerModel.format(timer.value(at: context.date)))
                         .font(.system(size: 11, weight: .semibold).monospacedDigit())

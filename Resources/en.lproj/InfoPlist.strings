@@ -4,3 +4,4 @@
 "NSCameraUsageDescription" = "Shows your camera in the notch's Mirror tab. Nothing is recorded or sent.";
 "NSDesktopFolderUsageDescription" = "Watches for new screenshots so they can be added to the shelf.";
 "NSDownloadsFolderUsageDescription" = "Shows when downloads start and finish.";
+"NSMicrophoneUsageDescription" = "Records microphone audio with a screen recording when you turn that on in Settings.";

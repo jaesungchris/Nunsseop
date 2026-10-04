@@ -42,6 +42,25 @@ final class NotchWindowController {
     private var updatesObserver: AnyCancellable?
     private var clipboardObserver: AnyCancellable?
     private var settingsObservers: [AnyCancellable] = []
+    private var hotKey: GlobalHotKey?
+    private var resignObserver: NSObjectProtocol?
+
+    /// Opens the notch on the Search tab with the keyboard focus in the search field.
+    private func openSearch() {
+        guard panel.isVisible else { return }
+        if model.isExpanded && model.tab == .search {
+            model.collapse()
+            panel.ignoresMouseEvents = true
+            return
+        }
+        if !model.settings.searchTab { model.settings.searchTab = true }
+        model.tab = .search
+        model.expand()
+        model.pinned = true
+        panel.ignoresMouseEvents = false
+        panel.makeKey()
+        model.search.focusToken += 1
+    }
 
     init() {
         let geometry = NotchGeometry.pickScreen(preferredName: AppSettings.shared.displayName).map { NotchGeometry(screen: $0, pillWidth: AppSettings.shared.pillWidth) }
@@ -99,6 +118,46 @@ final class NotchWindowController {
             }
         }
         model.downloads.start()
+        model.peripherals.onLow = { [weak self] device in
+            self?.model.hud.show(.notice(symbol: device.symbol, title: String(localized: "Low battery"),
+                                         detail: "\(device.name) \(device.percent)%"), duration: 5)
+        }
+        settingsObservers.append(model.settings.$peripheralBatteries.sink { [weak self] enabled in
+            if enabled { self?.model.peripherals.start() } else { self?.model.peripherals.stop() }
+        })
+        model.privacy.onChange = { [weak self] camera, mic in
+            guard let self, self.model.settings.privacyIndicator else { return }
+            let title = camera && mic ? String(localized: "Camera and microphone in use")
+                : camera ? String(localized: "Camera in use") : String(localized: "Microphone in use")
+            self.model.hud.show(.notice(symbol: camera ? "video.fill" : "mic.fill", title: title, detail: nil), duration: 3)
+        }
+        settingsObservers.append(model.settings.$privacyIndicator.sink { [weak self] enabled in
+            if enabled { self?.model.privacy.start() } else { self?.model.privacy.stop() }
+        })
+        model.recorder.onFinished = { [weak self] url in
+            guard let self, let url else { return }
+            self.model.shelf.add([url])
+            self.model.hud.show(.notice(symbol: "record.circle", title: String(localized: "Recording saved"),
+                                        detail: url.lastPathComponent), duration: 4)
+        }
+        resignObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: panel,
+                                                                queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.model.pinned else { return }
+                self.model.collapse()
+                self.panel.ignoresMouseEvents = true
+            }
+        }
+        settingsObservers.append(model.settings.$searchHotkey.sink { [weak self] enabled in
+            self?.hotKey = enabled ? GlobalHotKey.controlOptionSpace { [weak self] in self?.openSearch() } : nil
+        })
+        if let keys = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
+            guard event.keyCode == 53, let self else { return event }
+            MainActor.assumeIsolated { self.model.collapse(); self.panel.ignoresMouseEvents = true }
+            return nil
+        }) {
+            monitors.append(keys)
+        }
         settingsObservers.append(model.settings.$weatherCity.combineLatest(model.settings.$headerWeather)
             .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
             .sink { [weak self] city, shown in self?.model.weather.setCity(shown ? city : "") })
@@ -235,6 +294,11 @@ final class NotchWindowController {
 
         if model.isExpanded {
             let inside = expandedRect.insetBy(dx: -6, dy: -6).contains(point)
+            if model.pinned {
+                if inside { model.pinned = false }
+                panel.ignoresMouseEvents = false
+                return
+            }
             panel.ignoresMouseEvents = !inside
             if inside {
                 collapseWork?.cancel()

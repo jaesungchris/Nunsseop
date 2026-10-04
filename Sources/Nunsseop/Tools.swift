@@ -163,6 +163,8 @@ final class ToolsModel: ObservableObject {
 
 struct ToolsTab: View {
     @ObservedObject var tools: ToolsModel
+    @ObservedObject var recorder: ScreenRecorder
+    let recordAudio: Bool
 
     var body: some View {
         HStack(spacing: 10) {
@@ -193,6 +195,18 @@ struct ToolsTab: View {
                      active: tools.keepAwake) {
                 Text(tools.keepAwake ? String(localized: "On") : String(localized: "Off")).font(.system(size: 11))
             } action: { tools.toggleKeepAwake() }
+
+            ToolTile(symbol: recorder.isRecording ? "stop.circle.fill" : "record.circle", title: String(localized: "Record screen"),
+                     active: recorder.isRecording) {
+                if let started = recorder.startedAt {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text(TimerModel.format(context.date.timeIntervalSince(started))).font(.system(size: 11).monospacedDigit())
+                    }
+                } else {
+                    Text(ScreenRecorder.hasPermission ? String(localized: "Start") : String(localized: "Needs permission"))
+                        .font(.system(size: 11))
+                }
+            } action: { recorder.toggle(withAudio: recordAudio) }
 
             VStack(alignment: .leading, spacing: 6) {
                 Label("Drives", systemImage: "externaldrive.fill").font(.system(size: 11, weight: .semibold))
@@ -239,7 +253,7 @@ private struct ToolTile<Detail: View>: View {
             detail.foregroundStyle(.white.opacity(0.6))
         }
         .padding(12)
-        .frame(width: 112, alignment: .leading)
+        .frame(width: 98, alignment: .leading)
         .frame(maxHeight: .infinity)
         .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.06)))
         .contentShape(RoundedRectangle(cornerRadius: 14))

@@ -4,3 +4,4 @@
 "NSCameraUsageDescription" = "Zeigt deine Kamera im Spiegel-Tab der Notch. Es wird nichts aufgenommen oder gesendet.";
 "NSDesktopFolderUsageDescription" = "Erkennt neue Bildschirmfotos, um sie zur Ablage hinzuzufügen.";
 "NSDownloadsFolderUsageDescription" = "Zeigt an, wenn Downloads beginnen und enden.";
+"NSMicrophoneUsageDescription" = "Nimmt Mikrofonton zur Bildschirmaufnahme auf, wenn du das in den Einstellungen aktivierst.";

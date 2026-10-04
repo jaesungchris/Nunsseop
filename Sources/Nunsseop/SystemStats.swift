@@ -100,6 +100,7 @@ final class SystemStats: ObservableObject {
 
 struct SystemTab: View {
     @ObservedObject var stats: SystemStats
+    let peripherals: PeripheralMonitor?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -110,13 +111,18 @@ struct SystemTab: View {
             Gauge(title: String(localized: "Disk"),
                   value: stats.diskTotal > 0 ? 1 - Double(stats.diskFree) / Double(stats.diskTotal) : 0,
                   caption: String(localized: "\(Self.bytes(stats.diskFree)) free"), tint: .purple)
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Network").font(.system(size: 12, weight: .semibold))
-                Label(Self.bytes(Int64(stats.downloadRate)) + "/s", systemImage: "arrow.down")
-                    .font(.system(size: 13, weight: .medium).monospacedDigit())
-                Label(Self.bytes(Int64(stats.uploadRate)) + "/s", systemImage: "arrow.up")
-                    .font(.system(size: 13, weight: .medium).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.7))
+                HStack(spacing: 10) {
+                    Label(Self.bytes(Int64(stats.downloadRate)) + "/s", systemImage: "arrow.down")
+                    Label(Self.bytes(Int64(stats.uploadRate)) + "/s", systemImage: "arrow.up")
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                .font(.system(size: 11, weight: .medium).monospacedDigit())
+                if let peripherals {
+                    Divider().overlay(.white.opacity(0.15)).padding(.vertical, 2)
+                    DeviceList(monitor: peripherals)
+                }
             }
             .padding(14)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -129,6 +135,29 @@ struct SystemTab: View {
 
     static func bytes(_ value: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: max(0, value), countStyle: .memory)
+    }
+}
+
+private struct DeviceList: View {
+    @ObservedObject var monitor: PeripheralMonitor
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Devices").font(.system(size: 12, weight: .semibold))
+            if monitor.devices.isEmpty {
+                Text("No battery devices connected").font(.system(size: 10)).foregroundStyle(.white.opacity(0.45))
+            }
+            ForEach(monitor.devices) { device in
+                HStack(spacing: 6) {
+                    Image(systemName: device.symbol).font(.system(size: 10)).frame(width: 14)
+                    Text(device.name).font(.system(size: 10)).lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text("\(device.percent)%").font(.system(size: 10, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(device.percent <= 15 ? .red : .white)
+                }
+            }
+        }
+        .onAppear { monitor.refresh() }
     }
 }
 

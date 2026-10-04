@@ -219,6 +219,10 @@ private struct AlertsPane: View {
                 Toggle("Warn at 20% battery and when fully charged", isOn: $settings.batteryAlerts)
                 Toggle("Show headphone battery when they connect", isOn: $settings.headphoneHUDEnabled)
                 Toggle("Show Caps Lock changes", isOn: $settings.capsLockHUD)
+                Toggle("Show mouse and keyboard batteries and warn when low", isOn: $settings.peripheralBatteries)
+            }
+            Section("Privacy") {
+                Toggle("Show when an app uses the camera or microphone", isOn: $settings.privacyIndicator)
             }
             Section("Files") {
                 Toggle("Add new screenshots to the shelf", isOn: $settings.screenshotsToShelf)
@@ -252,6 +256,14 @@ private struct ServicesPane: View {
             Section("Weather") {
                 TextField("Weather city (e.g. Seoul)", text: $settings.weatherCity)
                 Text("Weather comes from Open-Meteo. Leave the city empty to hide it.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Quick search") {
+                Toggle("Open Search with ⌃⌥Space from anywhere", isOn: $settings.searchHotkey)
+            }
+            Section("Screen recording") {
+                Toggle("Record microphone audio", isOn: $settings.recordAudio)
+                Text("Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Mirror") {

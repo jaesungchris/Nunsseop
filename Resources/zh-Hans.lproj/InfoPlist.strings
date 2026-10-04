@@ -4,3 +4,4 @@
 "NSCameraUsageDescription" = "在刘海的镜子标签中显示相机画面。不会录制或发送。";
 "NSDesktopFolderUsageDescription" = "检查新截图以便加入架子。";
 "NSDownloadsFolderUsageDescription" = "在下载开始和完成时提示。";
+"NSMicrophoneUsageDescription" = "在设置中开启后，录制屏幕时一并录制麦克风声音。";

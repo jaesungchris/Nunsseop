@@ -4,3 +4,4 @@
 "NSCameraUsageDescription" = "Affiche votre caméra dans l’onglet Miroir de l’encoche. Rien n’est enregistré ni envoyé.";
 "NSDesktopFolderUsageDescription" = "Détecte les nouvelles captures pour les ajouter à l’étagère.";
 "NSDownloadsFolderUsageDescription" = "Indique le début et la fin des téléchargements.";
+"NSMicrophoneUsageDescription" = "Enregistre le son du micro avec l’enregistrement de l’écran si vous l’activez dans les réglages.";

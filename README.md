@@ -20,8 +20,11 @@
 - **Timer.** Countdown, Pomodoro and stopwatch, with the time left shown on the collapsed notch.
 - **Clipboard history.** Recent copied text, searchable, one click to copy again. Kept in memory only, and items password managers mark as concealed are skipped.
 - **Notes.** A scratchpad that is always one hover away.
-- **Tools.** Switch the audio output, mute the microphone, keep the Mac awake and eject external drives.
-- **System.** CPU, memory, disk and network at a glance.
+- **Tools.** Switch the audio output, mute the microphone, keep the Mac awake, record the screen (with a timer on the collapsed notch) and eject external drives.
+- **System.** CPU, memory, disk and network at a glance, plus the battery of your mouse, keyboard and trackpad, with a warning when one runs low.
+- **Quick search.** Press ⌃⌥Space anywhere to open apps, search the web, or work out sums like `12*(3+4)` and copy the result.
+- **Emoji picker.** Every emoji, searchable by name, with your recent picks first. One click copies it.
+- **Privacy indicator.** A camera or microphone dot on the collapsed notch while any app is using them.
 - **Apps.** Launch anything in your Dock from the notch.
 - **Weather.** Current conditions for your city in the header, from [Open-Meteo](https://open-meteo.com).
 - **Downloads.** A heads-up when a download starts and finishes, optionally added to the shelf.
