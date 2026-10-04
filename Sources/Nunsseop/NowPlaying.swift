@@ -124,6 +124,7 @@ final class NowPlayingController: ObservableObject {
     }
 
     func send(_ command: NowPlayingCommand) {
+        if case .seek(let seconds) = command, !seconds.isFinite { return }
         if case .seek(let seconds) = command, var current = track {
             current.position = seconds
             current.fetchedAt = Date()

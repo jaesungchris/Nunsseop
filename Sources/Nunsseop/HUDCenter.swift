@@ -29,6 +29,7 @@ final class HUDCenter: ObservableObject {
     private var externalDisplays: [(service: CFTypeRef, max: Int)] = []
     private var externalLevel: Float?
     private var lastKeyboardLevel: Float = 0.5
+    private var pendingExternalLevel: Float?
     private var cancellables: Set<AnyCancellable> = []
 
     init(settings: AppSettings) {
@@ -55,7 +56,7 @@ final class HUDCenter: ObservableObject {
         // The tap callback runs on the main run loop.
         interceptor.handlesVolume = { [weak self] in MainActor.assumeIsolated { self?.audio.canSetVolume ?? false } }
         interceptor.handlesBrightness = { [weak self] in
-            MainActor.assumeIsolated { BuiltInBrightness.isAvailable || self?.externalLevel != nil }
+            MainActor.assumeIsolated { BuiltInBrightness.isAvailable || self?.externalTarget != nil }
         }
         interceptor.handlesKeyboard = { KeyboardBacklight.isAvailable }
         refreshExternalDisplays()
@@ -113,19 +114,28 @@ final class HUDCenter: ObservableObject {
             audio.setMuted(!audio.isMuted)
         case .brightnessUp, .brightnessDown:
             let delta = key == .brightnessUp ? step : -step
-            if BuiltInBrightness.isAvailable && (pointerIsOnBuiltInDisplay || externalLevel == nil),
+            if BuiltInBrightness.isAvailable && (pointerIsOnBuiltInDisplay || externalTarget == nil),
                let level = BuiltInBrightness.level {
                 let new = min(1, max(0, level + delta))
                 BuiltInBrightness.set(new)
                 show(.brightness(new))
-            } else if let level = externalLevel {
+            } else if let level = externalLevel, let display = externalTarget {
                 let new = min(1, max(0, level + delta))
                 externalLevel = new
                 show(.brightness(new))
-                let displays = externalDisplays
-                ddcQueue.async {
-                    for display in displays {
-                        ExternalBrightness.set(Int((Float(display.max) * new).rounded()), on: display.service)
+                // Coalesce key repeats: only the latest value is written.
+                let alreadyQueued = pendingExternalLevel != nil
+                pendingExternalLevel = new
+                guard !alreadyQueued else { return }
+                ddcQueue.async { [weak self] in
+                    let value = DispatchQueue.main.sync { () -> Float? in
+                        MainActor.assumeIsolated {
+                            defer { self?.pendingExternalLevel = nil }
+                            return self?.pendingExternalLevel
+                        }
+                    }
+                    if let value {
+                        ExternalBrightness.set(Int((Float(display.max) * value).rounded()), on: display.service)
                     }
                 }
             }
@@ -145,6 +155,17 @@ final class HUDCenter: ObservableObject {
         if key == .volumeUp || key == .volumeDown || key == .mute {
             show(.volume(audio.volume, muted: audio.isMuted))
         }
+    }
+
+    /// DDC services can't be matched to screens here, so external brightness is only
+    /// handled when exactly one external screen is connected and it answers DDC.
+    private var externalTarget: (service: CFTypeRef, max: Int)? {
+        let externalScreens = NSScreen.screens.filter { screen in
+            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else { return false }
+            return CGDisplayIsBuiltin(id) == 0
+        }
+        guard externalScreens.count <= 1, externalDisplays.count == 1 else { return nil }
+        return externalDisplays[0]
     }
 
     private var pointerIsOnBuiltInDisplay: Bool {

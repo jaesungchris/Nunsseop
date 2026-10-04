@@ -41,6 +41,10 @@ final class NotchViewModel: ObservableObject {
         hud.$event
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
+        settings.$mirrorEnabled
+            .filter { !$0 }
+            .sink { [weak self] _ in if self?.tab == .mirror { self?.tab = .home } }
+            .store(in: &cancellables)
         settings.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
@@ -103,5 +107,7 @@ final class NotchViewModel: ObservableObject {
     func collapse() {
         guard isExpanded else { return }
         isExpanded = false
+        // The camera must only start from an explicit click on the Mirror tab.
+        if tab == .mirror { tab = .home }
     }
 }

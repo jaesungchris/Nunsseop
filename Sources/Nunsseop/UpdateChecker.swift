@@ -57,7 +57,8 @@ final class UpdateChecker: ObservableObject {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let tag = json["tag_name"] as? String,
               let page = (json["html_url"] as? String).flatMap(URL.init(string:)),
-              page.host == "github.com" else { return nil }
+              page.scheme == "https", page.host == "github.com",
+              page.path.hasPrefix("/namekun/Nunsseop/") else { return nil }
         return Release(version: tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV")), url: page)
     }
 

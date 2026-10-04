@@ -118,15 +118,16 @@ final class NotchWindowController {
     private func scrolled(_ event: NSEvent) {
         let settings = model.settings
         guard settings.swipeToOpen || settings.swipeForTracks else { return }
+        // Only trackpad swipes over the panel; not scrolling in other windows, wheels or momentum.
+        guard event.window === panel, event.hasPreciseScrollingDeltas, event.momentumPhase.isEmpty else { return }
         if event.phase == .began || event.phase == .mayBegin {
             swipe = .zero
             swipeFired = false
         }
         // Convert to finger direction regardless of the natural scrolling setting.
         let sign: CGFloat = event.isDirectionInvertedFromDevice ? 1 : -1
-        let scale: CGFloat = event.hasPreciseScrollingDeltas ? 1 : 10
-        swipe.dx += event.scrollingDeltaX * sign * scale
-        swipe.dy += event.scrollingDeltaY * sign * scale
+        swipe.dx += event.scrollingDeltaX * sign
+        swipe.dy += event.scrollingDeltaY * sign
 
         swipeIdleWork?.cancel()
         let idle = DispatchWorkItem { [weak self] in
@@ -137,7 +138,6 @@ final class NotchWindowController {
         }
         swipeIdleWork = idle
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: idle)
-        if event.phase == .ended || event.phase == .cancelled { idle.perform() }
 
         guard !swipeFired else { return }
         let threshold: CGFloat = 40

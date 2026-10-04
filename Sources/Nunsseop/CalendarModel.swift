@@ -86,7 +86,11 @@ final class CalendarModel: ObservableObject {
         reminders.removeAll { $0.id == item.id }
         guard !isDemo, let reminder = store.calendarItem(withIdentifier: item.id) as? EKReminder else { return }
         reminder.isCompleted = true
-        try? store.save(reminder, commit: true)
+        do {
+            try store.save(reminder, commit: true)
+        } catch {
+            reloadReminders()
+        }
     }
 
     /// Incomplete reminders due by the end of the selected day, including undated ones.
