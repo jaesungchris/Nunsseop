@@ -30,6 +30,7 @@ final class AppSettings: ObservableObject {
     @Published var batteryInHeader: Bool { didSet { defaults.set(batteryInHeader, forKey: "batteryInHeader") } }
     @Published var chargingHUDEnabled: Bool { didSet { defaults.set(chargingHUDEnabled, forKey: "chargingHUDEnabled") } }
     @Published var headphoneHUDEnabled: Bool { didSet { defaults.set(headphoneHUDEnabled, forKey: "headphoneHUDEnabled") } }
+    @Published var calendarEnabled: Bool { didSet { defaults.set(calendarEnabled, forKey: "calendarEnabled") } }
 
     private init() {
         defaults.register(defaults: [
@@ -46,6 +47,7 @@ final class AppSettings: ObservableObject {
             "batteryInHeader": true,
             "chargingHUDEnabled": true,
             "headphoneHUDEnabled": true,
+            "calendarEnabled": true,
         ])
         expandedWidth = defaults.double(forKey: "expandedWidth")
         expandedHeight = defaults.double(forKey: "expandedHeight")
@@ -60,6 +62,7 @@ final class AppSettings: ObservableObject {
         batteryInHeader = defaults.bool(forKey: "batteryInHeader")
         chargingHUDEnabled = defaults.bool(forKey: "chargingHUDEnabled")
         headphoneHUDEnabled = defaults.bool(forKey: "headphoneHUDEnabled")
+        calendarEnabled = defaults.bool(forKey: "calendarEnabled")
     }
 
     func resetSizes() {

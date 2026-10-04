@@ -17,6 +17,7 @@ final class NotchViewModel: ObservableObject {
     let nowPlaying = NowPlayingController()
     let shelf = ShelfStore()
     let hud: HUDCenter
+    let calendar = CalendarModel()
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
 

@@ -27,7 +27,13 @@ struct NotchView: View {
                         Group {
                             switch model.tab {
                             case .home:
-                                HomeTab(nowPlaying: nowPlaying)
+                                HStack(spacing: 16) {
+                                    HomeTab(nowPlaying: nowPlaying)
+                                    if model.settings.calendarEnabled {
+                                        CalendarPanel(calendar: model.calendar)
+                                            .frame(width: 168)
+                                    }
+                                }
                             case .shelf:
                                 ShelfView(shelf: model.shelf, isDropTargeted: isDropTargeted)
                             }

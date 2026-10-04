@@ -60,6 +60,9 @@ struct SettingsView: View {
                 SliderRow(title: "마우스를 올린 뒤 펼치기까지", value: $settings.openDelay,
                           range: 0...1, unit: "초", format: "%.1f")
             }
+            Section("홈") {
+                Toggle("홈 탭에 캘린더 표시", isOn: $settings.calendarEnabled)
+            }
             Section("시스템 HUD") {
                 Toggle("볼륨이 바뀌면 노치에 표시", isOn: $settings.volumeHUDEnabled)
                 Toggle("볼륨·밝기 키를 가로채 기본 HUD 대신 노치만 표시", isOn: $settings.replaceSystemHUD)
