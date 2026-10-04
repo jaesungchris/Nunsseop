@@ -281,11 +281,33 @@ final class NotchWindowController {
             monitors.append(local)
         }
         if let scroll = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel, handler: { [weak self] event in
-            MainActor.assumeIsolated { self?.scrolled(event) }
-            return event
+            let overHeader = MainActor.assumeIsolated { () -> Bool in
+                guard let self else { return false }
+                self.scrolled(event)
+                return self.isWheelOverHeader(event)
+            }
+            return overHeader ? (Self.sideways(event) ?? event) : event
         }) {
             monitors.append(scroll)
         }
+    }
+
+    /// A mouse wheel turned over the expanded header scrolls the tab row sideways.
+    private func isWheelOverHeader(_ event: NSEvent) -> Bool {
+        event.window === panel && model.isExpanded && !event.hasPreciseScrollingDeltas
+            && event.scrollingDeltaX == 0 && event.scrollingDeltaY != 0
+            && panel.frame.height - event.locationInWindow.y < max(model.geometry.collapsedSize.height, 24) + 6
+    }
+
+    nonisolated private static func sideways(_ event: NSEvent) -> NSEvent? {
+        guard let copy = event.cgEvent?.copy() else { return nil }
+        for (vertical, horizontal) in [(CGEventField.scrollWheelEventDeltaAxis1, CGEventField.scrollWheelEventDeltaAxis2),
+                                       (.scrollWheelEventPointDeltaAxis1, .scrollWheelEventPointDeltaAxis2),
+                                       (.scrollWheelEventFixedPtDeltaAxis1, .scrollWheelEventFixedPtDeltaAxis2)] {
+            copy.setIntegerValueField(horizontal, value: copy.getIntegerValueField(vertical))
+            copy.setIntegerValueField(vertical, value: 0)
+        }
+        return NSEvent(cgEvent: copy)
     }
 
     /// Turns two-finger swipes over the notch into open/close and track skips.

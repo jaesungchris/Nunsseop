@@ -225,32 +225,9 @@ private struct HeaderBar: View {
         .frame(height: max(height, 24))
     }
 
-    /// Tabs that don't fit scroll sideways; the selected one is kept in view.
     private func tabStrip(_ tabs: [NotchTab], overflowing: Bool) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(tabs) { tab in
-                        TabButton(symbol: tab.symbol, selected: model.tab == tab,
-                                  badge: tab == .shelf ? shelf.items.count : 0) { model.tab = tab }
-                            .help(tab.title)
-                            .id(tab)
-                    }
-                }
-            }
-            .scrollDisabled(!overflowing)
-            .mask {
-                HStack(spacing: 0) {
-                    Color.black
-                    LinearGradient(colors: [.black, overflowing ? .clear : .black], startPoint: .leading, endPoint: .trailing)
-                        .frame(width: 16)
-                }
-            }
-            .onAppear { proxy.scrollTo(model.tab) }
-            .onChange(of: model.tab) { _, tab in
-                withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(tab) }
-            }
-        }
+        TabStrip(model: model, shelf: shelf, tabs: tabs, overflowing: overflowing,
+                 visibleCount: max(1, Int((layout.strip + 6) / Self.slot)))
     }
 
     @ViewBuilder private var status: some View {
@@ -289,6 +266,84 @@ private struct HeaderBar: View {
         }
         .buttonStyle(.plain)
         .help("Quit Nunsseop")
+    }
+}
+
+/// Tabs that don't fit scroll sideways, with arrows at the ends; the selected one is kept in view.
+private struct TabStrip: View {
+    @ObservedObject var model: NotchViewModel
+    @ObservedObject var shelf: ShelfStore
+    let tabs: [NotchTab]
+    let overflowing: Bool
+    let visibleCount: Int
+    @State private var leading: NotchTab?
+
+    private var leadingIndex: Int { leading.flatMap { tabs.firstIndex(of: $0) } ?? 0 }
+    private var canGoBack: Bool { overflowing && leadingIndex > 0 }
+    private var canGoForward: Bool { overflowing && leadingIndex + visibleCount < tabs.count }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(tabs) { tab in
+                    TabButton(symbol: tab.symbol, selected: model.tab == tab,
+                              badge: tab == .shelf ? shelf.items.count : 0) { model.tab = tab }
+                        .help(tab.title)
+                        .id(tab)
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .scrollPosition(id: $leading, anchor: .leading)
+        .scrollDisabled(!overflowing)
+        .mask {
+            HStack(spacing: 0) {
+                LinearGradient(colors: [canGoBack ? .clear : .black, .black], startPoint: .leading, endPoint: .trailing).frame(width: 22)
+                Color.black
+                LinearGradient(colors: [.black, canGoForward ? .clear : .black], startPoint: .leading, endPoint: .trailing).frame(width: 22)
+            }
+        }
+        .overlay(alignment: .leading) { if canGoBack { arrow("chevron.left", fade: .leading) { page(-1) } } }
+        .overlay(alignment: .trailing) { if canGoForward { arrow("chevron.right", fade: .trailing) { page(1) } } }
+        .onAppear { reveal(model.tab, animated: false) }
+        .onChange(of: model.tab) { _, tab in reveal(tab, animated: true) }
+    }
+
+    /// Scrolls just enough to bring the tab into view.
+    private func reveal(_ tab: NotchTab, animated: Bool) {
+        guard overflowing, let index = tabs.firstIndex(of: tab) else { return }
+        var target = leadingIndex
+        if index < target { target = index }
+        if index >= target + visibleCount { target = index - visibleCount + 1 }
+        target = min(max(0, target), max(0, tabs.count - visibleCount))
+        guard target != leadingIndex || leading == nil else { return }
+        if animated {
+            withAnimation(.easeOut(duration: 0.2)) { leading = tabs[target] }
+        } else {
+            leading = tabs[target]
+        }
+    }
+
+    private func page(_ direction: Int) {
+        let step = max(1, visibleCount - 1)
+        let target = min(max(0, leadingIndex + direction * step), max(0, tabs.count - visibleCount))
+        withAnimation(.easeOut(duration: 0.25)) { leading = tabs[target] }
+    }
+
+    private func arrow(_ symbol: String, fade: Edge, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.white.opacity(0.8))
+                .frame(width: 22, height: 22)
+                .background(
+                    LinearGradient(colors: [.black.opacity(0), .black],
+                                   startPoint: fade == .trailing ? .leading : .trailing,
+                                   endPoint: fade == .trailing ? .trailing : .leading)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
