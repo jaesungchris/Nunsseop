@@ -45,13 +45,15 @@ extension View {
 struct NotchBackground<S: Shape>: View {
     let shape: S
     let glass: Bool
+    /// Opacity of the black tint over the glass: higher is darker.
+    let tint: Double
     let expanded: Bool
     let notchHeight: CGFloat
 
     var body: some View {
         if glass && expanded, #available(macOS 26, *) {
             ZStack(alignment: .top) {
-                Color.clear.glassEffect(.regular.tint(.black.opacity(0.55)), in: shape)
+                Color.clear.glassEffect(.regular.tint(.black.opacity(tint)), in: shape)
                 LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.55), .init(color: .black.opacity(0), location: 1)],
                                startPoint: .top, endPoint: .bottom)
                     .frame(height: notchHeight + 28)

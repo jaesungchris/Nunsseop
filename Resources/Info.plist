@@ -2,51 +2,51 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
-    <key>CFBundleExecutable</key>
-    <string>Nunsseop</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>CFBundleIdentifier</key>
-    <string>io.github.namekun.Nunsseop</string>
-    <key>CFBundleLocalizations</key>
-    <array>
-        <string>en</string>
-        <string>ko</string>
-        <string>ja</string>
-        <string>zh-Hans</string>
-        <string>es</string>
-        <string>de</string>
-        <string>fr</string>
-    </array>
-    <key>CFBundleName</key>
-    <string>Nunsseop</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.8.0</string>
-    <key>CFBundleVersion</key>
-    <string>17</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
-    <key>LSUIElement</key>
-    <true/>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Shows what Music, Spotify and your browsers are playing and controls playback.</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>Records microphone audio with a screen recording when you turn that on in Settings.</string>
-    <key>NSCameraUsageDescription</key>
-    <string>Shows your camera in the notch's Mirror tab. Nothing is recorded or sent.</string>
-    <key>NSCalendarsFullAccessUsageDescription</key>
-    <string>Shows today's and this week's events on the notch's Home tab.</string>
-    <key>NSRemindersFullAccessUsageDescription</key>
-    <string>Shows reminders due today under the calendar and lets you complete them.</string>
-    <key>NSDesktopFolderUsageDescription</key>
-    <string>Watches for new screenshots so they can be added to the shelf.</string>
-    <key>NSDownloadsFolderUsageDescription</key>
-    <string>Shows when downloads start and finish.</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>Nunsseop</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>io.github.namekun.Nunsseop</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ko</string>
+		<string>ja</string>
+		<string>zh-Hans</string>
+		<string>es</string>
+		<string>de</string>
+		<string>fr</string>
+	</array>
+	<key>CFBundleName</key>
+	<string>Nunsseop</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.8.1</string>
+	<key>CFBundleVersion</key>
+	<string>18</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Shows what Music, Spotify and your browsers are playing and controls playback.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Shows today's and this week's events on the notch's Home tab.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Shows your camera in the notch's Mirror tab. Nothing is recorded or sent.</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Watches for new screenshots so they can be added to the shelf.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Shows when downloads start and finish.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Records microphone audio with a screen recording when you turn that on in Settings.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Shows reminders due today under the calendar and lets you complete them.</string>
 </dict>
 </plist>

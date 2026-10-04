@@ -20,7 +20,7 @@ struct NotchView: View {
 
         VStack(spacing: 0) {
             ZStack(alignment: .top) {
-                NotchBackground(shape: shape, glass: model.settings.liquidGlass, expanded: model.isExpanded, notchHeight: notchHeight)
+                NotchBackground(shape: shape, glass: model.settings.liquidGlass, tint: model.settings.glassTint / 100, expanded: model.isExpanded, notchHeight: notchHeight)
 
                 if model.isExpanded {
                     VStack(spacing: 0) {

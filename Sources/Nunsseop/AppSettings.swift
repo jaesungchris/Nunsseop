@@ -7,6 +7,7 @@ final class AppSettings: ObservableObject {
     nonisolated static let expandedWidthRange: ClosedRange<Double> = 520...780
     nonisolated static let expandedHeightRange: ClosedRange<Double> = 170...260
     nonisolated static let pillWidthRange: ClosedRange<Double> = 140...320
+    nonisolated static let glassTintRange: ClosedRange<Double> = 20...90
 
     private let defaults = UserDefaults.standard
 
@@ -50,6 +51,8 @@ final class AppSettings: ObservableObject {
     @Published var widenForTabs: Bool { didSet { defaults.set(widenForTabs, forKey: "widenForTabs") } }
     /// Liquid Glass surfaces on macOS 26 and later.
     @Published var liquidGlass: Bool { didSet { defaults.set(liquidGlass, forKey: "liquidGlass") } }
+    /// How dark the expanded notch's glass is, in percent.
+    @Published var glassTint: Double { didSet { defaults.set(glassTint, forKey: "glassTint") } }
     /// A system-wide shortcut opens the Search tab from anywhere.
     @Published var searchHotkey: Bool { didSet { defaults.set(searchHotkey, forKey: "searchHotkey") } }
     @Published var searchHotKey: HotKeyCombo {
@@ -119,6 +122,7 @@ final class AppSettings: ObservableObject {
             "aiTab": true,
             "widenForTabs": true,
             "liquidGlass": true,
+            "glassTint": 55.0,
             "searchHotkey": true,
             "peripheralBatteries": true,
             "privacyIndicator": true,
@@ -172,6 +176,7 @@ final class AppSettings: ObservableObject {
         aiTab = defaults.bool(forKey: "aiTab")
         widenForTabs = defaults.bool(forKey: "widenForTabs")
         liquidGlass = defaults.bool(forKey: "liquidGlass")
+        glassTint = min(max(defaults.double(forKey: "glassTint"), Self.glassTintRange.lowerBound), Self.glassTintRange.upperBound)
         searchHotkey = defaults.bool(forKey: "searchHotkey")
         if let name = defaults.string(forKey: "searchHotKeyName") {
             searchHotKey = HotKeyCombo(keyCode: UInt32(defaults.integer(forKey: "searchHotKeyCode")),

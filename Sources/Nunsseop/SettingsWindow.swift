@@ -110,6 +110,10 @@ private struct GeneralPane: View {
                 Toggle("Widen the notch when needed so every tab fits", isOn: $settings.widenForTabs)
                 if LiquidGlass.isAvailable {
                     Toggle("Liquid Glass look", isOn: $settings.liquidGlass)
+                    if settings.liquidGlass {
+                        SliderRow(title: "Glass tint", value: $settings.glassTint,
+                                  range: AppSettings.glassTintRange, unit: "%")
+                    }
                 }
                 SliderRow(title: "Expanded height", value: $settings.expandedHeight,
                           range: AppSettings.expandedHeightRange, unit: "pt")
