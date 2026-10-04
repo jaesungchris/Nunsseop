@@ -108,6 +108,9 @@ private struct GeneralPane: View {
                 SliderRow(title: "Expanded width", value: $settings.expandedWidth,
                           range: AppSettings.expandedWidthRange, unit: "pt")
                 Toggle("Widen the notch when needed so every tab fits", isOn: $settings.widenForTabs)
+                if LiquidGlass.isAvailable {
+                    Toggle("Liquid Glass look", isOn: $settings.liquidGlass)
+                }
                 SliderRow(title: "Expanded height", value: $settings.expandedHeight,
                           range: AppSettings.expandedHeightRange, unit: "pt")
                 SliderRow(title: "Collapsed width on screens without a notch", value: $settings.pillWidth,

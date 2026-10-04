@@ -20,7 +20,7 @@ struct NotchView: View {
 
         VStack(spacing: 0) {
             ZStack(alignment: .top) {
-                shape.fill(Color.black)
+                NotchBackground(shape: shape, glass: model.settings.liquidGlass, expanded: model.isExpanded, notchHeight: notchHeight)
 
                 if model.isExpanded {
                     VStack(spacing: 0) {
@@ -107,6 +107,7 @@ struct NotchView: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .environment(\.liquidGlass, model.settings.liquidGlass)
         .animation(.spring(response: 0.42, dampingFraction: 0.8), value: model.isExpanded)
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.showsLiveActivity)
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.showsSneakPeek)

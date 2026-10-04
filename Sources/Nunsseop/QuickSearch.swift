@@ -418,7 +418,7 @@ struct SearchTab: View {
                     .onKeyPress(.upArrow) { model.move(-1); return .handled }
             }
             .padding(.horizontal, 12).frame(height: 34)
-            .background(RoundedRectangle(cornerRadius: 10).fill(.white.opacity(0.1)))
+            .surface(RoundedRectangle(cornerRadius: 10), opacity: 0.1)
 
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {

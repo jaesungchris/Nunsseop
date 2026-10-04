@@ -48,6 +48,8 @@ final class AppSettings: ObservableObject {
     @Published var aiTab: Bool { didSet { defaults.set(aiTab, forKey: "aiTab") } }
     /// Grows the expanded notch past its set width, as far as the screen allows, so every tab fits.
     @Published var widenForTabs: Bool { didSet { defaults.set(widenForTabs, forKey: "widenForTabs") } }
+    /// Liquid Glass surfaces on macOS 26 and later.
+    @Published var liquidGlass: Bool { didSet { defaults.set(liquidGlass, forKey: "liquidGlass") } }
     /// A system-wide shortcut opens the Search tab from anywhere.
     @Published var searchHotkey: Bool { didSet { defaults.set(searchHotkey, forKey: "searchHotkey") } }
     @Published var searchHotKey: HotKeyCombo {
@@ -116,6 +118,7 @@ final class AppSettings: ObservableObject {
             "emojiTab": true,
             "aiTab": true,
             "widenForTabs": true,
+            "liquidGlass": true,
             "searchHotkey": true,
             "peripheralBatteries": true,
             "privacyIndicator": true,
@@ -168,6 +171,7 @@ final class AppSettings: ObservableObject {
         emojiTab = defaults.bool(forKey: "emojiTab")
         aiTab = defaults.bool(forKey: "aiTab")
         widenForTabs = defaults.bool(forKey: "widenForTabs")
+        liquidGlass = defaults.bool(forKey: "liquidGlass")
         searchHotkey = defaults.bool(forKey: "searchHotkey")
         if let name = defaults.string(forKey: "searchHotKeyName") {
             searchHotKey = HotKeyCombo(keyCode: UInt32(defaults.integer(forKey: "searchHotKeyCode")),

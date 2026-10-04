@@ -30,7 +30,7 @@ struct NotesTab: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.05))
+            Color.clear.surface(RoundedRectangle(cornerRadius: 14), opacity: 0.05)
             if notes.text.isEmpty {
                 Text("Jot something down…")
                     .font(.system(size: 13))

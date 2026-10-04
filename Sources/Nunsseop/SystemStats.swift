@@ -131,7 +131,7 @@ struct SystemTab: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.06)))
+            .surface(RoundedRectangle(cornerRadius: 14))
         }
         .foregroundStyle(.white)
         .onAppear { stats.start() }
@@ -191,6 +191,6 @@ private struct Gauge: View {
         .padding(.vertical, 12).padding(.horizontal, 8)
         .frame(width: 112)
         .frame(maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.06)))
+        .surface(RoundedRectangle(cornerRadius: 14))
     }
 }

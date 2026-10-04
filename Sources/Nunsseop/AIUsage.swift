@@ -176,7 +176,7 @@ struct AIUsageTab: View {
                 }
                 .padding(.horizontal, 12).padding(.vertical, 10)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.06)))
+                .surface(RoundedRectangle(cornerRadius: 14))
             }
         }
         .foregroundStyle(.white)

@@ -85,7 +85,7 @@ struct ClipboardTab: View {
                         .font(.system(size: 12))
                 }
                 .padding(.horizontal, 10).frame(height: 26)
-                .background(Capsule().fill(.white.opacity(0.08)))
+                .surface(Capsule(), opacity: 0.08)
                 Button("Clear") { history.clear() }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .semibold))

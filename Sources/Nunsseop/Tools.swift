@@ -229,7 +229,7 @@ struct ToolsTab: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.06)))
+            .surface(RoundedRectangle(cornerRadius: 14))
         }
         .foregroundStyle(.white)
     }
@@ -255,7 +255,7 @@ private struct ToolTile<Detail: View>: View {
         .padding(12)
         .frame(width: 98, alignment: .leading)
         .frame(maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.06)))
+        .surface(RoundedRectangle(cornerRadius: 14))
         .contentShape(RoundedRectangle(cornerRadius: 14))
         .onTapGesture(perform: action)
     }

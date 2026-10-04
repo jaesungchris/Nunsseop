@@ -121,7 +121,7 @@ struct MirrorTab: View {
                     .background(Capsule().fill(.white.opacity(0.15)))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.04)))
+                .surface(RoundedRectangle(cornerRadius: 14), opacity: 0.04)
             }
         }
         .foregroundStyle(.white)

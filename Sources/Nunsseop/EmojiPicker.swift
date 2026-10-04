@@ -62,7 +62,7 @@ struct EmojiTab: View {
                 }
             }
             .padding(.horizontal, 10).frame(height: 26)
-            .background(Capsule().fill(.white.opacity(0.08)))
+            .surface(Capsule(), opacity: 0.08)
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(30), spacing: 4), count: 16), spacing: 4) {
                     ForEach(model.results(for: query)) { emoji in
