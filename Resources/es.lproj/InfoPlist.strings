@@ -2,3 +2,5 @@
 "NSCalendarsFullAccessUsageDescription" = "Muestra los eventos de hoy y de esta semana en la pestaña Inicio del notch.";
 "NSRemindersFullAccessUsageDescription" = "Muestra los recordatorios de hoy bajo el calendario y permite completarlos.";
 "NSCameraUsageDescription" = "Muestra tu cámara en la pestaña Espejo del notch. No se graba ni se envía nada.";
+"NSDesktopFolderUsageDescription" = "Detecta capturas nuevas para añadirlas al estante.";
+"NSDownloadsFolderUsageDescription" = "Avisa cuando las descargas empiezan y terminan.";

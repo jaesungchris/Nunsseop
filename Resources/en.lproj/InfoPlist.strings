@@ -2,3 +2,5 @@
 "NSCalendarsFullAccessUsageDescription" = "Shows today's and this week's events on the notch's Home tab.";
 "NSRemindersFullAccessUsageDescription" = "Shows reminders due today under the calendar and lets you complete them.";
 "NSCameraUsageDescription" = "Shows your camera in the notch's Mirror tab. Nothing is recorded or sent.";
+"NSDesktopFolderUsageDescription" = "Watches for new screenshots so they can be added to the shelf.";
+"NSDownloadsFolderUsageDescription" = "Shows when downloads start and finish.";

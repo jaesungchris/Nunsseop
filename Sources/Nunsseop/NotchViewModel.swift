@@ -2,7 +2,7 @@ import AppKit
 import Combine
 
 enum NotchTab {
-    case home, shelf, timer, clipboard, notes, tools, mirror
+    case home, shelf, timer, clipboard, notes, tools, system, apps, mirror
 }
 
 @MainActor
@@ -26,6 +26,11 @@ final class NotchViewModel: ObservableObject {
     let screenshots = ScreenshotWatcher()
     let capsLock = CapsLockWatcher()
     let notifyServer = NotifyServer()
+    let stats = SystemStats()
+    let launcher = AppLauncher()
+    let lyrics = LyricsModel()
+    let weather = WeatherModel()
+    let downloads = DownloadWatcher()
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
 
@@ -40,6 +45,12 @@ final class NotchViewModel: ObservableObject {
             .map { $0 || $1 }
             .removeDuplicates()
             .sink { [weak self] in self?.showsLiveActivity = $0 }
+            .store(in: &cancellables)
+        nowPlaying.$track
+            .sink { [weak self] in self?.lyrics.update(for: $0) }
+            .store(in: &cancellables)
+        lyrics.objectWillChange
+            .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
         timer.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
@@ -66,7 +77,9 @@ final class NotchViewModel: ObservableObject {
     }
 
     var showsSneakPeek: Bool {
-        settings.sneakPeekEnabled && nowPlaying.track != nil && (settings.sneakPeekAlways || sneakPeekPending)
+        guard settings.sneakPeekEnabled, let track = nowPlaying.track else { return false }
+        let lyricsLive = settings.lyricsEnabled && settings.lyricsUnderNotch && track.isPlaying && !lyrics.lines.isEmpty
+        return settings.sneakPeekAlways || sneakPeekPending || lyricsLive
     }
 
     /// While music plays, the collapsed notch grows an "ear" on each side
@@ -123,6 +136,8 @@ final class NotchViewModel: ObservableObject {
         case .clipboard: visible = settings.clipboardTab
         case .notes: visible = settings.notesTab
         case .tools: visible = settings.toolsTab
+        case .system: visible = settings.systemTab
+        case .apps: visible = settings.appsTab
         case .mirror: visible = settings.mirrorEnabled
         }
         if !visible { tab = .home }

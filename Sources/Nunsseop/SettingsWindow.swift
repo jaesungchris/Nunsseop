@@ -101,6 +101,8 @@ struct SettingsView: View {
                 Toggle("Show the Clipboard tab and keep clipboard history", isOn: $settings.clipboardTab)
                 Toggle("Show the Notes tab", isOn: $settings.notesTab)
                 Toggle("Show the Tools tab", isOn: $settings.toolsTab)
+                Toggle("Show the System tab", isOn: $settings.systemTab)
+                Toggle("Show the Apps tab", isOn: $settings.appsTab)
                 Toggle("Show the Mirror tab", isOn: $settings.mirrorEnabled)
                 Picker("Camera", selection: $settings.mirrorCameraID) {
                     Text("System default").tag("")
@@ -135,6 +137,18 @@ struct SettingsView: View {
                     NSPasteboard.general.setString(NotifyServer.hookCommand, forType: .string)
                 }
                 .disabled(!settings.localNotifications)
+            }
+            Section("Lyrics & weather") {
+                Toggle("Show synced lyrics (from LRCLIB)", isOn: $settings.lyricsEnabled)
+                Toggle("Keep the current lyric under the notch while playing", isOn: $settings.lyricsUnderNotch)
+                    .disabled(!settings.lyricsEnabled)
+                TextField("Weather city (e.g. Seoul)", text: $settings.weatherCity)
+                Text("Weather comes from Open-Meteo. Leave the city empty to hide it.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Downloads") {
+                Toggle("Show when downloads start and finish", isOn: $settings.downloadAlerts)
+                Toggle("Add finished downloads to the shelf", isOn: $settings.downloadsToShelf)
             }
             Section("Sneak Peek") {
                 Toggle("Show the title under the notch when the track or play state changes", isOn: $settings.sneakPeekEnabled)

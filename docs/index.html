@@ -184,7 +184,7 @@
 <header class="hero">
   <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
   <div class="wrap">
-    <span class="eyebrow"><b>v0.3.1</b> <span class="en">Free &amp; open source · macOS 14+</span><span class="ko">무료 오픈소스 · macOS 14 이상</span></span>
+    <span class="eyebrow"><b>v0.4.0</b> <span class="en">Free &amp; open source · macOS 14+</span><span class="ko">무료 오픈소스 · macOS 14 이상</span></span>
     <h1 class="en">Your notch,<br><span class="grad-text">finally useful.</span></h1>
     <h1 class="ko">노치,<br><span class="grad-text">이제 쓸모 있게.</span></h1>
     <p class="lead en">Music, files, your calendar and system HUDs live right where the camera sits. Hover to open. That's it.</p>
@@ -290,6 +290,24 @@
         <p class="en">Add one hook and the notch tells you when Claude Code is waiting for you. Any local script can do the same.</p>
         <p class="ko">훅 하나만 추가하면 Claude Code가 기다릴 때 노치가 알려 줍니다. 어떤 로컬 스크립트든 같은 방식으로 보낼 수 있어요.</p>
       </article>
+      <article class="tile t-third reveal">
+        <div class="ico">🎤</div>
+        <h3><span class="en">Synced lyrics</span><span class="ko">실시간 가사</span></h3>
+        <p class="en">The line being sung, right under the title — or under the notch while you work.</p>
+        <p class="ko">지금 부르는 가사가 제목 아래에, 원하면 작업 중에도 노치 아래에 흐릅니다.</p>
+      </article>
+      <article class="tile t-third reveal">
+        <div class="ico">📊</div>
+        <h3><span class="en">System at a glance</span><span class="ko">한눈에 보는 시스템</span></h3>
+        <p class="en">CPU, memory, disk and network, plus your Dock apps one click away.</p>
+        <p class="ko">CPU, 메모리, 디스크, 네트워크. Dock 앱도 클릭 한 번이면 실행됩니다.</p>
+      </article>
+      <article class="tile t-third reveal">
+        <div class="ico">⛅</div>
+        <h3><span class="en">Weather &amp; downloads</span><span class="ko">날씨와 다운로드</span></h3>
+        <p class="en">Today's weather in the header, and a nudge when a download finishes.</p>
+        <p class="ko">헤더에 오늘 날씨를, 다운로드가 끝나면 살짝 알려 줍니다.</p>
+      </article>
       <article class="tile t-half reveal">
         <div class="ico">🔋</div>
         <h3><span class="en">Little heads-ups</span><span class="ko">작은 알림들</span></h3>
@@ -363,8 +381,8 @@ open build/Nunsseop.app</pre></div>
         <p class="ko">macOS 15.4부터 비공개 MediaRemote 프레임워크는 Apple이 서명한 앱에만 응답합니다. Nunsseop은 시스템의 <code>/usr/bin/perl</code> 안에서 작은 헬퍼를 실행해 재생 정보를 읽고 재생·일시정지·건너뛰기·위치 이동을 보냅니다.</p>
         <p class="en">If a future macOS update blocks it, Nunsseop falls back to AppleScript for Music and Spotify and to reading media tabs in browsers.</p>
         <p class="ko">이후 macOS 업데이트로 막히면 Music·Spotify는 AppleScript로, 브라우저는 미디어 탭 읽기로 자동 전환됩니다.</p>
-        <p class="en">No personal data is collected or sent. The only network calls are a daily release check (you can turn it off) and fallback artwork downloads.</p>
-        <p class="ko">개인 정보는 수집하거나 전송하지 않습니다. 네트워크는 하루 한 번 새 버전 확인(끌 수 있음)과 대체 경로의 앨범아트 다운로드에만 씁니다.</p>
+        <p class="en">No personal data is collected or sent. Network use is limited to a daily release check, lyrics from LRCLIB, weather from Open-Meteo for the city you choose, and fallback artwork — each can be turned off.</p>
+        <p class="ko">개인 정보는 수집하거나 전송하지 않습니다. 네트워크는 하루 한 번 새 버전 확인, LRCLIB 가사, 지정한 도시의 Open-Meteo 날씨, 대체 경로의 앨범아트에만 쓰며 모두 끌 수 있습니다.</p>
       </div>
       <div class="plain reveal">
         <h3><span class="en">Permissions, only when you ask</span><span class="ko">권한은 필요할 때만</span></h3>

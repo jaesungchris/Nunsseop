@@ -25,9 +25,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.3.1</string>
+    <string>0.4.0</string>
     <key>CFBundleVersion</key>
-    <string>4</string>
+    <string>5</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
@@ -40,6 +40,10 @@
     <string>Shows today's and this week's events on the notch's Home tab.</string>
     <key>NSRemindersFullAccessUsageDescription</key>
     <string>Shows reminders due today under the calendar and lets you complete them.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>Watches for new screenshots so they can be added to the shelf.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>Shows when downloads start and finish.</string>
     <key>NSHighResolutionCapable</key>
     <true/>
 </dict>

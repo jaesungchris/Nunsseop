@@ -2,3 +2,5 @@
 "NSCalendarsFullAccessUsageDescription" = "Zeigt die Termine von heute und dieser Woche im Start-Tab der Notch.";
 "NSRemindersFullAccessUsageDescription" = "Zeigt heute fällige Erinnerungen unter dem Kalender und lässt dich sie erledigen.";
 "NSCameraUsageDescription" = "Zeigt deine Kamera im Spiegel-Tab der Notch. Es wird nichts aufgenommen oder gesendet.";
+"NSDesktopFolderUsageDescription" = "Erkennt neue Bildschirmfotos, um sie zur Ablage hinzuzufügen.";
+"NSDownloadsFolderUsageDescription" = "Zeigt an, wenn Downloads beginnen und enden.";

@@ -130,3 +130,23 @@
 "Drives" = "磁盘";
 "No external drives" = "没有外接磁盘";
 "Eject" = "推出";
+
+/* System, apps, lyrics, weather, downloads */
+"Apps in your Dock show up here" = "程序坞中的应用会显示在这里";
+"Downloading" = "正在下载";
+"Download finished" = "下载完成";
+"Show the System tab" = "显示系统标签";
+"Show the Apps tab" = "显示应用标签";
+"Lyrics & weather" = "歌词与天气";
+"Show synced lyrics (from LRCLIB)" = "显示同步歌词（LRCLIB）";
+"Keep the current lyric under the notch while playing" = "播放时在刘海下方持续显示当前歌词";
+"Weather city (e.g. Seoul)" = "天气城市（如：北京）";
+"Weather comes from Open-Meteo. Leave the city empty to hide it." = "天气来自 Open-Meteo。城市留空则不显示。";
+"Downloads" = "下载";
+"Show when downloads start and finish" = "下载开始和完成时显示";
+"Add finished downloads to the shelf" = "将已完成的下载加入架子";
+"Network" = "网络";
+"Memory" = "内存";
+"Disk" = "磁盘";
+"%lld cores" = "%lld 核";
+"%@ free" = "可用 %@";

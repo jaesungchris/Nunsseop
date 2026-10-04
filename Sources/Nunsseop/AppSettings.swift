@@ -40,6 +40,15 @@ final class AppSettings: ObservableObject {
     @Published var screenshotsToShelf: Bool { didSet { defaults.set(screenshotsToShelf, forKey: "screenshotsToShelf") } }
     @Published var localNotifications: Bool { didSet { defaults.set(localNotifications, forKey: "localNotifications") } }
     @Published var timerTab: Bool { didSet { defaults.set(timerTab, forKey: "timerTab") } }
+    @Published var systemTab: Bool { didSet { defaults.set(systemTab, forKey: "systemTab") } }
+    @Published var appsTab: Bool { didSet { defaults.set(appsTab, forKey: "appsTab") } }
+    @Published var lyricsEnabled: Bool { didSet { defaults.set(lyricsEnabled, forKey: "lyricsEnabled") } }
+    /// Keeps the current lyric line under the notch while music plays.
+    @Published var lyricsUnderNotch: Bool { didSet { defaults.set(lyricsUnderNotch, forKey: "lyricsUnderNotch") } }
+    /// City for the header weather chip; empty hides it.
+    @Published var weatherCity: String { didSet { defaults.set(weatherCity, forKey: "weatherCity") } }
+    @Published var downloadAlerts: Bool { didSet { defaults.set(downloadAlerts, forKey: "downloadAlerts") } }
+    @Published var downloadsToShelf: Bool { didSet { defaults.set(downloadsToShelf, forKey: "downloadsToShelf") } }
     /// Also controls whether copied text is recorded at all.
     @Published var clipboardTab: Bool { didSet { defaults.set(clipboardTab, forKey: "clipboardTab") } }
     @Published var notesTab: Bool { didSet { defaults.set(notesTab, forKey: "notesTab") } }
@@ -71,6 +80,13 @@ final class AppSettings: ObservableObject {
             "remindersEnabled": true,
             "mirrorEnabled": true,
             "timerTab": true,
+            "systemTab": true,
+            "appsTab": true,
+            "lyricsEnabled": true,
+            "lyricsUnderNotch": false,
+            "weatherCity": "",
+            "downloadAlerts": true,
+            "downloadsToShelf": false,
             "batteryAlerts": true,
             "capsLockHUD": true,
             "screenshotsToShelf": true,
@@ -101,6 +117,13 @@ final class AppSettings: ObservableObject {
         remindersEnabled = defaults.bool(forKey: "remindersEnabled")
         mirrorEnabled = defaults.bool(forKey: "mirrorEnabled")
         timerTab = defaults.bool(forKey: "timerTab")
+        systemTab = defaults.bool(forKey: "systemTab")
+        appsTab = defaults.bool(forKey: "appsTab")
+        lyricsEnabled = defaults.bool(forKey: "lyricsEnabled")
+        lyricsUnderNotch = defaults.bool(forKey: "lyricsUnderNotch")
+        weatherCity = defaults.string(forKey: "weatherCity") ?? ""
+        downloadAlerts = defaults.bool(forKey: "downloadAlerts")
+        downloadsToShelf = defaults.bool(forKey: "downloadsToShelf")
         batteryAlerts = defaults.bool(forKey: "batteryAlerts")
         capsLockHUD = defaults.bool(forKey: "capsLockHUD")
         screenshotsToShelf = defaults.bool(forKey: "screenshotsToShelf")

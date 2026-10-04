@@ -130,3 +130,23 @@
 "Drives" = "ドライブ";
 "No external drives" = "外部ドライブはありません";
 "Eject" = "取り出す";
+
+/* System, apps, lyrics, weather, downloads */
+"Apps in your Dock show up here" = "Dock のアプリがここに表示されます";
+"Downloading" = "ダウンロード中";
+"Download finished" = "ダウンロード完了";
+"Show the System tab" = "システムタブを表示";
+"Show the Apps tab" = "アプリタブを表示";
+"Lyrics & weather" = "歌詞と天気";
+"Show synced lyrics (from LRCLIB)" = "同期歌詞を表示（LRCLIB）";
+"Keep the current lyric under the notch while playing" = "再生中は現在の歌詞をノッチの下に表示し続ける";
+"Weather city (e.g. Seoul)" = "天気の都市（例: 東京）";
+"Weather comes from Open-Meteo. Leave the city empty to hide it." = "天気は Open-Meteo から取得します。都市を空にすると非表示になります。";
+"Downloads" = "ダウンロード";
+"Show when downloads start and finish" = "ダウンロードの開始と完了を表示";
+"Add finished downloads to the shelf" = "完了したダウンロードをシェルフに追加";
+"Network" = "ネットワーク";
+"Memory" = "メモリ";
+"Disk" = "ディスク";
+"%lld cores" = "%lld コア";
+"%@ free" = "空き %@";

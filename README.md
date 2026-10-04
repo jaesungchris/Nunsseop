@@ -13,6 +13,7 @@
 ## Features
 
 - **Now playing.** Title, artist, artwork and playback controls for any app that reports to macOS Now Playing: Music, Spotify, YouTube Music, and browsers such as Safari, Chrome, Arc, Dia and Aside. Drag the progress bar to seek. The collapsed notch grows a small artwork and visualizer tinted with the artwork's colour.
+- **Synced lyrics.** The current line from [LRCLIB](https://lrclib.net) under the title, or kept under the notch while music plays.
 - **Sneak peek.** When the track or play state changes, the title appears under the notch for a few seconds (or always, if you prefer).
 - **File shelf.** Drag files onto the notch to keep them and drag them back out when you need them. Drop files on the AirDrop tile to send them, or share them from the context menu. The shelf survives restarts.
 - **Calendar and reminders.** A week strip, the selected day's events and the reminders due by then, which you can tick off from the notch.
@@ -20,6 +21,10 @@
 - **Clipboard history.** Recent copied text, searchable, one click to copy again. Kept in memory only, and items password managers mark as concealed are skipped.
 - **Notes.** A scratchpad that is always one hover away.
 - **Tools.** Switch the audio output, mute the microphone, keep the Mac awake and eject external drives.
+- **System.** CPU, memory, disk and network at a glance.
+- **Apps.** Launch anything in your Dock from the notch.
+- **Weather.** Current conditions for your city in the header, from [Open-Meteo](https://open-meteo.com).
+- **Downloads.** A heads-up when a download starts and finishes, optionally added to the shelf.
 - **Mirror.** A quick look at yourself through the camera of your choice.
 - **System HUDs.** Volume, brightness (built-in and DDC-capable external displays), keyboard backlight, power connected or disconnected, low battery and full charge, Caps Lock, and headphone battery (left, right and case) appear in the notch. New screenshots drop onto the shelf automatically.
 - **Claude Code notifications.** Claude Code (or any local script) can show a message in the notch when it needs you; see below. Nunsseop can take over the volume and brightness keys so the system HUD no longer appears.
@@ -118,6 +123,8 @@ Nunsseop does not collect or send any personal data. Its network use is limited 
 
 - checking `api.github.com` for a newer release once a day (can be turned off in Settings);
 - accepting notifications from tools on your own Mac on `127.0.0.1:47750` (can be turned off in Settings);
+- looking up synced lyrics for the playing track on `lrclib.net` (can be turned off in Settings);
+- fetching weather from `open-meteo.com` for the city you enter (off until you enter one);
 - downloading artwork over HTTPS from the image servers of known music and video services, only when the MediaRemote helper is unavailable.
 
 The camera preview is shown only while the Mirror tab is open and is never recorded. Clipboard history stays in memory and is cleared when Nunsseop quits.

@@ -155,3 +155,23 @@
 "Drives" = "드라이브";
 "No external drives" = "외장 드라이브 없음";
 "Eject" = "꺼내기";
+
+/* System, apps, lyrics, weather, downloads */
+"Apps in your Dock show up here" = "Dock에 있는 앱이 여기에 표시됩니다";
+"Downloading" = "다운로드 중";
+"Download finished" = "다운로드 완료";
+"Show the System tab" = "시스템 탭 표시";
+"Show the Apps tab" = "앱 탭 표시";
+"Lyrics & weather" = "가사와 날씨";
+"Show synced lyrics (from LRCLIB)" = "실시간 가사 표시 (LRCLIB)";
+"Keep the current lyric under the notch while playing" = "재생 중 현재 가사를 노치 아래에 계속 표시";
+"Weather city (e.g. Seoul)" = "날씨 도시 (예: 서울)";
+"Weather comes from Open-Meteo. Leave the city empty to hide it." = "날씨는 Open-Meteo에서 가져옵니다. 도시를 비워 두면 표시하지 않습니다.";
+"Downloads" = "다운로드";
+"Show when downloads start and finish" = "다운로드 시작·완료 시 표시";
+"Add finished downloads to the shelf" = "완료된 다운로드를 선반에 추가";
+"Network" = "네트워크";
+"Memory" = "메모리";
+"Disk" = "디스크";
+"%lld cores" = "코어 %lld개";
+"%@ free" = "%@ 남음";

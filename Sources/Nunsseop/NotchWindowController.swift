@@ -87,6 +87,27 @@ final class NotchWindowController {
                                         detail: nil), duration: 1.2)
         }
         model.capsLock.start()
+        model.downloads.onStart = { [weak self] name in
+            guard let self, self.model.settings.downloadAlerts else { return }
+            self.model.hud.show(.notice(symbol: "arrow.down.circle", title: String(localized: "Downloading"), detail: name), duration: 3)
+        }
+        model.downloads.onFinish = { [weak self] url in
+            guard let self else { return }
+            if self.model.settings.downloadsToShelf { self.model.shelf.add([url]) }
+            if self.model.settings.downloadAlerts {
+                self.model.hud.show(.notice(symbol: "checkmark.circle.fill", title: String(localized: "Download finished"),
+                                            detail: url.lastPathComponent), duration: 4)
+            }
+        }
+        model.downloads.start()
+        settingsObservers.append(model.settings.$weatherCity
+            .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
+            .sink { [weak self] in self?.model.weather.setCity($0) })
+        settingsObservers.append(model.settings.$lyricsEnabled.sink { [weak self] enabled in
+            guard let self else { return }
+            self.model.lyrics.isEnabled = enabled
+            self.model.lyrics.update(for: enabled ? self.model.nowPlaying.track : nil)
+        })
         model.notifyServer.onNotify = { [weak self] title, message in
             self?.model.hud.show(.notice(symbol: "sparkles", title: title, detail: message), duration: 6)
         }

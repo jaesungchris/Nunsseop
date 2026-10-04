@@ -130,3 +130,23 @@
 "Drives" = "Disques";
 "No external drives" = "Aucun disque externe";
 "Eject" = "Éjecter";
+
+/* System, apps, lyrics, weather, downloads */
+"Apps in your Dock show up here" = "Les apps du Dock apparaissent ici";
+"Downloading" = "Téléchargement";
+"Download finished" = "Téléchargement terminé";
+"Show the System tab" = "Afficher l’onglet Système";
+"Show the Apps tab" = "Afficher l’onglet Apps";
+"Lyrics & weather" = "Paroles et météo";
+"Show synced lyrics (from LRCLIB)" = "Afficher les paroles synchronisées (LRCLIB)";
+"Keep the current lyric under the notch while playing" = "Garder la ligne en cours sous l’encoche pendant la lecture";
+"Weather city (e.g. Seoul)" = "Ville pour la météo (ex. Paris)";
+"Weather comes from Open-Meteo. Leave the city empty to hide it." = "La météo provient d’Open-Meteo. Laissez la ville vide pour la masquer.";
+"Downloads" = "Téléchargements";
+"Show when downloads start and finish" = "Afficher le début et la fin des téléchargements";
+"Add finished downloads to the shelf" = "Ajouter les téléchargements terminés à l’étagère";
+"Network" = "Réseau";
+"Memory" = "Mémoire";
+"Disk" = "Disque";
+"%lld cores" = "%lld cœurs";
+"%@ free" = "%@ libres";

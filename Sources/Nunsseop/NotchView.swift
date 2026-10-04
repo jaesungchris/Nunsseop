@@ -29,7 +29,7 @@ struct NotchView: View {
                             switch model.tab {
                             case .home:
                                 HStack(spacing: 16) {
-                                    HomeTab(nowPlaying: nowPlaying)
+                                    HomeTab(nowPlaying: nowPlaying, lyrics: model.settings.lyricsEnabled ? model.lyrics : nil)
                                     if model.settings.calendarEnabled {
                                         CalendarPanel(calendar: model.calendar, showsReminders: model.settings.remindersEnabled)
                                             .frame(width: 168)
@@ -46,6 +46,10 @@ struct NotchView: View {
                                 NotesTab(notes: model.notes)
                             case .tools:
                                 ToolsTab(tools: model.tools)
+                            case .system:
+                                SystemTab(stats: model.stats)
+                            case .apps:
+                                AppsTab(launcher: model.launcher)
                             case .mirror:
                                 MirrorTab(mirror: model.mirror, deviceID: model.settings.mirrorCameraID)
                             }
@@ -68,7 +72,7 @@ struct NotchView: View {
                             Color.clear.frame(height: notchHeight)
                         }
                         if model.showsSneakPeek, let track = nowPlaying.track {
-                            SneakPeekLine(track: track)
+                            SneakPeekLine(track: track, lyrics: model.settings.lyricsEnabled ? model.lyrics : nil)
                                 .frame(height: NotchViewModel.sneakPeekHeight, alignment: .top)
                                 .transition(.opacity)
                         }
@@ -155,12 +159,20 @@ private struct NotchDropDelegate: DropDelegate {
 private struct HeaderBar: View {
     @ObservedObject var model: NotchViewModel
     @ObservedObject var shelf: ShelfStore
+    @ObservedObject var weather: WeatherModel
     @ObservedObject private var updates = UpdateChecker.shared
     let height: CGFloat
+
+    private var visibleTabCount: Int {
+        let settings = model.settings
+        return 2 + [settings.timerTab, settings.clipboardTab, settings.notesTab, settings.toolsTab,
+                    settings.systemTab, settings.appsTab, settings.mirrorEnabled].filter { $0 }.count
+    }
 
     init(model: NotchViewModel, height: CGFloat) {
         self.model = model
         self.shelf = model.shelf
+        self.weather = model.weather
         self.height = height
     }
 
@@ -181,17 +193,35 @@ private struct HeaderBar: View {
             if model.settings.toolsTab {
                 TabButton(symbol: "switch.2", selected: model.tab == .tools) { model.tab = .tools }
             }
+            if model.settings.systemTab {
+                TabButton(symbol: "cpu", selected: model.tab == .system) { model.tab = .system }
+            }
+            if model.settings.appsTab {
+                TabButton(symbol: "square.grid.3x3.fill", selected: model.tab == .apps) { model.tab = .apps }
+            }
             if model.settings.mirrorEnabled {
                 TabButton(symbol: "camera.fill", selected: model.tab == .mirror) { model.tab = .mirror }
             }
             Spacer()
             // The middle of the header sits under the camera housing on notched displays.
-            if !model.geometry.hasNotch {
+            // The middle sits under the camera on notched displays, and gets crowded with many tabs.
+            if !model.geometry.hasNotch && visibleTabCount <= 6 {
                 Text(Date.now, format: .dateTime.month().day().weekday(.abbreviated))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.white.opacity(0.45))
+                    .lineLimit(1)
+                    .fixedSize()
             }
             Spacer()
+            if let weather = model.weather.current {
+                HStack(spacing: 4) {
+                    Image(systemName: WeatherModel.symbol(for: weather.code)).symbolRenderingMode(.multicolor)
+                    Text("\(Int(weather.temperature.rounded()))°").monospacedDigit()
+                }
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.7))
+                .help("\(weather.place) · \(Int(weather.low.rounded()))° / \(Int(weather.high.rounded()))°")
+            }
             if model.settings.batteryInHeader, let power = model.hud.power {
                 BatteryBadge(state: power)
             }
@@ -363,6 +393,7 @@ private struct BatteryBadge: View {
         }
         .foregroundStyle(.white.opacity(0.6))
         .padding(.trailing, 4)
+        .fixedSize()
     }
 }
 
@@ -404,16 +435,26 @@ private struct CollapsedActivity: View {
 
 private struct SneakPeekLine: View {
     let track: NowPlayingTrack
+    let lyrics: LyricsModel?
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: track.isPlaying ? "play.fill" : "pause.fill")
-                .font(.system(size: 8))
-                .foregroundStyle(.white.opacity(0.6))
-            Text(track.title).foregroundStyle(.white)
-            if !track.artist.isEmpty {
-                Text(track.artist).foregroundStyle(.white.opacity(0.5))
+        TimelineView(.periodic(from: .now, by: 0.5)) { context in
+            HStack(spacing: 6) {
+                Image(systemName: track.isPlaying ? "play.fill" : "pause.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.white.opacity(0.6))
+                if track.isPlaying, let line = lyrics?.line(at: track.position(at: context.date)) {
+                    Text(line).foregroundStyle(.white)
+                        .id(line)
+                        .transition(.opacity)
+                } else {
+                    Text(track.title).foregroundStyle(.white)
+                    if !track.artist.isEmpty {
+                        Text(track.artist).foregroundStyle(.white.opacity(0.5))
+                    }
+                }
             }
+            .animation(.easeInOut(duration: 0.25), value: lyrics?.line(at: track.position(at: context.date)))
         }
         .font(.system(size: 11, weight: .medium))
         .lineLimit(1)
@@ -425,6 +466,7 @@ private struct SneakPeekLine: View {
 
 private struct HomeTab: View {
     @ObservedObject var nowPlaying: NowPlayingController
+    let lyrics: LyricsModel?
 
     private var emptyMessage: String {
         if let browser = nowPlaying.browserNeedingJavaScript {
@@ -447,10 +489,19 @@ private struct HomeTab: View {
                             Text(track.title)
                                 .font(.system(size: 15, weight: .semibold))
                                 .lineLimit(1)
-                            Text(track.artist.isEmpty ? track.album : track.artist)
-                                .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.55))
-                                .lineLimit(1)
+                            if track.isPlaying, let lyrics, !lyrics.lines.isEmpty {
+                                TimelineView(.periodic(from: .now, by: 0.5)) { context in
+                                    Text(lyrics.line(at: track.position(at: context.date)) ?? (track.artist.isEmpty ? track.album : track.artist))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(nowPlaying.tint)
+                                        .lineLimit(1)
+                                }
+                            } else {
+                                Text(track.artist.isEmpty ? track.album : track.artist)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.white.opacity(0.55))
+                                    .lineLimit(1)
+                            }
                         }
                         Spacer(minLength: 8)
                         SpectrumBars(isPlaying: track.isPlaying, tint: nowPlaying.tint)
