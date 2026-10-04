@@ -28,6 +28,7 @@ final class NotchWindowController {
     private let panel: NotchPanel
     private var monitors: [Any] = []
     private var collapseWork: DispatchWorkItem?
+    private var openWork: DispatchWorkItem?
     private var screenObserver: NSObjectProtocol?
     private var pillWidthObserver: AnyCancellable?
 
@@ -114,8 +115,20 @@ final class NotchWindowController {
         } else {
             let inside = collapsedRect.contains(point)
             panel.ignoresMouseEvents = !inside
-            if inside {
-                model.expand()
+            if !inside {
+                openWork?.cancel()
+                openWork = nil
+            } else if openWork == nil {
+                let work = DispatchWorkItem { [weak self] in
+                    MainActor.assumeIsolated {
+                        self?.openWork = nil
+                        guard let self, self.model.geometry.shapeRect(size: self.model.collapsedSize)
+                            .contains(NSEvent.mouseLocation) else { return }
+                        self.model.expand()
+                    }
+                }
+                openWork = work
+                DispatchQueue.main.asyncAfter(deadline: .now() + model.settings.openDelay, execute: work)
             }
         }
     }

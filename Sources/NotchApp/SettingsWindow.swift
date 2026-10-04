@@ -38,6 +38,18 @@ struct SettingsView: View {
                 Toggle("재생 중 접힌 노치 양옆을 작게", isOn: $settings.compactLiveActivity)
                 Button("크기 기본값으로") { settings.resetSizes() }
             }
+            Section("동작") {
+                SliderRow(title: "마우스를 올린 뒤 펼치기까지", value: $settings.openDelay,
+                          range: 0...1, unit: "초", format: "%.1f")
+            }
+            Section("미리보기") {
+                Toggle("곡이나 재생 상태가 바뀌면 노치 아래에 제목 표시", isOn: $settings.sneakPeekEnabled)
+                Toggle("재생 정보가 있으면 항상 표시", isOn: $settings.sneakPeekAlways)
+                    .disabled(!settings.sneakPeekEnabled)
+                SliderRow(title: "표시 시간", value: $settings.sneakPeekDuration,
+                          range: 1...10, unit: "초", format: "%.1f")
+                    .disabled(!settings.sneakPeekEnabled || settings.sneakPeekAlways)
+            }
         }
         .formStyle(.grouped)
         .frame(width: 460)
@@ -50,13 +62,14 @@ private struct SliderRow: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     let unit: String
+    var format = "%.0f"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(title)
                 Spacer()
-                Text("\(Int(value)) \(unit)").monospacedDigit().foregroundStyle(.secondary)
+                Text(String(format: format, value) + " " + unit).monospacedDigit().foregroundStyle(.secondary)
             }
             Slider(value: $value, in: range)
         }

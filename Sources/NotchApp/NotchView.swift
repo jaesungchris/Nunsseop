@@ -38,10 +38,21 @@ struct NotchView: View {
                     .padding(.horizontal, topRadius + 14)
                     .padding(.bottom, 16)
                     .transition(.opacity.combined(with: .scale(scale: 0.94, anchor: .top)))
-                } else if model.showsLiveActivity {
-                    CollapsedActivity(nowPlaying: nowPlaying, height: notchHeight, earWidth: model.earWidth)
-                        .padding(.horizontal, topRadius + 3)
-                        .transition(.opacity)
+                } else if model.showsLiveActivity || model.showsSneakPeek {
+                    VStack(spacing: 0) {
+                        if model.showsLiveActivity {
+                            CollapsedActivity(nowPlaying: nowPlaying, height: notchHeight, earWidth: model.earWidth)
+                        } else {
+                            Color.clear.frame(height: notchHeight)
+                        }
+                        if model.showsSneakPeek, let track = nowPlaying.track {
+                            SneakPeekLine(track: track)
+                                .frame(height: NotchViewModel.sneakPeekHeight, alignment: .top)
+                                .transition(.opacity)
+                        }
+                    }
+                    .padding(.horizontal, topRadius + 3)
+                    .transition(.opacity)
                 }
             }
             .frame(width: size.width, height: size.height)
@@ -66,6 +77,7 @@ struct NotchView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .animation(.spring(response: 0.42, dampingFraction: 0.8), value: model.isExpanded)
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.showsLiveActivity)
+        .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.showsSneakPeek)
         .animation(.easeInOut(duration: 0.18), value: model.tab)
     }
 }
@@ -165,6 +177,25 @@ private struct CollapsedActivity: View {
                 .frame(width: art - 2, height: max(8, art - 6))
         }
         .frame(height: height)
+    }
+}
+
+private struct SneakPeekLine: View {
+    let track: NowPlayingTrack
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: track.isPlaying ? "play.fill" : "pause.fill")
+                .font(.system(size: 8))
+                .foregroundStyle(.white.opacity(0.6))
+            Text(track.title).foregroundStyle(.white)
+            if !track.artist.isEmpty {
+                Text(track.artist).foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .font(.system(size: 11, weight: .medium))
+        .lineLimit(1)
+        .padding(.horizontal, 10)
     }
 }
 
