@@ -86,6 +86,10 @@ final class NotifyServer: @unchecked Sendable {
 
     private var listener: NWListener?
     private let queue = DispatchQueue(label: "nunsseop.notify")
+    /// Touched only on `queue`.
+    private var openConnections = 0
+    private static let maxConnections = 8
+    private static let maxRequestBytes = 65_536
     let token: String
 
     /// A shell command for Claude Code's Notification hook. Claude Code passes the event as
@@ -106,6 +110,7 @@ final class NotifyServer: @unchecked Sendable {
         if let existing = try? String(contentsOf: url, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
            existing.count >= 32 {
             token = existing
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
         } else {
             token = (UUID().uuidString + UUID().uuidString).replacingOccurrences(of: "-", with: "").lowercased()
             try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -130,7 +135,20 @@ final class NotifyServer: @unchecked Sendable {
     }
 
     private func handle(_ connection: NWConnection) {
+        guard openConnections < Self.maxConnections else {
+            connection.cancel()
+            return
+        }
+        openConnections += 1
+        connection.stateUpdateHandler = { [weak self] state in
+            switch state {
+            case .cancelled, .failed: self?.openConnections -= 1
+            default: break
+            }
+        }
         connection.start(queue: queue)
+        // Drop clients that connect and then stall.
+        queue.asyncAfter(deadline: .now() + 5) { connection.cancel() }
         receive(on: connection, buffer: Data())
     }
 
@@ -141,7 +159,7 @@ final class NotifyServer: @unchecked Sendable {
             if let data { buffer.append(data) }
             if let request = Self.parse(buffer) {
                 self.respond(to: request, on: connection)
-            } else if isComplete || error != nil || buffer.count > 65_536 {
+            } else if isComplete || error != nil || buffer.count > Self.maxRequestBytes {
                 self.reply(connection, status: "400 Bad Request")
             } else {
                 self.receive(on: connection, buffer: buffer)
@@ -167,7 +185,7 @@ final class NotifyServer: @unchecked Sendable {
             guard let colon = line.firstIndex(of: ":") else { continue }
             headers[line[..<colon].lowercased()] = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
         }
-        let length = Int(headers["content-length"] ?? "0") ?? 0
+        guard let length = Int(headers["content-length"] ?? "0"), (0...maxRequestBytes).contains(length) else { return nil }
         let body = data[separator.upperBound...]
         guard body.count >= length else { return nil }
         return Request(method: String(parts[0]), path: String(parts[1]), headers: headers, body: Data(body.prefix(length)))
@@ -177,7 +195,7 @@ final class NotifyServer: @unchecked Sendable {
         guard request.method == "POST", request.path == "/notify" else {
             return reply(connection, status: "404 Not Found")
         }
-        guard request.headers["authorization"] == "Bearer \(token)" else {
+        guard Self.constantTimeEqual(request.headers["authorization"] ?? "", "Bearer \(token)") else {
             return reply(connection, status: "401 Unauthorized")
         }
         // The body is either JSON {"title", "message"} or plain text with the title in X-Title.
@@ -188,6 +206,15 @@ final class NotifyServer: @unchecked Sendable {
         let handler = onNotify
         DispatchQueue.main.async { MainActor.assumeIsolated { handler?(title, message) } }
         reply(connection, status: "204 No Content")
+    }
+
+    private static func constantTimeEqual(_ a: String, _ b: String) -> Bool {
+        let x = Array(a.utf8), y = Array(b.utf8)
+        var difference = UInt8(x.count == y.count ? 0 : 1)
+        for i in 0..<max(x.count, y.count) {
+            difference |= (i < x.count ? x[i] : 0) ^ (i < y.count ? y[i] : 0)
+        }
+        return difference == 0
     }
 
     private func reply(_ connection: NWConnection, status: String) {
