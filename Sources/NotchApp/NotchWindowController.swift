@@ -51,6 +51,7 @@ final class NotchWindowController {
         panel.setFrame(model.geometry.panelFrame, display: true)
         panel.orderFrontRegardless()
         installMonitors()
+        model.nowPlaying.start()
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main
@@ -82,8 +83,8 @@ final class NotchWindowController {
 
     private func pointerMoved() {
         let point = NSEvent.mouseLocation
-        let collapsedRect = model.geometry.shapeRect(expanded: false)
-        let expandedRect = model.geometry.shapeRect(expanded: true)
+        let collapsedRect = model.geometry.shapeRect(size: model.collapsedSize)
+        let expandedRect = model.geometry.shapeRect(size: NotchGeometry.expandedSize)
 
         if model.isExpanded {
             let inside = expandedRect.insetBy(dx: -6, dy: -6).contains(point)

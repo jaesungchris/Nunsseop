@@ -18,6 +18,8 @@
     <string>14.0</string>
     <key>LSUIElement</key>
     <true/>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Music, Spotify의 재생 정보를 표시하고 재생을 제어합니다.</string>
     <key>NSHighResolutionCapable</key>
     <true/>
 </dict>

@@ -9,6 +9,7 @@ final class DebugSnapshotter {
     private weak var view: NSView?
     private var cancellable: AnyCancellable?
     private var counter = 0
+    private var signalSource: DispatchSourceSignal?
 
     init(directory: URL, view: NSView, model: NotchViewModel) {
         self.directory = directory
@@ -20,6 +21,13 @@ final class DebugSnapshotter {
                     self?.capture(label: expanded ? "expanded" : "collapsed")
                 }
             }
+        signal(SIGUSR1, SIG_IGN)
+        let source = DispatchSource.makeSignalSource(signal: SIGUSR1, queue: .main)
+        source.setEventHandler { [weak self] in
+            MainActor.assumeIsolated { self?.capture(label: "manual") }
+        }
+        source.resume()
+        signalSource = source
     }
 
     private func capture(label: String) {
