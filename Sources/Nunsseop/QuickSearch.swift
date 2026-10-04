@@ -143,6 +143,7 @@ final class QuickSearchModel: ObservableObject {
 
 struct SearchTab: View {
     @ObservedObject var model: QuickSearchModel
+    let shortcut: String?
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -172,7 +173,13 @@ struct SearchTab: View {
                                   subtitle: "Google") { model.searchWeb() }
                     }
                     if model.query.isEmpty {
-                        Text("Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: ⌃⌥Space")
+                        Group {
+                            if let shortcut {
+                                Text("Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: \(shortcut)")
+                            } else {
+                                Text("Type an app name, a sum like 12*(3+4), or anything to search the web.")
+                            }
+                        }
                             .font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 4)
                     }
@@ -225,11 +232,35 @@ private struct ResultRow: View {
     }
 }
 
+/// Shortcuts offered for opening Search. ⌃⌥Space is also macOS's default for switching input sources.
+enum SearchShortcut: String, CaseIterable, Identifiable {
+    case shiftCommandSpace, optionSpace, controlOptionSpace
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .shiftCommandSpace: return "⇧⌘Space"
+        case .optionSpace: return "⌥Space"
+        case .controlOptionSpace: return "⌃⌥Space"
+        }
+    }
+
+    var modifiers: UInt32 {
+        switch self {
+        case .shiftCommandSpace: return UInt32(shiftKey | cmdKey)
+        case .optionSpace: return UInt32(optionKey)
+        case .controlOptionSpace: return UInt32(controlKey | optionKey)
+        }
+    }
+}
+
 /// A system-wide hotkey through Carbon, which needs no Accessibility permission.
 final class GlobalHotKey {
     private var reference: EventHotKeyRef?
     private var handler: EventHandlerRef?
     private let action: () -> Void
+    private(set) var isRegistered = false
 
     init(keyCode: UInt32, modifiers: UInt32, action: @escaping () -> Void) {
         self.action = action
@@ -242,7 +273,7 @@ final class GlobalHotKey {
             return noErr
         }, 1, &spec, context, &handler)
         let id = EventHotKeyID(signature: OSType(0x4E534550), id: 1)
-        RegisterEventHotKey(keyCode, modifiers, id, GetApplicationEventTarget(), 0, &reference)
+        isRegistered = RegisterEventHotKey(keyCode, modifiers, id, GetApplicationEventTarget(), 0, &reference) == noErr
     }
 
     deinit {
@@ -250,7 +281,7 @@ final class GlobalHotKey {
         if let handler { RemoveEventHandler(handler) }
     }
 
-    static func controlOptionSpace(_ action: @escaping () -> Void) -> GlobalHotKey {
-        GlobalHotKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(controlKey | optionKey), action: action)
+    convenience init(shortcut: SearchShortcut, action: @escaping () -> Void) {
+        self.init(keyCode: UInt32(kVK_Space), modifiers: shortcut.modifiers, action: action)
     }
 }

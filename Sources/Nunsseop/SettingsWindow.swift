@@ -259,7 +259,18 @@ private struct ServicesPane: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Quick search") {
-                Toggle("Open Search with ⌃⌥Space from anywhere", isOn: $settings.searchHotkey)
+                Toggle("Open Search from anywhere with a shortcut", isOn: $settings.searchHotkey)
+                Picker("Shortcut", selection: $settings.searchShortcut) {
+                    ForEach(SearchShortcut.allCases) { Text($0.label).tag($0) }
+                }
+                .disabled(!settings.searchHotkey)
+                if settings.searchShortcutTaken {
+                    Text("Another app is already using this shortcut. Pick a different one.")
+                        .font(.caption).foregroundStyle(.orange)
+                } else if settings.searchHotkey && settings.searchShortcut == .controlOptionSpace {
+                    Text("macOS also uses ⌃⌥Space to switch input sources, so it may change your keyboard language instead.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
             Section("Screen recording") {
                 Toggle("Record microphone audio", isOn: $settings.recordAudio)

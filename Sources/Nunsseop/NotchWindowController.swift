@@ -53,7 +53,6 @@ final class NotchWindowController {
             panel.ignoresMouseEvents = true
             return
         }
-        if !model.settings.searchTab { model.settings.searchTab = true }
         model.tab = .search
         model.expand()
         model.pinned = true
@@ -148,9 +147,13 @@ final class NotchWindowController {
                 self.panel.ignoresMouseEvents = true
             }
         }
-        settingsObservers.append(model.settings.$searchHotkey.sink { [weak self] enabled in
-            self?.hotKey = enabled ? GlobalHotKey.controlOptionSpace { [weak self] in self?.openSearch() } : nil
-        })
+        settingsObservers.append(model.settings.$searchHotkey.combineLatest(model.settings.$searchShortcut)
+            .sink { [weak self] enabled, shortcut in
+                guard let self else { return }
+                self.hotKey = nil
+                self.hotKey = enabled ? GlobalHotKey(shortcut: shortcut) { [weak self] in self?.openSearch() } : nil
+                self.model.settings.searchShortcutTaken = enabled && self.hotKey?.isRegistered != true
+            })
         if let keys = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
             guard event.keyCode == 53, let self else { return event }
             MainActor.assumeIsolated { self.model.collapse(); self.panel.ignoresMouseEvents = true }

@@ -203,12 +203,10 @@
 "Press Return to copy" = "Pulsa Retorno para copiar";
 "Open" = "Abrir";
 "Search the web for “%@”" = "Buscar «%@» en la web";
-"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: ⌃⌥Space" = "Escribe el nombre de una app, una operación como 12*(3+4) o cualquier cosa para buscar en la web. Atajo: ⌃⌥Espacio";
 "Show mouse and keyboard batteries and warn when low" = "Mostrar la batería del ratón y el teclado y avisar cuando esté baja";
 "Privacy" = "Privacidad";
 "Show when an app uses the camera or microphone" = "Mostrar cuando una app use la cámara o el micrófono";
 "Quick search" = "Búsqueda rápida";
-"Open Search with ⌃⌥Space from anywhere" = "Abrir Buscar con ⌃⌥Espacio desde cualquier lugar";
 "Screen recording" = "Grabación de pantalla";
 "Record microphone audio" = "Grabar audio del micrófono";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "Las grabaciones se guardan donde van las capturas de pantalla y se añaden al estante. La primera vez se necesita el permiso de Grabación de pantalla.";
@@ -223,3 +221,9 @@
 "%@ tokens" = "%@ tokens";
 "Resets %@" = "Se restablece %@";
 "Usage appears here once you have used Claude Code or Codex on this Mac." = "El uso aparecerá aquí cuando uses Claude Code o Codex en este Mac.";
+"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: %@" = "Escribe el nombre de una app, una operación como 12*(3+4) o cualquier cosa para buscar en la web. Atajo: %@";
+"Type an app name, a sum like 12*(3+4), or anything to search the web." = "Escribe el nombre de una app, una operación como 12*(3+4) o cualquier cosa para buscar en la web.";
+"Open Search from anywhere with a shortcut" = "Abrir Buscar desde cualquier lugar con un atajo";
+"Shortcut" = "Atajo";
+"Another app is already using this shortcut. Pick a different one." = "Otra app ya usa este atajo. Elige otro.";
+"macOS also uses ⌃⌥Space to switch input sources, so it may change your keyboard language instead." = "macOS también usa ⌃⌥Espacio para cambiar de fuente de entrada, así que puede cambiar el idioma del teclado en su lugar.";

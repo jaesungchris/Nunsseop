@@ -203,12 +203,10 @@
 "Press Return to copy" = "Return キーでコピー";
 "Open" = "開く";
 "Search the web for “%@”" = "Web で「%@」を検索";
-"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: ⌃⌥Space" = "アプリ名、12*(3+4) のような計算式、または Web で調べたい語句を入力してください。ショートカット: ⌃⌥Space";
 "Show mouse and keyboard batteries and warn when low" = "マウスとキーボードのバッテリーを表示し、残量が少ないと通知";
 "Privacy" = "プライバシー";
 "Show when an app uses the camera or microphone" = "アプリがカメラやマイクを使っているときに表示";
 "Quick search" = "クイック検索";
-"Open Search with ⌃⌥Space from anywhere" = "どこからでも ⌃⌥Space で検索を開く";
 "Screen recording" = "画面収録";
 "Record microphone audio" = "マイクの音声を録音";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "録画はスクリーンショットの保存先に保存され、シェルフに追加されます。初回は画面収録の許可が必要です。";
@@ -223,3 +221,9 @@
 "%@ tokens" = "%@ トークン";
 "Resets %@" = "%@ にリセット";
 "Usage appears here once you have used Claude Code or Codex on this Mac." = "この Mac で Claude Code や Codex を使うと、ここに使用量が表示されます。";
+"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: %@" = "アプリ名、12*(3+4) のような計算式、または Web で調べたい語句を入力してください。ショートカット: %@";
+"Type an app name, a sum like 12*(3+4), or anything to search the web." = "アプリ名、12*(3+4) のような計算式、または Web で調べたい語句を入力してください。";
+"Open Search from anywhere with a shortcut" = "ショートカットでどこからでも検索を開く";
+"Shortcut" = "ショートカット";
+"Another app is already using this shortcut. Pick a different one." = "このショートカットは別のアプリが使用しています。別のものを選んでください。";
+"macOS also uses ⌃⌥Space to switch input sources, so it may change your keyboard language instead." = "macOS も ⌃⌥Space で入力ソースを切り替えるため、検索の代わりにキーボードの言語が変わることがあります。";

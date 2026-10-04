@@ -197,5 +197,7 @@ final class NotchViewModel: ObservableObject {
         pinned = false
         // The camera must only start from an explicit click on the Mirror tab.
         if tab == .mirror { tab = .home }
+        // Search opened by its shortcut may be a tab the header doesn't show.
+        leaveHiddenTab()
     }
 }

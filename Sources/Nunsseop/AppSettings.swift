@@ -46,8 +46,11 @@ final class AppSettings: ObservableObject {
     @Published var searchTab: Bool { didSet { defaults.set(searchTab, forKey: "searchTab") } }
     @Published var emojiTab: Bool { didSet { defaults.set(emojiTab, forKey: "emojiTab") } }
     @Published var aiTab: Bool { didSet { defaults.set(aiTab, forKey: "aiTab") } }
-    /// ⌃⌥Space opens the Search tab from anywhere.
+    /// A system-wide shortcut opens the Search tab from anywhere.
     @Published var searchHotkey: Bool { didSet { defaults.set(searchHotkey, forKey: "searchHotkey") } }
+    @Published var searchShortcut: SearchShortcut { didSet { defaults.set(searchShortcut.rawValue, forKey: "searchShortcut") } }
+    /// Set when another app already holds the chosen shortcut.
+    @Published var searchShortcutTaken = false
     @Published var peripheralBatteries: Bool { didSet { defaults.set(peripheralBatteries, forKey: "peripheralBatteries") } }
     /// Shows when any app uses the camera or microphone.
     @Published var privacyIndicator: Bool { didSet { defaults.set(privacyIndicator, forKey: "privacyIndicator") } }
@@ -103,6 +106,7 @@ final class AppSettings: ObservableObject {
             "emojiTab": true,
             "aiTab": true,
             "searchHotkey": true,
+            "searchShortcut": SearchShortcut.shiftCommandSpace.rawValue,
             "peripheralBatteries": true,
             "privacyIndicator": true,
             "recordAudio": false,
@@ -154,6 +158,7 @@ final class AppSettings: ObservableObject {
         emojiTab = defaults.bool(forKey: "emojiTab")
         aiTab = defaults.bool(forKey: "aiTab")
         searchHotkey = defaults.bool(forKey: "searchHotkey")
+        searchShortcut = SearchShortcut(rawValue: defaults.string(forKey: "searchShortcut") ?? "") ?? .shiftCommandSpace
         peripheralBatteries = defaults.bool(forKey: "peripheralBatteries")
         privacyIndicator = defaults.bool(forKey: "privacyIndicator")
         recordAudio = defaults.bool(forKey: "recordAudio")

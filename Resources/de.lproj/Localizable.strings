@@ -203,12 +203,10 @@
 "Press Return to copy" = "Zum Kopieren Return drücken";
 "Open" = "Öffnen";
 "Search the web for “%@”" = "Im Web nach „%@“ suchen";
-"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: ⌃⌥Space" = "Gib einen App-Namen, eine Rechnung wie 12*(3+4) oder einen Suchbegriff fürs Web ein. Kurzbefehl: ⌃⌥Leertaste";
 "Show mouse and keyboard batteries and warn when low" = "Batterie von Maus und Tastatur anzeigen und bei niedrigem Stand warnen";
 "Privacy" = "Datenschutz";
 "Show when an app uses the camera or microphone" = "Anzeigen, wenn eine App Kamera oder Mikrofon verwendet";
 "Quick search" = "Schnellsuche";
-"Open Search with ⌃⌥Space from anywhere" = "Suche überall mit ⌃⌥Leertaste öffnen";
 "Screen recording" = "Bildschirmaufnahme";
 "Record microphone audio" = "Mikrofonton aufnehmen";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "Aufnahmen werden am Speicherort für Bildschirmfotos gesichert und zur Ablage hinzugefügt. Beim ersten Mal ist die Berechtigung für Bildschirmaufnahme nötig.";
@@ -223,3 +221,9 @@
 "%@ tokens" = "%@ Tokens";
 "Resets %@" = "Zurückgesetzt %@";
 "Usage appears here once you have used Claude Code or Codex on this Mac." = "Die Nutzung erscheint hier, sobald du Claude Code oder Codex auf diesem Mac verwendest.";
+"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: %@" = "Gib einen App-Namen, eine Rechnung wie 12*(3+4) oder einen Suchbegriff fürs Web ein. Kurzbefehl: %@";
+"Type an app name, a sum like 12*(3+4), or anything to search the web." = "Gib einen App-Namen, eine Rechnung wie 12*(3+4) oder einen Suchbegriff fürs Web ein.";
+"Open Search from anywhere with a shortcut" = "Suche überall mit einem Kurzbefehl öffnen";
+"Shortcut" = "Kurzbefehl";
+"Another app is already using this shortcut. Pick a different one." = "Eine andere App verwendet diesen Kurzbefehl bereits. Wähle einen anderen.";
+"macOS also uses ⌃⌥Space to switch input sources, so it may change your keyboard language instead." = "macOS wechselt mit ⌃⌥Leertaste auch die Eingabequelle, daher kann sich stattdessen die Tastatursprache ändern.";

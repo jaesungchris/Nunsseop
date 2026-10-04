@@ -228,12 +228,10 @@
 "Press Return to copy" = "Return 키를 눌러 복사";
 "Open" = "열기";
 "Search the web for “%@”" = "웹에서 “%@” 검색";
-"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: ⌃⌥Space" = "앱 이름, 12*(3+4) 같은 계산식, 또는 웹에서 찾을 내용을 입력하세요. 단축키: ⌃⌥Space";
 "Show mouse and keyboard batteries and warn when low" = "마우스와 키보드 배터리를 표시하고 부족하면 알림";
 "Privacy" = "개인정보 보호";
 "Show when an app uses the camera or microphone" = "앱이 카메라나 마이크를 사용하면 표시";
 "Quick search" = "빠른 검색";
-"Open Search with ⌃⌥Space from anywhere" = "어디서든 ⌃⌥Space로 검색 열기";
 "Screen recording" = "화면 녹화";
 "Record microphone audio" = "마이크 소리 녹음";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "녹화 파일은 스크린샷 저장 위치에 저장되고 선반에 추가됩니다. 처음에는 화면 기록 권한이 필요합니다.";
@@ -248,3 +246,9 @@
 "%@ tokens" = "%@ 토큰";
 "Resets %@" = "%@ 초기화";
 "Usage appears here once you have used Claude Code or Codex on this Mac." = "이 Mac에서 Claude Code나 Codex를 쓰면 여기에 사용량이 표시됩니다.";
+"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: %@" = "앱 이름, 12*(3+4) 같은 계산식, 또는 웹에서 찾을 내용을 입력하세요. 단축키: %@";
+"Type an app name, a sum like 12*(3+4), or anything to search the web." = "앱 이름, 12*(3+4) 같은 계산식, 또는 웹에서 찾을 내용을 입력하세요.";
+"Open Search from anywhere with a shortcut" = "단축키로 어디서든 검색 열기";
+"Shortcut" = "단축키";
+"Another app is already using this shortcut. Pick a different one." = "다른 앱이 이미 이 단축키를 쓰고 있습니다. 다른 단축키를 고르세요.";
+"macOS also uses ⌃⌥Space to switch input sources, so it may change your keyboard language instead." = "macOS도 ⌃⌥Space로 입력 소스를 바꾸기 때문에, 검색 대신 키보드 언어가 바뀔 수 있습니다.";

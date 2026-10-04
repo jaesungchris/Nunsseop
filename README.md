@@ -57,7 +57,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 
 | | |
 | :---: | :---: |
-| <img src="docs/images/tab-search.png" alt="Quick search with a calculation"><br>**Quick search.** <kbd>⌃⌥Space</kbd> from anywhere: open apps, search the web, calculate. | <img src="docs/images/tab-ai.png" alt="AI usage for Claude Code and Codex"><br>**AI usage.** Claude Code and Codex limits, no login needed. |
+| <img src="docs/images/tab-search.png" alt="Quick search with a calculation"><br>**Quick search.** <kbd>⇧⌘Space</kbd> from anywhere: open apps, search the web, calculate. | <img src="docs/images/tab-ai.png" alt="AI usage for Claude Code and Codex"><br>**AI usage.** Claude Code and Codex limits, no login needed. |
 | <img src="docs/images/shelf.png" alt="File shelf with AirDrop tile"><br>**Shelf.** Park files in the notch, or drop them on AirDrop. | <img src="docs/images/tab-timer.png" alt="Timer tab"><br>**Timer.** Countdown, Pomodoro and stopwatch. |
 | <img src="docs/images/tab-tools.png" alt="Tools tab"><br>**Tools.** Audio output, mic mute, keep awake, screen recording. | <img src="docs/images/tab-system.png" alt="System tab with device batteries"><br>**System.** CPU, memory, disk, network and device batteries. |
 | <img src="docs/images/tab-emoji.png" alt="Emoji picker"><br>**Emoji.** Every emoji, searchable, one click to copy. | <img src="docs/images/hud-headphones.png" alt="Headphone battery HUD"><br>**HUDs.** Volume, brightness, AirPods battery and more. |
@@ -72,7 +72,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 **🗂️ Get things done**
 - **Shelf.** Drag files onto the notch and back out later. Screenshots and finished downloads can land there automatically.
 - **Calendar and reminders.** Your week, today's events, and reminders you can tick off.
-- **Quick search.** <kbd>⌃⌥Space</kbd> opens apps, searches the web, and works out sums like `12*(3+4)`.
+- **Quick search.** <kbd>⇧⌘Space</kbd> opens apps, searches the web, and works out sums like `12*(3+4)`. You can switch the shortcut to <kbd>⌥Space</kbd> or <kbd>⌃⌥Space</kbd> in Settings.
 - **Timer, clipboard history, notes and an emoji picker.** Clipboard history stays in memory and skips anything a password manager marks as secret.
 
 **💻 Your Mac**

@@ -203,12 +203,10 @@
 "Press Return to copy" = "按 Return 键拷贝";
 "Open" = "打开";
 "Search the web for “%@”" = "在网页中搜索“%@”";
-"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: ⌃⌥Space" = "输入应用名称、类似 12*(3+4) 的算式，或任何要在网页中搜索的内容。快捷键：⌃⌥Space";
 "Show mouse and keyboard batteries and warn when low" = "显示鼠标和键盘电量，电量低时提醒";
 "Privacy" = "隐私";
 "Show when an app uses the camera or microphone" = "应用使用相机或麦克风时显示";
 "Quick search" = "快速搜索";
-"Open Search with ⌃⌥Space from anywhere" = "在任何地方按 ⌃⌥Space 打开搜索";
 "Screen recording" = "屏幕录制";
 "Record microphone audio" = "录制麦克风声音";
 "Recordings are saved where screenshots go and added to the shelf. Screen Recording permission is needed the first time." = "录屏会存储到截屏的存储位置并添加到架子。首次使用需要屏幕录制权限。";
@@ -223,3 +221,9 @@
 "%@ tokens" = "%@ 个令牌";
 "Resets %@" = "%@重置";
 "Usage appears here once you have used Claude Code or Codex on this Mac." = "在这台 Mac 上使用 Claude Code 或 Codex 后，用量会显示在这里。";
+"Type an app name, a sum like 12*(3+4), or anything to search the web. Shortcut: %@" = "输入应用名称、类似 12*(3+4) 的算式，或任何要在网页中搜索的内容。快捷键：%@";
+"Type an app name, a sum like 12*(3+4), or anything to search the web." = "输入应用名称、类似 12*(3+4) 的算式，或任何要在网页中搜索的内容。";
+"Open Search from anywhere with a shortcut" = "使用快捷键在任何地方打开搜索";
+"Shortcut" = "快捷键";
+"Another app is already using this shortcut. Pick a different one." = "其他应用已在使用此快捷键，请选择另一个。";
+"macOS also uses ⌃⌥Space to switch input sources, so it may change your keyboard language instead." = "macOS 也用 ⌃⌥Space 切换输入法，因此可能会切换键盘语言而不是打开搜索。";
