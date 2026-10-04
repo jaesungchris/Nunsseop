@@ -68,6 +68,8 @@ final class NotchViewModel: ObservableObject {
     @Published var tab: NotchTab = .home
     @Published private(set) var showsLiveActivity = false
     @Published private(set) var sneakPeekPending = false
+    /// Set briefly when a call with a meeting name starts.
+    @Published private(set) var callPeekPending = false
 
     let settings: AppSettings
     let nowPlaying = NowPlayingController()
@@ -89,6 +91,7 @@ final class NotchViewModel: ObservableObject {
     let downloads = DownloadWatcher()
     let peripherals = PeripheralMonitor()
     let privacy = PrivacyMonitor()
+    let calls = CallMonitor()
     let emoji = EmojiModel()
     let aiUsage = AIUsageModel()
     lazy var search = QuickSearchModel(clipboard: clipboard, emoji: emoji, tools: tools)
@@ -97,6 +100,7 @@ final class NotchViewModel: ObservableObject {
     @Published var pinned = false
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
+    private var callPeekWork: DispatchWorkItem?
 
     static let sneakPeekHeight: CGFloat = 24
 
@@ -110,6 +114,8 @@ final class NotchViewModel: ObservableObject {
             .combineLatest(recorder.$startedAt.map { $0 != nil },
                            privacy.$cameraInUse.combineLatest(privacy.$micInUse, settings.$privacyIndicator).map { ($0 || $1) && $2 })
             .map { $0 || $1 || $2 }
+            .combineLatest(calls.$call.map { $0 != nil })
+            .map { $0 || $1 }
             .removeDuplicates()
             .sink { [weak self] in self?.showsLiveActivity = $0 }
             .store(in: &cancellables)
@@ -127,6 +133,15 @@ final class NotchViewModel: ObservableObject {
             .store(in: &cancellables)
         timer.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        calls.objectWillChange
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        // A meeting's name shows under the notch when the call starts.
+        calls.$call
+            .compactMap { call in call.flatMap { call in call.title.map { "\(call.startedAt)|\($0)" } } }
+            .removeDuplicates()
+            .sink { [weak self] _ in self?.triggerCallPeek() }
             .store(in: &cancellables)
         nowPlaying.$track
             .compactMap { $0.map { "\($0.identity)|\($0.isPlaying)" } }
@@ -181,8 +196,15 @@ final class NotchViewModel: ObservableObject {
         return content + 2 * Self.headerInset
     }
 
+    /// The meeting name the sneak peek shows instead of the track while a call starts.
+    var sneakPeekCallTitle: String? {
+        callPeekPending ? calls.call?.title : nil
+    }
+
     var showsSneakPeek: Bool {
-        guard settings.sneakPeekEnabled, let track = nowPlaying.track else { return false }
+        guard settings.sneakPeekEnabled else { return false }
+        if sneakPeekCallTitle != nil { return true }
+        guard let track = nowPlaying.track else { return false }
         let lyricsLive = settings.lyricsEnabled && settings.lyricsUnderNotch && track.isPlaying && !lyrics.lines.isEmpty
         return settings.sneakPeekAlways || sneakPeekPending || lyricsLive
     }
@@ -228,10 +250,21 @@ final class NotchViewModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + settings.sneakPeekDuration, execute: work)
     }
 
+    private func triggerCallPeek() {
+        callPeekWork?.cancel()
+        callPeekPending = true
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated { self?.callPeekPending = false }
+        }
+        callPeekWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + settings.sneakPeekDuration, execute: work)
+    }
+
     var earWidth: CGFloat {
         let height = geometry.collapsedSize.height
         let base = settings.compactLiveActivity ? height * 0.7 : height + 6
-        // Room for "12:34" when a timer is running.
+        // Room for "1:23:45" during a call, and "12:34" when a timer is running.
+        if calls.call != nil { return max(base, 60) }
         let needsText = (timer.isRunning && settings.collapsedTimer) || recorder.isRecording
         return needsText ? max(base, 50) : base
     }

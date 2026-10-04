@@ -195,6 +195,7 @@
 "Right side when idle" = "평소 오른쪽에 표시";
 "Artwork and visualizer while music plays" = "음악 재생 중 앨범아트와 이퀄라이저";
 "Time left while a timer runs" = "타이머 작동 중 남은 시간";
+"Call app and duration during calls" = "통화 중 앱과 통화 시간";
 "Title under the notch when the track changes" = "곡이 바뀌면 노치 아래에 제목";
 "Always show the title while something is playing" = "재생 중에는 제목을 항상 표시";
 "Current lyric under the notch while playing" = "재생 중 노치 아래에 현재 가사";

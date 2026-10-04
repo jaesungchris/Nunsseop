@@ -76,6 +76,8 @@ final class AppSettings: ObservableObject {
     @Published var headerWeather: Bool { didSet { defaults.set(headerWeather, forKey: "headerWeather") } }
     @Published var collapsedMusic: Bool { didSet { defaults.set(collapsedMusic, forKey: "collapsedMusic") } }
     @Published var collapsedTimer: Bool { didSet { defaults.set(collapsedTimer, forKey: "collapsedTimer") } }
+    /// Shows the call app and how long the call has run while one is in progress.
+    @Published var callIsland: Bool { didSet { defaults.set(callIsland, forKey: "callIsland") } }
     @Published var idleLeft: IdleItem { didSet { defaults.set(idleLeft.rawValue, forKey: "idleLeft") } }
     @Published var idleRight: IdleItem { didSet { defaults.set(idleRight.rawValue, forKey: "idleRight") } }
     @Published var systemTab: Bool { didSet { defaults.set(systemTab, forKey: "systemTab") } }
@@ -136,6 +138,7 @@ final class AppSettings: ObservableObject {
             "headerWeather": true,
             "collapsedMusic": true,
             "collapsedTimer": true,
+            "callIsland": true,
             "idleLeft": IdleItem.none.rawValue,
             "idleRight": IdleItem.none.rawValue,
             "systemTab": true,
@@ -199,6 +202,7 @@ final class AppSettings: ObservableObject {
         headerWeather = defaults.bool(forKey: "headerWeather")
         collapsedMusic = defaults.bool(forKey: "collapsedMusic")
         collapsedTimer = defaults.bool(forKey: "collapsedTimer")
+        callIsland = defaults.bool(forKey: "callIsland")
         idleLeft = IdleItem(rawValue: defaults.string(forKey: "idleLeft") ?? "") ?? .none
         idleRight = IdleItem(rawValue: defaults.string(forKey: "idleRight") ?? "") ?? .none
         systemTab = defaults.bool(forKey: "systemTab")

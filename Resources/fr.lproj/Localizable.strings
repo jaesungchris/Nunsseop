@@ -170,6 +170,7 @@
 "Right side when idle" = "À droite au repos";
 "Artwork and visualizer while music plays" = "Pochette et visualiseur pendant la musique";
 "Time left while a timer runs" = "Temps restant du minuteur";
+"Call app and duration during calls" = "App et durée pendant les appels";
 "Title under the notch when the track changes" = "Titre sous l’encoche au changement de morceau";
 "Always show the title while something is playing" = "Toujours afficher le titre pendant la lecture";
 "Current lyric under the notch while playing" = "Ligne de paroles sous l’encoche pendant la lecture";

@@ -74,7 +74,7 @@ struct NotchView: View {
                     VStack(spacing: 0) {
                         if model.showsLiveActivity {
                             CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, recorder: model.recorder,
-                                              privacy: model.settings.privacyIndicator ? model.privacy : nil,
+                                              privacy: model.settings.privacyIndicator ? model.privacy : nil, call: model.calls.call,
                                               height: notchHeight, earWidth: model.earWidth,
                                               showsMusic: model.settings.collapsedMusic, showsTimer: model.settings.collapsedTimer)
                         } else if model.showsIdleEars {
@@ -82,7 +82,17 @@ struct NotchView: View {
                         } else {
                             Color.clear.frame(height: notchHeight)
                         }
-                        if model.showsSneakPeek, let track = nowPlaying.track {
+                        if model.showsSneakPeek, let title = model.sneakPeekCallTitle {
+                            HStack(spacing: 6) {
+                                Image(systemName: "phone.fill").font(.system(size: 8)).foregroundStyle(.green)
+                                Text(title).foregroundStyle(.white)
+                            }
+                            .font(.system(size: 11, weight: .medium))
+                            .lineLimit(1)
+                            .padding(.horizontal, 10)
+                            .frame(height: NotchViewModel.sneakPeekHeight, alignment: .top)
+                            .transition(.opacity)
+                        } else if model.showsSneakPeek, let track = nowPlaying.track {
                             SneakPeekLine(track: track, lyrics: model.settings.lyricsEnabled ? model.lyrics : nil)
                                 .frame(height: NotchViewModel.sneakPeekHeight, alignment: .top)
                                 .transition(.opacity)
@@ -575,6 +585,7 @@ private struct CollapsedActivity: View {
     @ObservedObject var timer: TimerModel
     @ObservedObject var recorder: ScreenRecorder
     let privacy: PrivacyMonitor?
+    let call: CallMonitor.Call?
     let height: CGFloat
     let earWidth: CGFloat
     let showsMusic: Bool
@@ -584,7 +595,12 @@ private struct CollapsedActivity: View {
         let art = min(height - 10, 32)
         let playing = showsMusic && nowPlaying.track?.isPlaying == true
         HStack {
-            if playing {
+            // A call outranks music and timers; a screen recording keeps its time on the right.
+            if let call {
+                Image(nsImage: call.icon)
+                    .resizable()
+                    .frame(width: art, height: art)
+            } else if playing {
                 ArtworkView(image: nowPlaying.artwork, cornerRadius: art > 16 ? 5 : 3)
                     .frame(width: art, height: art)
             } else if recorder.isRecording {
@@ -606,6 +622,12 @@ private struct CollapsedActivity: View {
                     Text(TimerModel.format(context.date.timeIntervalSince(started)))
                         .font(.system(size: 11, weight: .semibold).monospacedDigit())
                         .foregroundStyle(.red)
+                }
+            } else if let call {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    Text(TimerModel.format(context.date.timeIntervalSince(call.startedAt)))
+                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(.green)
                 }
             } else if let privacy, (privacy.cameraInUse || privacy.micInUse), !(showsTimer && timer.isRunning), playing {
                 HStack(spacing: 3) {

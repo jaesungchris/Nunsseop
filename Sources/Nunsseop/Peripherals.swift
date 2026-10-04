@@ -179,7 +179,7 @@ final class PrivacyMonitor: ObservableObject {
         return false
     }
 
-    private static func anyMicRunning() -> Bool {
+    nonisolated static func anyMicRunning() -> Bool {
         var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDevices, mScope: kAudioObjectPropertyScopeGlobal,
                                                  mElement: kAudioObjectPropertyElementMain)
         var size: UInt32 = 0

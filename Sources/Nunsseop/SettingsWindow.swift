@@ -164,6 +164,7 @@ private struct LayoutPane: View {
             Section("Collapsed notch") {
                 Toggle("Artwork and visualizer while music plays", isOn: $settings.collapsedMusic)
                 Toggle("Time left while a timer runs", isOn: $settings.collapsedTimer)
+                Toggle("Call app and duration during calls", isOn: $settings.callIsland)
                 Picker("Left side when idle", selection: $settings.idleLeft) {
                     ForEach(IdleItem.allCases) { Text($0.title).tag($0) }
                 }

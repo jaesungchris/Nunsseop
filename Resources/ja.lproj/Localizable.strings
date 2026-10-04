@@ -170,6 +170,7 @@
 "Right side when idle" = "待機中の右側";
 "Artwork and visualizer while music plays" = "音楽再生中のアートワークとビジュアライザ";
 "Time left while a timer runs" = "タイマー作動中の残り時間";
+"Call app and duration during calls" = "通話中のアプリと通話時間";
 "Title under the notch when the track changes" = "曲が変わったらノッチの下にタイトル";
 "Always show the title while something is playing" = "再生中は常にタイトルを表示";
 "Current lyric under the notch while playing" = "再生中はノッチの下に現在の歌詞";

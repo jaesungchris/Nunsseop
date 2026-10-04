@@ -169,6 +169,9 @@ final class NotchWindowController {
         settingsObservers.append(model.settings.$privacyIndicator.sink { [weak self] enabled in
             if enabled { self?.model.privacy.start() } else { self?.model.privacy.stop() }
         })
+        settingsObservers.append(model.settings.$callIsland.sink { [weak self] enabled in
+            if enabled && self?.panel.isVisible == true { self?.model.calls.start() } else { self?.model.calls.stop() }
+        })
         model.recorder.onFinished = { [weak self] url in
             guard let self, let url else { return }
             self.model.shelf.add([url])
@@ -281,11 +284,13 @@ final class NotchWindowController {
             model.clipboard.stop()
             model.capsLock.stop()
             model.notifyServer.stop()
+            model.calls.stop()
         } else if !panel.isVisible {
             panel.orderFrontRegardless()
             if settings.clipboardTab { model.clipboard.start() }
             if settings.capsLockHUD { model.capsLock.start() }
             if settings.localNotifications { model.notifyServer.start() }
+            if settings.callIsland { model.calls.start() }
         }
     }
 

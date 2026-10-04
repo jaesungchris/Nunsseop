@@ -170,6 +170,7 @@
 "Right side when idle" = "空闲时右侧";
 "Artwork and visualizer while music plays" = "播放音乐时的封面和可视化";
 "Time left while a timer runs" = "计时器运行时的剩余时间";
+"Call app and duration during calls" = "通话时显示应用和通话时长";
 "Title under the notch when the track changes" = "曲目变化时在刘海下方显示标题";
 "Always show the title while something is playing" = "播放时始终显示标题";
 "Current lyric under the notch while playing" = "播放时在刘海下方显示当前歌词";

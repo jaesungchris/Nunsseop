@@ -126,6 +126,51 @@ struct BrowserMedia {
         """
     }
 
+    struct Tab {
+        let url: String
+        let title: String
+        /// The tab in front of its window.
+        let isActive: Bool
+    }
+
+    /// URL and title of every tab in non-private windows, and each window's front tab, for finding call tabs.
+    private var tabsScript: String {
+        """
+        tell application id "\(bundleID)"
+            set out to {}
+            repeat with w from 1 to count of windows
+                set isPrivate to false
+                try
+                    if mode of window w is "incognito" then set isPrivate to true
+                end try
+                if not isPrivate then
+                    set activeURL to ""
+                    try
+                        set activeURL to URL of active tab of window w
+                    end try
+                    set end of out to {URL of every tab of window w, title of every tab of window w, activeURL}
+                end if
+            end repeat
+            return out
+        end tell
+        """
+    }
+
+    /// Chromium browsers only; nil when the browser can't be asked.
+    func tabs() -> [Tab]? {
+        guard dialect == .chromium, case .success(let windows) = Self.run(tabsScript) else { return nil }
+        var result: [Tab] = []
+        for w in 0..<max(0, windows.numberOfItems) {
+            guard let window = windows.atIndex(w + 1), let urls = window.atIndex(1), let titles = window.atIndex(2) else { continue }
+            let active = window.atIndex(3)?.stringValue ?? ""
+            for t in 0..<max(0, urls.numberOfItems) {
+                guard let url = urls.atIndex(t + 1)?.stringValue else { continue }
+                result.append(Tab(url: url, title: titles.atIndex(t + 1)?.stringValue ?? "", isActive: url == active))
+            }
+        }
+        return result
+    }
+
     private static func appleScriptLiteral(_ string: String) -> String {
         "\"" + string.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
     }
@@ -149,7 +194,14 @@ struct BrowserMedia {
         return mediaHosts.contains { host == $0 || host.hasSuffix("." + $0) }
     }
 
+    /// Now Playing and calls both ask browsers from their own queues; their scripts run one at a time here.
+    private static let scriptQueue = DispatchQueue(label: "nunsseop.browser-scripts")
+
     private static func run(_ source: String) -> Result<NSAppleEventDescriptor, Failure> {
+        scriptQueue.sync { runNow(source) }
+    }
+
+    private static func runNow(_ source: String) -> Result<NSAppleEventDescriptor, Failure> {
         var errorInfo: NSDictionary?
         guard let script = NSAppleScript(source: source) else { return .failure(.other) }
         let result = script.executeAndReturnError(&errorInfo)
