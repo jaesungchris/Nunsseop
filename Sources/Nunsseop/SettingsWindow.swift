@@ -1,4 +1,5 @@
 import AppKit
+import EventKit
 import SwiftUI
 
 @MainActor
@@ -155,6 +156,9 @@ private struct LayoutPane: View {
                 Toggle("Calendar", isOn: $settings.calendarEnabled)
                 Toggle("Reminders", isOn: $settings.remindersEnabled)
                     .disabled(!settings.calendarEnabled)
+            }
+            if settings.calendarEnabled {
+                CalendarChoices(settings: settings)
             }
             Section("Header") {
                 Toggle("Date", isOn: $settings.headerDate)
@@ -321,6 +325,62 @@ private struct ServicesPane: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// The calendars macOS knows about, grouped by account, each with a switch for the Home tab.
+private struct CalendarChoices: View {
+    @ObservedObject var settings: AppSettings
+    @State private var groups: [(account: String, calendars: [EKCalendar])] = []
+    private let store = EKEventStore()
+
+    var body: some View {
+        Section {
+            if EKEventStore.authorizationStatus(for: .event) != .fullAccess {
+                Text("Allow calendar access on the Home tab to choose calendars.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if groups.isEmpty {
+                Text("No calendars yet.").font(.caption).foregroundStyle(.secondary)
+            }
+            ForEach(groups, id: \.account) { group in
+                Text(group.account).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
+                    Toggle(isOn: shown(calendar.calendarIdentifier)) {
+                        HStack(spacing: 6) {
+                            Circle().fill(Color(nsColor: calendar.color ?? .systemBlue)).frame(width: 8, height: 8)
+                            Text(calendar.title)
+                        }
+                    }
+                }
+            }
+            Button("Add an Account…") {
+                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Internet-Accounts-Settings.extension")!)
+            }
+        } header: {
+            Text("Calendars")
+        } footer: {
+            Text("Google, iCloud, Exchange and other accounts added to macOS appear here.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .onAppear(perform: load)
+        .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in load() }
+    }
+
+    private func shown(_ id: String) -> Binding<Bool> {
+        Binding {
+            !settings.hiddenCalendarIDs.contains(id)
+        } set: { show in
+            settings.hiddenCalendarIDs.removeAll { $0 == id }
+            if !show { settings.hiddenCalendarIDs.append(id) }
+        }
+    }
+
+    private func load() {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { groups = []; return }
+        let calendars = store.calendars(for: .event)
+        groups = Dictionary(grouping: calendars) { $0.source.title }
+            .map { (account: $0.key, calendars: $0.value.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }) }
+            .sorted { $0.account.localizedStandardCompare($1.account) == .orderedAscending }
     }
 }
 

@@ -62,6 +62,11 @@
 "Swipe left or right on the Home tab to skip tracks" = "Desliza a izquierda o derecha en Inicio para cambiar de pista";
 "Show reminders under the calendar" = "Mostrar recordatorios bajo el calendario";
 "Reminders" = "Recordatorios";
+"Calendars" = "Calendarios";
+"Allow calendar access on the Home tab to choose calendars." = "Permite el acceso a los calendarios en la pestaña Inicio para elegirlos.";
+"No calendars yet." = "Aún no hay calendarios.";
+"Add an Account…" = "Añadir una cuenta…";
+"Google, iCloud, Exchange and other accounts added to macOS appear here." = "Aquí aparecen las cuentas de Google, iCloud, Exchange y otras añadidas a macOS.";
 "No reminders" = "Sin recordatorios";
 "Mark as completed" = "Marcar como completado";
 "Allow Reminders" = "Permitir recordatorios";

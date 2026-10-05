@@ -33,6 +33,8 @@ final class AppSettings: ObservableObject {
     @Published var chargingHUDEnabled: Bool { didSet { defaults.set(chargingHUDEnabled, forKey: "chargingHUDEnabled") } }
     @Published var headphoneHUDEnabled: Bool { didSet { defaults.set(headphoneHUDEnabled, forKey: "headphoneHUDEnabled") } }
     @Published var calendarEnabled: Bool { didSet { defaults.set(calendarEnabled, forKey: "calendarEnabled") } }
+    /// Calendars left out of the Home tab. Stored as hidden so newly added calendars show up.
+    @Published var hiddenCalendarIDs: [String] { didSet { defaults.set(hiddenCalendarIDs, forKey: "hiddenCalendarIDs") } }
     @Published var remindersEnabled: Bool { didSet { defaults.set(remindersEnabled, forKey: "remindersEnabled") } }
     /// NSScreen.localizedName of the display to use; empty means automatic.
     @Published var displayName: String { didSet { defaults.set(displayName, forKey: "displayName") } }
@@ -180,6 +182,7 @@ final class AppSettings: ObservableObject {
         headphoneHUDEnabled = defaults.bool(forKey: "headphoneHUDEnabled")
         calendarEnabled = defaults.bool(forKey: "calendarEnabled")
         remindersEnabled = defaults.bool(forKey: "remindersEnabled")
+        hiddenCalendarIDs = defaults.stringArray(forKey: "hiddenCalendarIDs") ?? []
         mirrorEnabled = defaults.bool(forKey: "mirrorEnabled")
         timerTab = defaults.bool(forKey: "timerTab")
         shelfTab = defaults.bool(forKey: "shelfTab")

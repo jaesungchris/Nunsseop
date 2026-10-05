@@ -160,6 +160,9 @@ final class NotchViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.leaveHiddenTab() }
             .store(in: &cancellables)
+        settings.$hiddenCalendarIDs
+            .sink { [weak self] in self?.calendar.hiddenCalendarIDs = Set($0) }
+            .store(in: &cancellables)
         settings.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)

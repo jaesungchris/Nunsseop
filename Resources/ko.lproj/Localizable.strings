@@ -79,6 +79,11 @@
 /* Reminders */
 "Show reminders under the calendar" = "캘린더 아래에 미리 알림 표시";
 "Reminders" = "미리 알림";
+"Calendars" = "캘린더";
+"Allow calendar access on the Home tab to choose calendars." = "캘린더를 고르려면 홈 탭에서 캘린더 접근을 허용하세요.";
+"No calendars yet." = "아직 캘린더가 없습니다.";
+"Add an Account…" = "계정 추가…";
+"Google, iCloud, Exchange and other accounts added to macOS appear here." = "macOS에 추가한 Google, iCloud, Exchange 등의 계정이 여기에 나타납니다.";
 "No reminders" = "미리 알림 없음";
 "Mark as completed" = "완료로 표시";
 "Allow Reminders" = "미리 알림 허용";

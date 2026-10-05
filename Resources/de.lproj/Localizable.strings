@@ -62,6 +62,11 @@
 "Swipe left or right on the Home tab to skip tracks" = "Im Start-Tab nach links oder rechts wischen, um Titel zu wechseln";
 "Show reminders under the calendar" = "Erinnerungen unter dem Kalender anzeigen";
 "Reminders" = "Erinnerungen";
+"Calendars" = "Kalender";
+"Allow calendar access on the Home tab to choose calendars." = "Erlaube auf dem Tab „Start“ den Kalenderzugriff, um Kalender auszuwählen.";
+"No calendars yet." = "Noch keine Kalender.";
+"Add an Account…" = "Account hinzufügen …";
+"Google, iCloud, Exchange and other accounts added to macOS appear here." = "Google-, iCloud-, Exchange- und andere zu macOS hinzugefügte Accounts erscheinen hier.";
 "No reminders" = "Keine Erinnerungen";
 "Mark as completed" = "Als erledigt markieren";
 "Allow Reminders" = "Erinnerungen erlauben";

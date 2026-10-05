@@ -27,6 +27,10 @@ final class CalendarModel: ObservableObject {
         didSet { reload() }
     }
     @Published private(set) var items: [CalendarItem] = []
+    /// Calendars whose events are left out.
+    var hiddenCalendarIDs: Set<String> = [] {
+        didSet { if hiddenCalendarIDs != oldValue { reload() } }
+    }
     /// Days of `week` that have at least one event, as start-of-day dates.
     @Published private(set) var busyDays: Set<Date> = []
     @Published private(set) var reminderAccess: Access
@@ -143,13 +147,19 @@ final class CalendarModel: ObservableObject {
         if isDemo { showDemoItems(); return }
         reloadReminders()
         guard access == .granted else { items = []; busyDays = []; return }
+        // nil means every calendar; an empty list would also mean every calendar to EventKit, so stop early instead.
+        var calendars: [EKCalendar]?
+        if !hiddenCalendarIDs.isEmpty {
+            calendars = store.calendars(for: .event).filter { !hiddenCalendarIDs.contains($0.calendarIdentifier) }
+            if calendars?.isEmpty == true { items = []; busyDays = []; return }
+        }
         if let first = week.first, let last = week.last, let weekEnd = Calendar.current.date(byAdding: .day, value: 1, to: last) {
-            let weekEvents = store.events(matching: store.predicateForEvents(withStart: first, end: weekEnd, calendars: nil))
+            let weekEvents = store.events(matching: store.predicateForEvents(withStart: first, end: weekEnd, calendars: calendars))
             busyDays = Set(weekEvents.map { Calendar.current.startOfDay(for: max($0.startDate, first)) })
         }
         let start = selectedDay
         guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return }
-        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
+        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: calendars)
         items = store.events(matching: predicate)
             .sorted { ($0.isAllDay ? 0 : 1, $0.startDate) < ($1.isAllDay ? 0 : 1, $1.startDate) }
             .map { event in

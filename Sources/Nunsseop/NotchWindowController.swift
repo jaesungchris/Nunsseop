@@ -78,6 +78,9 @@ final class NotchWindowController {
             snapshotter = DebugSnapshotter(directory: URL(fileURLWithPath: CommandLine.arguments[i + 1]),
                                            view: hosting, model: model)
         }
+        if CommandLine.arguments.contains("--demo-settings") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SettingsWindowController.shared.show() }
+        }
         #endif
     }
 

@@ -62,6 +62,11 @@
 "Swipe left or right on the Home tab to skip tracks" = "ホームタブで左右にスワイプして曲をスキップ";
 "Show reminders under the calendar" = "カレンダーの下にリマインダーを表示";
 "Reminders" = "リマインダー";
+"Calendars" = "カレンダー";
+"Allow calendar access on the Home tab to choose calendars." = "カレンダーを選ぶには、ホームタブでカレンダーへのアクセスを許可してください。";
+"No calendars yet." = "カレンダーはまだありません。";
+"Add an Account…" = "アカウントを追加…";
+"Google, iCloud, Exchange and other accounts added to macOS appear here." = "macOS に追加した Google、iCloud、Exchange などのアカウントがここに表示されます。";
 "No reminders" = "リマインダーなし";
 "Mark as completed" = "完了にする";
 "Allow Reminders" = "リマインダーを許可";

@@ -62,6 +62,11 @@
 "Swipe left or right on the Home tab to skip tracks" = "在主页标签左右轻扫切换曲目";
 "Show reminders under the calendar" = "在日历下方显示提醒事项";
 "Reminders" = "提醒事项";
+"Calendars" = "日历";
+"Allow calendar access on the Home tab to choose calendars." = "请先在主页标签中允许访问日历，然后再选择日历。";
+"No calendars yet." = "还没有日历。";
+"Add an Account…" = "添加账户…";
+"Google, iCloud, Exchange and other accounts added to macOS appear here." = "添加到 macOS 的 Google、iCloud、Exchange 等账户会显示在这里。";
 "No reminders" = "无提醒事项";
 "Mark as completed" = "标记为完成";
 "Allow Reminders" = "允许提醒事项";
