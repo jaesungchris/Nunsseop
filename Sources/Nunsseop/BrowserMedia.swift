@@ -171,6 +171,33 @@ struct BrowserMedia {
         return result
     }
 
+    /// Runs `js` in each non-private tab on `host` until one returns a non-empty string, without
+    /// bringing the browser forward. Chromium browsers only; nil when none answered.
+    func runInTabs(onHost host: String, _ js: String) -> String? {
+        guard dialect == .chromium else { return nil }
+        let script = """
+        tell application id "\(bundleID)"
+            repeat with w in windows
+                set isPrivate to false
+                try
+                    if mode of w is "incognito" then set isPrivate to true
+                end try
+                if not isPrivate then
+                    repeat with t in tabs of w
+                        if URL of t starts with \(Self.appleScriptLiteral("https://" + host + "/")) then
+                            set r to execute t javascript "\(js)"
+                            if r is not missing value and r is not "" then return r
+                        end if
+                    end repeat
+                end if
+            end repeat
+            return ""
+        end tell
+        """
+        guard case .success(let result) = Self.run(script), let value = result.stringValue, !value.isEmpty else { return nil }
+        return value
+    }
+
     private static func appleScriptLiteral(_ string: String) -> String {
         "\"" + string.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
     }

@@ -28,13 +28,18 @@ struct NotchView: View {
                         Group {
                             switch model.tab {
                             case .home:
-                                HStack(spacing: 16) {
-                                    HomeTab(nowPlaying: nowPlaying, lyrics: model.settings.lyricsEnabled ? model.lyrics : nil)
-                                    if model.settings.calendarEnabled {
-                                        // A wide notch gives the calendar room for the whole week in large digits.
-                                        let wide = model.expandedSize.width >= 700
-                                        CalendarPanel(calendar: model.calendar, showsReminders: model.settings.remindersEnabled, wide: wide)
-                                            .frame(width: wide ? 220 : 168)
+                                VStack(spacing: 8) {
+                                    if let call = model.calls.call, let controls = model.callControls.state {
+                                        CallRow(call: call, state: controls) { model.callControls.toggle($0) }
+                                    }
+                                    HStack(spacing: 16) {
+                                        HomeTab(nowPlaying: nowPlaying, lyrics: model.settings.lyricsEnabled ? model.lyrics : nil)
+                                        if model.settings.calendarEnabled {
+                                            // A wide notch gives the calendar room for the whole week in large digits.
+                                            let wide = model.expandedSize.width >= 700
+                                            CalendarPanel(calendar: model.calendar, showsReminders: model.settings.remindersEnabled, wide: wide)
+                                                .frame(width: wide ? 220 : 168)
+                                        }
                                     }
                                 }
                             case .shelf:
@@ -78,6 +83,7 @@ struct NotchView: View {
                         if model.showsLiveActivity {
                             CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, recorder: model.recorder,
                                               privacy: model.settings.privacyIndicator ? model.privacy : nil, call: model.calls.call,
+                                              callMuted: model.callControls.state?.mic == .off,
                                               height: notchHeight, earWidth: model.earWidth,
                                               showsMusic: model.settings.collapsedMusic, showsTimer: model.settings.collapsedTimer)
                         } else if model.showsIdleEars {

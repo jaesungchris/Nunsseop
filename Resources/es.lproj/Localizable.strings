@@ -281,3 +281,9 @@
 "Added to the shelf" = "Añadido al estante";
 "%lld files" = "%lld archivos";
 "Shake while dragging files to open a shelf" = "Agitar al arrastrar archivos para abrir un estante";
+
+/* Call controls */
+"Mute" = "Silenciar";
+"Unmute" = "Activar micrófono";
+"Turn camera off" = "Apagar cámara";
+"Turn camera on" = "Encender cámara";

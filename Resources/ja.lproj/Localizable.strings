@@ -281,3 +281,9 @@
 "Added to the shelf" = "シェルフに追加しました";
 "%lld files" = "%lld 個のファイル";
 "Shake while dragging files to open a shelf" = "ファイルをドラッグ中に揺らしてシェルフを開く";
+
+/* Call controls */
+"Mute" = "ミュート";
+"Unmute" = "ミュート解除";
+"Turn camera off" = "カメラをオフ";
+"Turn camera on" = "カメラをオン";

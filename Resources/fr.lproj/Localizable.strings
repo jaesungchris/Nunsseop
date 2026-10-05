@@ -281,3 +281,9 @@
 "Added to the shelf" = "Ajouté à l’étagère";
 "%lld files" = "%lld fichiers";
 "Shake while dragging files to open a shelf" = "Secouer en faisant glisser des fichiers pour ouvrir une étagère";
+
+/* Call controls */
+"Mute" = "Couper le micro";
+"Unmute" = "Réactiver le micro";
+"Turn camera off" = "Désactiver la caméra";
+"Turn camera on" = "Activer la caméra";

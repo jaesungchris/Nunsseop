@@ -94,6 +94,8 @@ struct CollapsedActivity: View {
     @ObservedObject var recorder: ScreenRecorder
     let privacy: PrivacyMonitor?
     let call: CallMonitor.Call?
+    /// Known to be muted; unknown states show nothing.
+    var callMuted = false
     let height: CGFloat
     let earWidth: CGFloat
     let showsMusic: Bool
@@ -132,10 +134,17 @@ struct CollapsedActivity: View {
                         .foregroundStyle(.red)
                 }
             } else if let call {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    Text(TimerModel.format(context.date.timeIntervalSince(call.startedAt)))
-                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(.green)
+                HStack(spacing: 3) {
+                    if callMuted {
+                        Image(systemName: "mic.slash.fill")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.red)
+                    }
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text(TimerModel.format(context.date.timeIntervalSince(call.startedAt)))
+                            .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                            .foregroundStyle(.green)
+                    }
                 }
             } else if let privacy, (privacy.cameraInUse || privacy.micInUse), !(showsTimer && timer.isRunning), playing {
                 HStack(spacing: 3) {

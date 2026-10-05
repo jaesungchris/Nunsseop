@@ -281,3 +281,9 @@
 "Added to the shelf" = "已加入架子";
 "%lld files" = "%lld 个文件";
 "Shake while dragging files to open a shelf" = "拖动文件时晃动指针以打开架子";
+
+/* Call controls */
+"Mute" = "静音";
+"Unmute" = "取消静音";
+"Turn camera off" = "关闭相机";
+"Turn camera on" = "打开相机";

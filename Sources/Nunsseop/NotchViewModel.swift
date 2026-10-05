@@ -92,6 +92,7 @@ final class NotchViewModel: ObservableObject {
     let peripherals = PeripheralMonitor()
     let privacy = PrivacyMonitor()
     let calls = CallMonitor()
+    let callControls = CallControlsModel()
     let emoji = EmojiModel()
     let aiUsage = AIUsageModel()
     lazy var search = QuickSearchModel(clipboard: clipboard, emoji: emoji, tools: tools)
@@ -135,6 +136,12 @@ final class NotchViewModel: ObservableObject {
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
         calls.objectWillChange
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        calls.$call
+            .sink { [weak self] in self?.callControls.follow($0) }
+            .store(in: &cancellables)
+        callControls.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
         // A meeting's name shows under the notch when the call starts.
@@ -267,8 +274,8 @@ final class NotchViewModel: ObservableObject {
     var earWidth: CGFloat {
         let height = geometry.collapsedSize.height
         let base = settings.compactLiveActivity ? height * 0.7 : height + 6
-        // Room for "1:23:45" during a call, and "12:34" when a timer is running.
-        if calls.call != nil { return max(base, 60) }
+        // Room for "1:23:45" during a call, plus a mic-slash while muted, and "12:34" when a timer is running.
+        if calls.call != nil { return max(base, callControls.state?.mic == .off ? 74 : 60) }
         let needsText = (timer.isRunning && settings.collapsedTimer) || recorder.isRecording
         return needsText ? max(base, 50) : base
     }
