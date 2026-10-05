@@ -85,23 +85,27 @@
   .copy { border: 0; background: rgba(255,255,255,0.08); color: var(--text); border-radius: 999px; height: 34px; padding: 0 14px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; flex: none; }
   .copy:hover { background: rgba(255,255,255,0.16); }
 
-  .device { position: relative; margin: 64px auto 0; max-width: 1000px; aspect-ratio: 16 / 9.4; border-radius: 26px 26px 18px 18px; padding: 10px 10px 0; background: linear-gradient(#1b1a21, #111016); border: 1px solid rgba(255,255,255,0.09); box-shadow: 0 60px 140px -40px rgba(140, 70, 220, 0.45), 0 0 0 1px rgba(0,0,0,0.6) inset; }
+  .device { position: relative; margin: 64px auto 0; max-width: 1000px; aspect-ratio: 1100 / 400; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); border-radius: 26px 26px 18px 18px; padding: 10px 10px 0; background: linear-gradient(#1b1a21, #111016); border: 1px solid rgba(255,255,255,0.09); box-shadow: 0 60px 140px -40px rgba(140, 70, 220, 0.45), 0 0 0 1px rgba(0,0,0,0.6) inset; }
   .screen { position: relative; height: 100%; border-radius: 18px 18px 6px 6px; overflow: hidden;
     background: radial-gradient(120% 90% at 20% 110%, #ff7aa8 0%, transparent 55%), radial-gradient(90% 80% at 85% 100%, #6a5cff 0%, transparent 60%), radial-gradient(70% 60% at 50% 20%, #2a1a4a 0%, transparent 70%), linear-gradient(160deg, #1d1534, #0c0a14); }
-  .menubar { position: absolute; inset: 0 0 auto; height: 3.6%; min-height: 18px; display: flex; align-items: center; justify-content: space-between; padding: 0 2.2%; font-size: clamp(8px, 1.1vw, 12px); color: rgba(255,255,255,0.85); background: rgba(0,0,0,0.18); }
+  .menubar { position: absolute; inset: 0 0 auto; height: calc(32 * var(--pt)); display: flex; align-items: center; justify-content: space-between; padding: 0 2.2%; font-size: clamp(8px, 1.1vw, 12px); color: rgba(255,255,255,0.85); background: rgba(0,0,0,0.18); }
   .menubar .l, .menubar .r { display: flex; gap: 1.6em; }
   .menubar .l b { font-weight: 700; }
-  .live-notch { --w: 26%; --h: 3.6%; position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: var(--w); height: var(--h); min-height: 18px; background: #000; border-radius: 0 0 14px 14px; cursor: pointer; overflow: hidden; transition: width .55s cubic-bezier(.2,.9,.25,1.12), height .55s cubic-bezier(.2,.9,.25,1.12), border-radius .4s; box-shadow: 0 10px 40px rgba(0,0,0,0.35); }
-  .live-notch .ears { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 5%; transition: opacity .25s; }
-  .live-notch .art { height: 62%; aspect-ratio: 1; border-radius: 4px; background: linear-gradient(135deg, var(--pink), var(--violet) 55%, #6a5cff); }
-  .live-notch .bars { display: flex; gap: 2px; height: 50%; align-items: center; }
-  .live-notch .bars i { width: 3px; height: 100%; border-radius: 2px; background: var(--violet); animation: eq 0.9s ease-in-out infinite; }
-  .live-notch .bars i:nth-child(2) { animation-delay: -.3s; } .live-notch .bars i:nth-child(3) { animation-delay: -.6s; } .live-notch .bars i:nth-child(4) { animation-delay: -.15s; }
-  @keyframes eq { 0%,100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
-  .live-notch img { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 100%; height: auto; opacity: 0; transition: opacity .35s .15s; }
-  .live-notch.open { --w: 64%; --h: 32%; border-radius: 0 0 30px 30px; }
-  .live-notch.open .ears { opacity: 0; }
-  .live-notch.open img { opacity: 1; }
+  /* The demo notch uses the app's real geometry, shown on the middle 1100 pt of a 14-inch MacBook Pro screen:
+     collapsed while music plays 272 × 32 pt, expanded 739 × 196 pt, with the same flared top corners. */
+  .screen { container-type: inline-size; --pt: calc(100cqw / 1100); }
+  .live-notch { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: calc(272 * var(--pt)); height: calc(32 * var(--pt)); --tr: calc(6 * var(--pt)); cursor: pointer; transition: width .5s cubic-bezier(.3,1.22,.5,1), height .5s cubic-bezier(.3,1.22,.5,1); filter: drop-shadow(0 10px 30px rgba(0,0,0,0.35)); }
+  .live-notch .body { position: absolute; top: 0; bottom: 0; left: calc(6 * var(--pt)); right: calc(6 * var(--pt)); background: #000; border-radius: 0 0 calc(14 * var(--pt)) calc(14 * var(--pt)); transition: left .5s, right .5s, border-radius .5s; }
+  .live-notch::before, .live-notch::after { content: ""; position: absolute; top: 0; width: calc(6 * var(--pt)); height: calc(6 * var(--pt)); transition: width .5s, height .5s; }
+  .live-notch::before { left: 0; background: radial-gradient(circle at 0 100%, transparent 70.7%, #000 71%); }
+  .live-notch::after { right: 0; background: radial-gradient(circle at 100% 100%, transparent 70.7%, #000 71%); }
+  .live-notch img { position: absolute; left: 0; top: 0; width: 100%; height: auto; transition: opacity .25s; }
+  .live-notch .full { opacity: 0; transition-delay: 0s; }
+  .live-notch.open { width: calc(739 * var(--pt)); height: calc(196 * var(--pt)); }
+  .live-notch.open .body { left: calc(18 * var(--pt)); right: calc(18 * var(--pt)); border-radius: 0 0 calc(26 * var(--pt)) calc(26 * var(--pt)); }
+  .live-notch.open::before, .live-notch.open::after { width: calc(18 * var(--pt)); height: calc(18 * var(--pt)); }
+  .live-notch.open .mini { opacity: 0; }
+  .live-notch.open .full { opacity: 1; transition-delay: .18s; }
   .hint { margin-top: 14px; color: var(--faint); font-size: 13px; }
 
   .works { padding: 56px 0 8px; text-align: center; }
@@ -261,8 +265,9 @@
       <div class="screen">
         <div class="menubar"><div class="l"><b></b><b>Nunsseop</b><span class="en">File</span><span class="ko">파일</span><span class="en">Edit</span><span class="ko">편집</span></div><div class="r"><span>100%</span><span id="clock">9:41</span></div></div>
         <div class="live-notch" id="notch" role="button" tabindex="0" aria-label="Open the notch">
-          <div class="ears"><span class="art"></span><span class="bars"><i></i><i></i><i></i><i></i></span></div>
-          <img src="images/home.png" alt="Expanded notch with now playing and calendar" width="739" height="196">
+          <div class="body"></div>
+          <img class="mini" src="images/collapsed-music.png" alt="" width="272" height="32">
+          <img class="full" src="images/home.png" alt="Expanded notch with now playing and calendar" width="739" height="196">
         </div>
       </div>
     </div>
