@@ -344,6 +344,8 @@ final class NotchWindowController {
         guard settings.swipeToOpen || settings.swipeForTracks else { return }
         // Only trackpad swipes over the panel; not scrolling in other windows, wheels or momentum.
         guard event.window === panel, event.hasPreciseScrollingDeltas, event.momentumPhase.isEmpty else { return }
+        // Scrolling over the timer's time changes its length instead.
+        if TimeScrollTarget.isHovered { return }
         // The expanded header scrolls its tabs sideways, so swipes there are left to it.
         let fromTop = panel.frame.height - event.locationInWindow.y
         if model.isExpanded && fromTop < max(model.geometry.collapsedSize.height, 24) + 6 { return }

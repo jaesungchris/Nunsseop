@@ -111,6 +111,7 @@
 "min" = "min";
 "Completed today: %lld" = "Completados hoy: %lld";
 "Counts up until you stop it" = "Cuenta hasta que lo detengas";
+"Scroll or click the time to change it" = "Desplaza o haz clic en el tiempo para cambiarlo";
 "Focus · %lld min" = "Enfoque · %lld min";
 "Break · %lld min" = "Descanso · %lld min";
 "Timer finished" = "Temporizador terminado";

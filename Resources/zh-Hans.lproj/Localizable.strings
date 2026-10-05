@@ -111,6 +111,7 @@
 "min" = "分钟";
 "Completed today: %lld" = "今日完成：%lld";
 "Counts up until you stop it" = "计时直到你停止";
+"Scroll or click the time to change it" = "滚动或点击时间来更改";
 "Focus · %lld min" = "专注 · %lld 分钟";
 "Break · %lld min" = "休息 · %lld 分钟";
 "Timer finished" = "计时结束";

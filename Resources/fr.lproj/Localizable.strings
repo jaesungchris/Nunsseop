@@ -111,6 +111,7 @@
 "min" = "min";
 "Completed today: %lld" = "Terminés aujourd’hui : %lld";
 "Counts up until you stop it" = "Compte jusqu’à ce que vous l’arrêtiez";
+"Scroll or click the time to change it" = "Faites défiler ou cliquez sur la durée pour la changer";
 "Focus · %lld min" = "Concentration · %lld min";
 "Break · %lld min" = "Pause · %lld min";
 "Timer finished" = "Minuteur terminé";

@@ -111,6 +111,7 @@
 "min" = "分";
 "Completed today: %lld" = "今日の完了: %lld";
 "Counts up until you stop it" = "止めるまで時間を計ります";
+"Scroll or click the time to change it" = "時間をスクロールするかクリックして変更";
 "Focus · %lld min" = "集中 · %lld 分";
 "Break · %lld min" = "休憩 · %lld 分";
 "Timer finished" = "タイマー終了";
