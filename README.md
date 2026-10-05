@@ -72,7 +72,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 - **Podcasts and long videos** get 15-second skips and a speed button (1× to 2×), when the player supports them.
 
 **🗂️ Get things done**
-- **Shelf.** Drag files onto the notch and back out later. Screenshots and finished downloads can land there automatically.
+- **Shelf.** Drag files onto the notch and back out later, with previews of images, PDFs and videos. Screenshots and finished downloads can land there automatically. Shake the pointer while dragging files anywhere and a small drop target appears right beside it.
 - **Calendar and reminders.** Today in large digits, your week with a dot on busy days, today's events, and reminders you can tick off. Every account added to macOS works (Google, iCloud, Exchange and more), and you choose which calendars show.
 - **Search that can replace Spotlight or Raycast.** Apps (even ones outside Applications), files, system commands and settings, clipboard history, emoji (start with `:`) and sums like `12*(3+4)`, ranked by what you open most. Initials work: `vsc` finds Visual Studio Code. Arrow keys pick, Return opens.
 - **Your shortcut.** <kbd>⇧⌘Space</kbd> by default, or record any combination in Settings. Nunsseop tells you when macOS or another app already uses it.
@@ -82,11 +82,11 @@ There's no Dock icon. Nunsseop lives in the notch.
 - **System HUDs.** Volume, brightness (including DDC external displays), keyboard backlight, charging, Caps Lock and AirPods battery appear in the notch. It can take over the volume and brightness keys so the system HUD stays away.
 - **System stats and batteries.** CPU, memory, disk, network, plus your mouse, keyboard and trackpad, with a warning when one runs low.
 - **Camera and mic indicator.** A dot on the notch while any app uses them.
-- **Tools.** Switch audio output, mute the mic, keep the Mac awake, record the screen, eject drives, pick a color from anywhere on screen, and copy the text out of any part of the screen.
+- **Tools.** Switch audio output, set each app's volume (experimental, macOS 14.2+), mute the mic, keep the Mac awake, record the screen, eject drives, pick a color from anywhere on screen, and copy the text out of any part of the screen.
 - **Weather, downloads, mirror and Dock apps**, one hover away.
 
 **📞 Even when it's closed**
-- **Calls.** During a call in Zoom, FaceTime, Teams, Slack, Discord, WhatsApp or Google Meet, the closed notch shows the app and how long you've been talking. It goes by which app uses the microphone, so no extra permissions are needed.
+- **Calls.** During a call in Zoom, FaceTime, Teams, Slack, Discord, WhatsApp or Google Meet, the closed notch shows the app and how long you've been talking. It goes by which app uses the microphone, so no extra permissions are needed. For Zoom, FaceTime and Meet you can mute the mic or turn the camera off from the notch, without switching to the call.
 - **Your pick on each side.** When nothing is playing, show Claude Code or Codex usage left, battery, weather or the date.
 - **Music and timers.** Tiny artwork and a visualizer while music plays, and the time left while a timer runs.
 
