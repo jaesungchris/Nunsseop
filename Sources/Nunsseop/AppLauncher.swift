@@ -23,7 +23,7 @@ final class AppLauncher: ObservableObject {
             let url = string.hasPrefix("file://") ? URL(string: string) : URL(fileURLWithPath: string)
             guard let url, url.pathExtension == "app", FileManager.default.fileExists(atPath: url.path),
                   seen.insert(url).inserted else { return nil }
-            return App(url: url, name: FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: ""))
+            return App(url: url, name: InstalledApps.name(at: url))
         }
     }
 
@@ -79,4 +79,34 @@ private struct AppIcon: View {
         .onHover { hovering = $0 }
         .help(app.name)
     }
+}
+
+/// Name and icon of installed apps. Finding an app by bundle ID and loading its icon is slow enough
+/// to matter in a view body, so apps that were found are remembered; missing ones are looked up again.
+enum InstalledApps {
+    private static let urls = NSCache<NSString, NSURL>()
+    private static let icons = NSCache<NSString, NSImage>()
+
+    static func url(for bundleID: String) -> URL? {
+        // A cached location is dropped if the app has since moved or been removed.
+        if let url = urls.object(forKey: bundleID as NSString) as URL?, FileManager.default.fileExists(atPath: url.path) {
+            return url
+        }
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return nil }
+        urls.setObject(url as NSURL, forKey: bundleID as NSString)
+        return url
+    }
+
+    static func name(at url: URL) -> String {
+        FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+    }
+
+    static func icon(at url: URL) -> NSImage {
+        if let icon = icons.object(forKey: url.path as NSString) { return icon }
+        let icon = NSWorkspace.shared.icon(forFile: url.path)
+        icons.setObject(icon, forKey: url.path as NSString)
+        return icon
+    }
+
+    static func icon(for bundleID: String) -> NSImage? { url(for: bundleID).map(icon(at:)) }
 }

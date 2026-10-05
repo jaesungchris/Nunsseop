@@ -12,53 +12,53 @@ final class AppSettings: ObservableObject {
 
     private let defaults = UserDefaults.standard
 
-    @Published var expandedWidth: Double { didSet { defaults.set(expandedWidth, forKey: "expandedWidth") } }
-    @Published var expandedHeight: Double { didSet { defaults.set(expandedHeight, forKey: "expandedHeight") } }
+    @Published var expandedWidth: Double = AppSettings.load("expandedWidth", default: 620.0, in: expandedWidthRange) { didSet { save(expandedWidth, "expandedWidth") } }
+    @Published var expandedHeight: Double = AppSettings.load("expandedHeight", default: 196.0, in: expandedHeightRange) { didSet { save(expandedHeight, "expandedHeight") } }
     /// Width of the collapsed shape on screens without a camera housing.
-    @Published var pillWidth: Double { didSet { defaults.set(pillWidth, forKey: "pillWidth") } }
+    @Published var pillWidth: Double = AppSettings.load("pillWidth", default: 190.0) { didSet { save(pillWidth, "pillWidth") } }
     /// Smaller artwork/visualizer "ears" beside the collapsed notch while music plays.
-    @Published var compactLiveActivity: Bool { didSet { defaults.set(compactLiveActivity, forKey: "compactLiveActivity") } }
+    @Published var compactLiveActivity: Bool = AppSettings.load("compactLiveActivity", default: false) { didSet { save(compactLiveActivity, "compactLiveActivity") } }
 
     /// Shows title and artist under the collapsed notch when the track or play state changes.
-    @Published var sneakPeekEnabled: Bool { didSet { defaults.set(sneakPeekEnabled, forKey: "sneakPeekEnabled") } }
-    @Published var sneakPeekAlways: Bool { didSet { defaults.set(sneakPeekAlways, forKey: "sneakPeekAlways") } }
-    @Published var sneakPeekDuration: Double { didSet { defaults.set(sneakPeekDuration, forKey: "sneakPeekDuration") } }
+    @Published var sneakPeekEnabled: Bool = AppSettings.load("sneakPeekEnabled", default: true) { didSet { save(sneakPeekEnabled, "sneakPeekEnabled") } }
+    @Published var sneakPeekAlways: Bool = AppSettings.load("sneakPeekAlways", default: false) { didSet { save(sneakPeekAlways, "sneakPeekAlways") } }
+    @Published var sneakPeekDuration: Double = AppSettings.load("sneakPeekDuration", default: 3.0) { didSet { save(sneakPeekDuration, "sneakPeekDuration") } }
     /// Seconds the pointer must rest on the notch before it opens.
-    @Published var openDelay: Double { didSet { defaults.set(openDelay, forKey: "openDelay") } }
+    @Published var openDelay: Double = AppSettings.load("openDelay", default: 0.1) { didSet { save(openDelay, "openDelay") } }
 
-    @Published var volumeHUDEnabled: Bool { didSet { defaults.set(volumeHUDEnabled, forKey: "volumeHUDEnabled") } }
+    @Published var volumeHUDEnabled: Bool = AppSettings.load("volumeHUDEnabled", default: true) { didSet { save(volumeHUDEnabled, "volumeHUDEnabled") } }
     /// Takes over the volume/brightness keys so only the notch HUD shows.
-    @Published var replaceSystemHUD: Bool { didSet { defaults.set(replaceSystemHUD, forKey: "replaceSystemHUD") } }
-    @Published var batteryInHeader: Bool { didSet { defaults.set(batteryInHeader, forKey: "batteryInHeader") } }
-    @Published var chargingHUDEnabled: Bool { didSet { defaults.set(chargingHUDEnabled, forKey: "chargingHUDEnabled") } }
-    @Published var headphoneHUDEnabled: Bool { didSet { defaults.set(headphoneHUDEnabled, forKey: "headphoneHUDEnabled") } }
-    @Published var calendarEnabled: Bool { didSet { defaults.set(calendarEnabled, forKey: "calendarEnabled") } }
+    @Published var replaceSystemHUD: Bool = AppSettings.load("replaceSystemHUD", default: false) { didSet { save(replaceSystemHUD, "replaceSystemHUD") } }
+    @Published var batteryInHeader: Bool = AppSettings.load("batteryInHeader", default: true) { didSet { save(batteryInHeader, "batteryInHeader") } }
+    @Published var chargingHUDEnabled: Bool = AppSettings.load("chargingHUDEnabled", default: true) { didSet { save(chargingHUDEnabled, "chargingHUDEnabled") } }
+    @Published var headphoneHUDEnabled: Bool = AppSettings.load("headphoneHUDEnabled", default: true) { didSet { save(headphoneHUDEnabled, "headphoneHUDEnabled") } }
+    @Published var calendarEnabled: Bool = AppSettings.load("calendarEnabled", default: true) { didSet { save(calendarEnabled, "calendarEnabled") } }
     /// Calendars left out of the Home tab. Stored as hidden so newly added calendars show up.
-    @Published var hiddenCalendarIDs: [String] { didSet { defaults.set(hiddenCalendarIDs, forKey: "hiddenCalendarIDs") } }
-    @Published var remindersEnabled: Bool { didSet { defaults.set(remindersEnabled, forKey: "remindersEnabled") } }
+    @Published var hiddenCalendarIDs: [String] = AppSettings.load("hiddenCalendarIDs", default: []) { didSet { save(hiddenCalendarIDs, "hiddenCalendarIDs") } }
+    @Published var remindersEnabled: Bool = AppSettings.load("remindersEnabled", default: true) { didSet { save(remindersEnabled, "remindersEnabled") } }
     /// NSScreen.localizedName of the display to use; empty means automatic.
-    @Published var displayName: String { didSet { defaults.set(displayName, forKey: "displayName") } }
+    @Published var displayName: String = AppSettings.load("displayName", default: "") { didSet { save(displayName, "displayName") } }
     /// Whether the notch shows on external displays while the MacBook lid is closed.
-    @Published var showInClamshell: Bool { didSet { defaults.set(showInClamshell, forKey: "showInClamshell") } }
-    @Published var checkForUpdates: Bool { didSet { defaults.set(checkForUpdates, forKey: "checkForUpdates") } }
-    @Published var batteryAlerts: Bool { didSet { defaults.set(batteryAlerts, forKey: "batteryAlerts") } }
-    @Published var capsLockHUD: Bool { didSet { defaults.set(capsLockHUD, forKey: "capsLockHUD") } }
-    @Published var screenshotsToShelf: Bool { didSet { defaults.set(screenshotsToShelf, forKey: "screenshotsToShelf") } }
-    @Published var localNotifications: Bool { didSet { defaults.set(localNotifications, forKey: "localNotifications") } }
-    @Published var timerTab: Bool { didSet { defaults.set(timerTab, forKey: "timerTab") } }
-    @Published var shelfTab: Bool { didSet { defaults.set(shelfTab, forKey: "shelfTab") } }
-    @Published var searchTab: Bool { didSet { defaults.set(searchTab, forKey: "searchTab") } }
-    @Published var emojiTab: Bool { didSet { defaults.set(emojiTab, forKey: "emojiTab") } }
-    @Published var aiTab: Bool { didSet { defaults.set(aiTab, forKey: "aiTab") } }
+    @Published var showInClamshell: Bool = AppSettings.load("showInClamshell", default: true) { didSet { save(showInClamshell, "showInClamshell") } }
+    @Published var checkForUpdates: Bool = AppSettings.load("checkForUpdates", default: true) { didSet { save(checkForUpdates, "checkForUpdates") } }
+    @Published var batteryAlerts: Bool = AppSettings.load("batteryAlerts", default: true) { didSet { save(batteryAlerts, "batteryAlerts") } }
+    @Published var capsLockHUD: Bool = AppSettings.load("capsLockHUD", default: true) { didSet { save(capsLockHUD, "capsLockHUD") } }
+    @Published var screenshotsToShelf: Bool = AppSettings.load("screenshotsToShelf", default: true) { didSet { save(screenshotsToShelf, "screenshotsToShelf") } }
+    @Published var localNotifications: Bool = AppSettings.load("localNotifications", default: true) { didSet { save(localNotifications, "localNotifications") } }
+    @Published var timerTab: Bool = AppSettings.load("timerTab", default: true) { didSet { save(timerTab, "timerTab") } }
+    @Published var shelfTab: Bool = AppSettings.load("shelfTab", default: true) { didSet { save(shelfTab, "shelfTab") } }
+    @Published var searchTab: Bool = AppSettings.load("searchTab", default: true) { didSet { save(searchTab, "searchTab") } }
+    @Published var emojiTab: Bool = AppSettings.load("emojiTab", default: true) { didSet { save(emojiTab, "emojiTab") } }
+    @Published var aiTab: Bool = AppSettings.load("aiTab", default: true) { didSet { save(aiTab, "aiTab") } }
     /// Grows the expanded notch past its set width, as far as the screen allows, so every tab fits.
-    @Published var widenForTabs: Bool { didSet { defaults.set(widenForTabs, forKey: "widenForTabs") } }
+    @Published var widenForTabs: Bool = AppSettings.load("widenForTabs", default: true) { didSet { save(widenForTabs, "widenForTabs") } }
     /// Liquid Glass surfaces on macOS 26 and later.
-    @Published var liquidGlass: Bool { didSet { defaults.set(liquidGlass, forKey: "liquidGlass") } }
+    @Published var liquidGlass: Bool = AppSettings.load("liquidGlass", default: true) { didSet { save(liquidGlass, "liquidGlass") } }
     /// How dark the expanded notch's glass is, in percent.
-    @Published var glassTint: Double { didSet { defaults.set(glassTint, forKey: "glassTint") } }
+    @Published var glassTint: Double = AppSettings.load("glassTint", default: 55.0, in: glassTintRange) { didSet { save(glassTint, "glassTint") } }
     /// A system-wide shortcut opens the Search tab from anywhere.
-    @Published var searchHotkey: Bool { didSet { defaults.set(searchHotkey, forKey: "searchHotkey") } }
-    @Published var searchHotKey: HotKeyCombo {
+    @Published var searchHotkey: Bool = AppSettings.load("searchHotkey", default: true) { didSet { save(searchHotkey, "searchHotkey") } }
+    @Published var searchHotKey: HotKeyCombo = AppSettings.loadSearchHotKey() {
         didSet {
             defaults.set(Int(searchHotKey.keyCode), forKey: "searchHotKeyCode")
             defaults.set(Int(searchHotKey.modifiers), forKey: "searchHotKeyModifiers")
@@ -69,168 +69,79 @@ final class AppSettings: ObservableObject {
     @Published var searchShortcutTaken = false
     /// While a new shortcut is being recorded the current one is released.
     @Published var recordingShortcut = false
-    @Published var peripheralBatteries: Bool { didSet { defaults.set(peripheralBatteries, forKey: "peripheralBatteries") } }
+    @Published var peripheralBatteries: Bool = AppSettings.load("peripheralBatteries", default: true) { didSet { save(peripheralBatteries, "peripheralBatteries") } }
     /// Shows when any app uses the camera or microphone.
-    @Published var privacyIndicator: Bool { didSet { defaults.set(privacyIndicator, forKey: "privacyIndicator") } }
-    @Published var recordAudio: Bool { didSet { defaults.set(recordAudio, forKey: "recordAudio") } }
+    @Published var privacyIndicator: Bool = AppSettings.load("privacyIndicator", default: true) { didSet { save(privacyIndicator, "privacyIndicator") } }
+    @Published var recordAudio: Bool = AppSettings.load("recordAudio", default: false) { didSet { save(recordAudio, "recordAudio") } }
     /// Order of the tabs after Home, as NotchTab raw values.
-    @Published var tabOrder: [String] { didSet { defaults.set(tabOrder, forKey: "tabOrder") } }
-    @Published var headerDate: Bool { didSet { defaults.set(headerDate, forKey: "headerDate") } }
-    @Published var headerWeather: Bool { didSet { defaults.set(headerWeather, forKey: "headerWeather") } }
-    @Published var collapsedMusic: Bool { didSet { defaults.set(collapsedMusic, forKey: "collapsedMusic") } }
-    @Published var collapsedTimer: Bool { didSet { defaults.set(collapsedTimer, forKey: "collapsedTimer") } }
+    @Published var tabOrder: [String] = AppSettings.load("tabOrder", default: NotchTab.allCases.filter { $0 != .home }.map(\.rawValue)) { didSet { save(tabOrder, "tabOrder") } }
+    @Published var headerDate: Bool = AppSettings.load("headerDate", default: true) { didSet { save(headerDate, "headerDate") } }
+    @Published var headerWeather: Bool = AppSettings.load("headerWeather", default: true) { didSet { save(headerWeather, "headerWeather") } }
+    @Published var collapsedMusic: Bool = AppSettings.load("collapsedMusic", default: true) { didSet { save(collapsedMusic, "collapsedMusic") } }
+    @Published var collapsedTimer: Bool = AppSettings.load("collapsedTimer", default: true) { didSet { save(collapsedTimer, "collapsedTimer") } }
     /// Shows the call app and how long the call has run while one is in progress.
-    @Published var callIsland: Bool { didSet { defaults.set(callIsland, forKey: "callIsland") } }
-    @Published var idleLeft: IdleItem { didSet { defaults.set(idleLeft.rawValue, forKey: "idleLeft") } }
-    @Published var idleRight: IdleItem { didSet { defaults.set(idleRight.rawValue, forKey: "idleRight") } }
-    @Published var systemTab: Bool { didSet { defaults.set(systemTab, forKey: "systemTab") } }
-    @Published var appsTab: Bool { didSet { defaults.set(appsTab, forKey: "appsTab") } }
-    @Published var lyricsEnabled: Bool { didSet { defaults.set(lyricsEnabled, forKey: "lyricsEnabled") } }
+    @Published var callIsland: Bool = AppSettings.load("callIsland", default: true) { didSet { save(callIsland, "callIsland") } }
+    @Published var idleLeft: IdleItem = AppSettings.load("idleLeft", default: .none) { didSet { save(idleLeft.rawValue, "idleLeft") } }
+    @Published var idleRight: IdleItem = AppSettings.load("idleRight", default: .none) { didSet { save(idleRight.rawValue, "idleRight") } }
+    @Published var systemTab: Bool = AppSettings.load("systemTab", default: true) { didSet { save(systemTab, "systemTab") } }
+    @Published var appsTab: Bool = AppSettings.load("appsTab", default: true) { didSet { save(appsTab, "appsTab") } }
+    @Published var lyricsEnabled: Bool = AppSettings.load("lyricsEnabled", default: true) { didSet { save(lyricsEnabled, "lyricsEnabled") } }
     /// Keeps the current lyric line under the notch while music plays.
-    @Published var lyricsUnderNotch: Bool { didSet { defaults.set(lyricsUnderNotch, forKey: "lyricsUnderNotch") } }
+    @Published var lyricsUnderNotch: Bool = AppSettings.load("lyricsUnderNotch", default: false) { didSet { save(lyricsUnderNotch, "lyricsUnderNotch") } }
     /// City for the header weather chip; empty hides it.
-    @Published var weatherCity: String { didSet { defaults.set(weatherCity, forKey: "weatherCity") } }
-    @Published var downloadAlerts: Bool { didSet { defaults.set(downloadAlerts, forKey: "downloadAlerts") } }
-    @Published var downloadsToShelf: Bool { didSet { defaults.set(downloadsToShelf, forKey: "downloadsToShelf") } }
+    @Published var weatherCity: String = AppSettings.load("weatherCity", default: "") { didSet { save(weatherCity, "weatherCity") } }
+    @Published var downloadAlerts: Bool = AppSettings.load("downloadAlerts", default: true) { didSet { save(downloadAlerts, "downloadAlerts") } }
+    @Published var downloadsToShelf: Bool = AppSettings.load("downloadsToShelf", default: false) { didSet { save(downloadsToShelf, "downloadsToShelf") } }
     /// Also controls whether copied text is recorded at all.
-    @Published var clipboardTab: Bool { didSet { defaults.set(clipboardTab, forKey: "clipboardTab") } }
+    @Published var clipboardTab: Bool = AppSettings.load("clipboardTab", default: true) { didSet { save(clipboardTab, "clipboardTab") } }
     /// Removes tracking parameters from copied links while the clipboard is watched.
-    @Published var cleanLinks: Bool { didSet { defaults.set(cleanLinks, forKey: "cleanLinks") } }
-    @Published var notesTab: Bool { didSet { defaults.set(notesTab, forKey: "notesTab") } }
-    @Published var toolsTab: Bool { didSet { defaults.set(toolsTab, forKey: "toolsTab") } }
-    @Published var mirrorEnabled: Bool { didSet { defaults.set(mirrorEnabled, forKey: "mirrorEnabled") } }
+    @Published var cleanLinks: Bool = AppSettings.load("cleanLinks", default: true) { didSet { save(cleanLinks, "cleanLinks") } }
+    @Published var notesTab: Bool = AppSettings.load("notesTab", default: true) { didSet { save(notesTab, "notesTab") } }
+    @Published var toolsTab: Bool = AppSettings.load("toolsTab", default: true) { didSet { save(toolsTab, "toolsTab") } }
+    @Published var mirrorEnabled: Bool = AppSettings.load("mirrorEnabled", default: true) { didSet { save(mirrorEnabled, "mirrorEnabled") } }
     /// AVCaptureDevice.uniqueID; empty means the system default camera.
-    @Published var mirrorCameraID: String { didSet { defaults.set(mirrorCameraID, forKey: "mirrorCameraID") } }
+    @Published var mirrorCameraID: String = AppSettings.load("mirrorCameraID", default: "") { didSet { save(mirrorCameraID, "mirrorCameraID") } }
     /// Two-finger swipe down on the notch opens it, swipe up closes it.
-    @Published var swipeToOpen: Bool { didSet { defaults.set(swipeToOpen, forKey: "swipeToOpen") } }
+    @Published var swipeToOpen: Bool = AppSettings.load("swipeToOpen", default: true) { didSet { save(swipeToOpen, "swipeToOpen") } }
     /// Two-finger swipe left/right on the Home tab skips tracks.
-    @Published var swipeForTracks: Bool { didSet { defaults.set(swipeForTracks, forKey: "swipeForTracks") } }
+    @Published var swipeForTracks: Bool = AppSettings.load("swipeForTracks", default: true) { didSet { save(swipeForTracks, "swipeForTracks") } }
 
-    private init() {
-        defaults.register(defaults: [
-            "expandedWidth": 620.0,
-            "expandedHeight": 196.0,
-            "pillWidth": 190.0,
-            "compactLiveActivity": false,
-            "sneakPeekEnabled": true,
-            "sneakPeekAlways": false,
-            "sneakPeekDuration": 3.0,
-            "openDelay": 0.1,
-            "volumeHUDEnabled": true,
-            "replaceSystemHUD": false,
-            "batteryInHeader": true,
-            "chargingHUDEnabled": true,
-            "headphoneHUDEnabled": true,
-            "calendarEnabled": true,
-            "remindersEnabled": true,
-            "mirrorEnabled": true,
-            "timerTab": true,
-            "shelfTab": true,
-            "searchTab": true,
-            "emojiTab": true,
-            "aiTab": true,
-            "widenForTabs": true,
-            "liquidGlass": true,
-            "glassTint": 55.0,
-            "searchHotkey": true,
-            "peripheralBatteries": true,
-            "privacyIndicator": true,
-            "recordAudio": false,
-            "tabOrder": NotchTab.allCases.filter { $0 != .home }.map(\.rawValue),
-            "headerDate": true,
-            "headerWeather": true,
-            "collapsedMusic": true,
-            "collapsedTimer": true,
-            "callIsland": true,
-            "idleLeft": IdleItem.none.rawValue,
-            "idleRight": IdleItem.none.rawValue,
-            "systemTab": true,
-            "appsTab": true,
-            "lyricsEnabled": true,
-            "lyricsUnderNotch": false,
-            "weatherCity": "",
-            "downloadAlerts": true,
-            "downloadsToShelf": false,
-            "batteryAlerts": true,
-            "capsLockHUD": true,
-            "screenshotsToShelf": true,
-            "localNotifications": true,
-            "clipboardTab": true,
-            "cleanLinks": true,
-            "notesTab": true,
-            "toolsTab": true,
-            "checkForUpdates": true,
-            "displayName": "",
-            "showInClamshell": true,
-            "mirrorCameraID": "",
-            "swipeToOpen": true,
-            "swipeForTracks": true,
-        ])
-        // Sizes saved before the minimums were raised come back clamped.
-        expandedWidth = min(max(defaults.double(forKey: "expandedWidth"), Self.expandedWidthRange.lowerBound), Self.expandedWidthRange.upperBound)
-        expandedHeight = min(max(defaults.double(forKey: "expandedHeight"), Self.expandedHeightRange.lowerBound), Self.expandedHeightRange.upperBound)
-        pillWidth = defaults.double(forKey: "pillWidth")
-        compactLiveActivity = defaults.bool(forKey: "compactLiveActivity")
-        sneakPeekEnabled = defaults.bool(forKey: "sneakPeekEnabled")
-        sneakPeekAlways = defaults.bool(forKey: "sneakPeekAlways")
-        sneakPeekDuration = defaults.double(forKey: "sneakPeekDuration")
-        openDelay = defaults.double(forKey: "openDelay")
-        volumeHUDEnabled = defaults.bool(forKey: "volumeHUDEnabled")
-        replaceSystemHUD = defaults.bool(forKey: "replaceSystemHUD")
-        batteryInHeader = defaults.bool(forKey: "batteryInHeader")
-        chargingHUDEnabled = defaults.bool(forKey: "chargingHUDEnabled")
-        headphoneHUDEnabled = defaults.bool(forKey: "headphoneHUDEnabled")
-        calendarEnabled = defaults.bool(forKey: "calendarEnabled")
-        remindersEnabled = defaults.bool(forKey: "remindersEnabled")
-        hiddenCalendarIDs = defaults.stringArray(forKey: "hiddenCalendarIDs") ?? []
-        mirrorEnabled = defaults.bool(forKey: "mirrorEnabled")
-        timerTab = defaults.bool(forKey: "timerTab")
-        shelfTab = defaults.bool(forKey: "shelfTab")
-        searchTab = defaults.bool(forKey: "searchTab")
-        emojiTab = defaults.bool(forKey: "emojiTab")
-        aiTab = defaults.bool(forKey: "aiTab")
-        widenForTabs = defaults.bool(forKey: "widenForTabs")
-        liquidGlass = defaults.bool(forKey: "liquidGlass")
-        glassTint = min(max(defaults.double(forKey: "glassTint"), Self.glassTintRange.lowerBound), Self.glassTintRange.upperBound)
-        searchHotkey = defaults.bool(forKey: "searchHotkey")
-        if let name = defaults.string(forKey: "searchHotKeyName") {
-            searchHotKey = HotKeyCombo(keyCode: UInt32(defaults.integer(forKey: "searchHotKeyCode")),
-                                       modifiers: UInt32(defaults.integer(forKey: "searchHotKeyModifiers")), key: name)
-        } else {
-            searchHotKey = .defaultSearch
-        }
-        peripheralBatteries = defaults.bool(forKey: "peripheralBatteries")
-        privacyIndicator = defaults.bool(forKey: "privacyIndicator")
-        recordAudio = defaults.bool(forKey: "recordAudio")
-        tabOrder = defaults.stringArray(forKey: "tabOrder") ?? []
-        headerDate = defaults.bool(forKey: "headerDate")
-        headerWeather = defaults.bool(forKey: "headerWeather")
-        collapsedMusic = defaults.bool(forKey: "collapsedMusic")
-        collapsedTimer = defaults.bool(forKey: "collapsedTimer")
-        callIsland = defaults.bool(forKey: "callIsland")
-        idleLeft = IdleItem(rawValue: defaults.string(forKey: "idleLeft") ?? "") ?? .none
-        idleRight = IdleItem(rawValue: defaults.string(forKey: "idleRight") ?? "") ?? .none
-        systemTab = defaults.bool(forKey: "systemTab")
-        appsTab = defaults.bool(forKey: "appsTab")
-        lyricsEnabled = defaults.bool(forKey: "lyricsEnabled")
-        lyricsUnderNotch = defaults.bool(forKey: "lyricsUnderNotch")
-        weatherCity = defaults.string(forKey: "weatherCity") ?? ""
-        downloadAlerts = defaults.bool(forKey: "downloadAlerts")
-        downloadsToShelf = defaults.bool(forKey: "downloadsToShelf")
-        batteryAlerts = defaults.bool(forKey: "batteryAlerts")
-        capsLockHUD = defaults.bool(forKey: "capsLockHUD")
-        screenshotsToShelf = defaults.bool(forKey: "screenshotsToShelf")
-        localNotifications = defaults.bool(forKey: "localNotifications")
-        clipboardTab = defaults.bool(forKey: "clipboardTab")
-        cleanLinks = defaults.bool(forKey: "cleanLinks")
-        notesTab = defaults.bool(forKey: "notesTab")
-        toolsTab = defaults.bool(forKey: "toolsTab")
-        checkForUpdates = defaults.bool(forKey: "checkForUpdates")
-        displayName = defaults.string(forKey: "displayName") ?? ""
-        showInClamshell = defaults.bool(forKey: "showInClamshell")
-        mirrorCameraID = defaults.string(forKey: "mirrorCameraID") ?? ""
-        swipeToOpen = defaults.bool(forKey: "swipeToOpen")
-        swipeForTracks = defaults.bool(forKey: "swipeForTracks")
+    private init() {}
+
+    private func save(_ value: Any, _ key: String) { defaults.set(value, forKey: key) }
+
+    // Unset keys fall back to the default; set ones read the way UserDefaults always did,
+    // so a "NO" passed as a launch argument still turns a switch off.
+    nonisolated private static func load(_ key: String, default value: Bool) -> Bool {
+        UserDefaults.standard.object(forKey: key) == nil ? value : UserDefaults.standard.bool(forKey: key)
+    }
+
+    nonisolated private static func load(_ key: String, default value: Double) -> Double {
+        UserDefaults.standard.object(forKey: key) == nil ? value : UserDefaults.standard.double(forKey: key)
+    }
+
+    /// Sizes saved before the minimums were raised come back clamped.
+    nonisolated private static func load(_ key: String, default value: Double, in range: ClosedRange<Double>) -> Double {
+        min(max(load(key, default: value), range.lowerBound), range.upperBound)
+    }
+
+    nonisolated private static func load(_ key: String, default value: String) -> String {
+        UserDefaults.standard.string(forKey: key) ?? value
+    }
+
+    nonisolated private static func load(_ key: String, default value: [String]) -> [String] {
+        UserDefaults.standard.stringArray(forKey: key) ?? value
+    }
+
+    nonisolated private static func load(_ key: String, default value: IdleItem) -> IdleItem {
+        IdleItem(rawValue: load(key, default: value.rawValue)) ?? value
+    }
+
+    nonisolated private static func loadSearchHotKey() -> HotKeyCombo {
+        let defaults = UserDefaults.standard
+        guard let name = defaults.string(forKey: "searchHotKeyName") else { return .defaultSearch }
+        return HotKeyCombo(keyCode: UInt32(defaults.integer(forKey: "searchHotKeyCode")),
+                           modifiers: UInt32(defaults.integer(forKey: "searchHotKeyModifiers")), key: name)
     }
 
     /// Every tab after Home in the user's order, including tabs added in newer versions.

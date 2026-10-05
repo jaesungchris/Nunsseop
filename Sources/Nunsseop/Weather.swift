@@ -123,7 +123,6 @@ final class WeatherModel: ObservableObject {
 final class DownloadWatcher {
     var onStart: ((String) -> Void)?
     var onFinish: ((URL) -> Void)?
-    var isEnabled = true
 
     private var source: DispatchSourceFileSystemObject?
     private var inProgress: [String: URL] = [:]
@@ -155,14 +154,12 @@ final class DownloadWatcher {
 
     private func scan(_ directory: URL) {
         let now = Self.partials(in: directory)
-        if isEnabled {
-            for (name, url) in now where inProgress[name] == nil {
-                onStart?(url.deletingPathExtension().lastPathComponent)
-            }
-            for (name, url) in inProgress where now[name] == nil {
-                let finished = url.deletingPathExtension()
-                if FileManager.default.fileExists(atPath: finished.path) { onFinish?(finished) }
-            }
+        for (name, url) in now where inProgress[name] == nil {
+            onStart?(url.deletingPathExtension().lastPathComponent)
+        }
+        for (name, url) in inProgress where now[name] == nil {
+            let finished = url.deletingPathExtension()
+            if FileManager.default.fileExists(atPath: finished.path) { onFinish?(finished) }
         }
         inProgress = now
     }

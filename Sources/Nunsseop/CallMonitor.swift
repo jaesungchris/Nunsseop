@@ -295,9 +295,8 @@ final class CallMonitor: ObservableObject {
            let range = path.range(of: ".app/") {
             url = URL(fileURLWithPath: String(path[..<range.upperBound].dropLast()))
         }
-        if url == nil { url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) }
+        if url == nil { url = InstalledApps.url(for: bundleID) }
         guard let url else { return (bundleID, NSWorkspace.shared.icon(for: .application)) }
-        return (FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: ""),
-                NSWorkspace.shared.icon(forFile: url.path))
+        return (InstalledApps.name(at: url), InstalledApps.icon(at: url))
     }
 }

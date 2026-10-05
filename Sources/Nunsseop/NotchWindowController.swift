@@ -40,12 +40,42 @@ final class NotchWindowController {
     private var screenObserver: NSObjectProtocol?
     private var pillWidthObserver: AnyCancellable?
     private var updatesObserver: AnyCancellable?
-    private var clipboardObserver: AnyCancellable?
     private var settingsObservers: [AnyCancellable] = []
     /// Keeps the AI limits fresh while an idle ear shows them.
     private var aiUsageTimer: Timer?
     private var hotKey: GlobalHotKey?
     private var resignObserver: NSObjectProtocol?
+
+    /// A watcher that only feeds the notch: it runs while its setting is on and the panel is on screen.
+    private struct Feature {
+        let setting: KeyPath<AppSettings, Bool>
+        let changes: KeyPath<AppSettings, Published<Bool>.Publisher>
+        let start: () -> Void
+        /// `hiding` is true when only the panel went away; the setting is still on.
+        let stop: (_ hiding: Bool) -> Void
+    }
+
+    /// Everything else runs regardless of the panel: now playing, the HUD (it may be taking over the volume and
+    /// brightness keys), tools, the screenshot and download watchers (they still fill the shelf), the AI usage
+    /// timer, lyrics, weather and update checks.
+    private lazy var features: [Feature] = {
+        let model = model
+        return [
+            Feature(setting: \.clipboardTab, changes: \.$clipboardTab,
+                    start: { model.clipboard.start() }, stop: { _ in model.clipboard.stop() }),
+            Feature(setting: \.capsLockHUD, changes: \.$capsLockHUD,
+                    start: { model.capsLock.start() }, stop: { _ in model.capsLock.stop() }),
+            Feature(setting: \.localNotifications, changes: \.$localNotifications,
+                    start: { model.notifyServer.start() }, stop: { _ in model.notifyServer.stop() }),
+            Feature(setting: \.callIsland, changes: \.$callIsland,
+                    start: { model.calls.start() }, stop: { _ in model.calls.stop() }),
+            // Hiding keeps the last camera/mic state, so showing again during a call already announced stays quiet.
+            Feature(setting: \.privacyIndicator, changes: \.$privacyIndicator,
+                    start: { model.privacy.start() }, stop: { hiding in model.privacy.stop(clearing: !hiding) }),
+            Feature(setting: \.peripheralBatteries, changes: \.$peripheralBatteries,
+                    start: { model.peripherals.start() }, stop: { _ in model.peripherals.stop() }),
+        ]
+    }()
 
     /// Opens the notch on the Search tab with the keyboard focus in the search field.
     private func openSearch() {
@@ -164,21 +194,12 @@ final class NotchWindowController {
             self?.model.hud.show(.notice(symbol: device.symbol, title: String(localized: "Low battery"),
                                          detail: "\(device.name) \(device.percent)%"), duration: 5)
         }
-        settingsObservers.append(model.settings.$peripheralBatteries.sink { [weak self] enabled in
-            if enabled && self?.panel.isVisible == true { self?.model.peripherals.start() } else { self?.model.peripherals.stop() }
-        })
         model.privacy.onChange = { [weak self] camera, mic in
             guard let self, self.model.settings.privacyIndicator else { return }
             let title = camera && mic ? String(localized: "Camera and microphone in use")
                 : camera ? String(localized: "Camera in use") : String(localized: "Microphone in use")
             self.model.hud.show(.notice(symbol: camera ? "video.fill" : "mic.fill", title: title, detail: nil), duration: 3)
         }
-        settingsObservers.append(model.settings.$privacyIndicator.sink { [weak self] enabled in
-            if enabled && self?.panel.isVisible == true { self?.model.privacy.start() } else { self?.model.privacy.stop() }
-        })
-        settingsObservers.append(model.settings.$callIsland.sink { [weak self] enabled in
-            if enabled && self?.panel.isVisible == true { self?.model.calls.start() } else { self?.model.calls.stop() }
-        })
         model.recorder.onFinished = { [weak self] url in
             guard let self, let url else { return }
             self.model.shelf.add([url])
@@ -243,19 +264,16 @@ final class NotchWindowController {
         }
         settingsObservers.append(model.settings.$cleanLinks.sink { [weak self] in self?.model.clipboard.cleansLinks = $0 })
         settingsObservers.append(model.settings.$screenshotsToShelf.sink { [weak self] in self?.model.screenshots.isEnabled = $0 })
-        settingsObservers.append(model.settings.$localNotifications.sink { [weak self] enabled in
-            if enabled && self?.panel.isVisible == true { self?.model.notifyServer.start() } else { self?.model.notifyServer.stop() }
-        })
         model.timer.onFinished = { [weak self] message in
             self?.model.hud.show(.notice(symbol: "timer", title: message, detail: nil), duration: 4)
         }
-        clipboardObserver = model.settings.$clipboardTab
-            .sink { [weak self] enabled in
-                if enabled && self?.panel.isVisible == true { self?.model.clipboard.start() } else { self?.model.clipboard.stop() }
-            }
-        settingsObservers.append(model.settings.$capsLockHUD.sink { [weak self] enabled in
-            if enabled && self?.panel.isVisible == true { self?.model.capsLock.start() } else { self?.model.capsLock.stop() }
-        })
+        // The publisher sends the new value before the setting changes, so the value is passed along.
+        for feature in features {
+            settingsObservers.append(model.settings[keyPath: feature.changes].sink { [weak self] enabled in
+                guard let self else { return }
+                if enabled && self.panel.isVisible { feature.start() } else { feature.stop(false) }
+            })
+        }
         updatesObserver = model.settings.$checkForUpdates
             .removeDuplicates()
             .sink { UpdateChecker.shared.startAutomaticChecks(enabled: $0) }
@@ -283,26 +301,15 @@ final class NotchWindowController {
     /// Hides the notch in clamshell mode when the user turned that off.
     private func updateVisibility() {
         let hidden = !model.settings.showInClamshell && NotchGeometry.lidIsClosed
-        let settings = model.settings
         if hidden {
             model.collapse()
             panel.ignoresMouseEvents = true
             panel.orderOut(nil)
             // Nothing can be shown while hidden, so stop the watchers that only feed the notch.
-            model.clipboard.stop()
-            model.capsLock.stop()
-            model.notifyServer.stop()
-            model.calls.stop()
-            model.privacy.stop(clearing: false)
-            model.peripherals.stop()
+            for feature in features { feature.stop(true) }
         } else if !panel.isVisible {
             panel.orderFrontRegardless()
-            if settings.clipboardTab { model.clipboard.start() }
-            if settings.capsLockHUD { model.capsLock.start() }
-            if settings.localNotifications { model.notifyServer.start() }
-            if settings.callIsland { model.calls.start() }
-            if settings.privacyIndicator { model.privacy.start() }
-            if settings.peripheralBatteries { model.peripherals.start() }
+            for feature in features where model.settings[keyPath: feature.setting] { feature.start() }
         }
     }
 

@@ -151,9 +151,12 @@ final class NotchViewModel: ObservableObject {
         hud.$event
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
-        // The idle ears show these.
+        // The idle ears show these. AI limits refresh every 20 s, so only a limit becoming known or unknown,
+        // which resizes the notch, reaches the whole view; IdleEars watches the values itself.
         hud.$power.map { _ in () }
-            .merge(with: weather.$current.map { _ in () }, aiUsage.$providers.map { _ in () })
+            .merge(with: weather.$current.map { _ in () },
+                   aiUsage.$providers.map { providers in [IdleItem.claude, .codex].map { Self.aiLeft($0, in: providers) != nil } }
+                       .removeDuplicates().map { _ in () })
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
         settings.objectWillChange
@@ -218,8 +221,6 @@ final class NotchViewModel: ObservableObject {
     static let hudEarWidth: CGFloat = 96
     /// Room for a short value such as "73%" or "16°" on each side while idle.
     static let idleEarWidth: CGFloat = 64
-
-    var showsHUD: Bool { hud.event != nil }
 
     var collapsedSize: CGSize {
         var size = geometry.collapsedSize

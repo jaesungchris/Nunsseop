@@ -27,7 +27,6 @@ struct PeripheralBattery: Identifiable, Equatable {
 final class PeripheralMonitor: ObservableObject {
     @Published private(set) var devices: [PeripheralBattery] = []
     var onLow: ((PeripheralBattery) -> Void)?
-    var isEnabled = true
 
     private var timer: Timer?
     private var warned: Set<String> = []
@@ -48,7 +47,7 @@ final class PeripheralMonitor: ObservableObject {
     }
 
     func refresh() {
-        guard isEnabled, !reading else { return }
+        guard !reading else { return }
         reading = true
         DispatchQueue.global(qos: .utility).async { [weak self] in
             let found = Self.read()
@@ -88,31 +87,12 @@ final class PeripheralMonitor: ObservableObject {
             }
             IOObjectRelease(iterator)
         }
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/system_profiler")
-        process.arguments = ["SPBluetoothDataType", "-json"]
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
-        if (try? process.run()) != nil {
-            DispatchQueue.global().asyncAfter(deadline: .now() + 10) { if process.isRunning { process.terminate() } }
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            process.waitUntilExit()
-            if let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let controllers = root["SPBluetoothDataType"] as? [[String: Any]] {
-                for controller in controllers {
-                    for entry in controller["device_connected"] as? [[String: Any]] ?? [] {
-                        for (name, value) in entry {
-                            guard let info = value as? [String: Any], result[name] == nil else { continue }
-                            let type = info["device_minorType"] as? String
-                            guard type != "Headphones", type != "Headset",
-                                  let text = info["device_batteryLevelMain"] as? String,
-                                  let percent = Int(text.trimmingCharacters(in: CharacterSet(charactersIn: "%"))) else { continue }
-                            result[name] = PeripheralBattery(name: name, percent: percent, kind: kind(for: name, type: type))
-                        }
-                    }
-                }
-            }
+        for (name, info) in BluetoothProfiler.connectedDevices() ?? [] where result[name] == nil {
+            let type = info["device_minorType"] as? String
+            guard type != "Headphones", type != "Headset",
+                  let text = info["device_batteryLevelMain"] as? String,
+                  let percent = Int(text.trimmingCharacters(in: CharacterSet(charactersIn: "%"))) else { continue }
+            result[name] = PeripheralBattery(name: name, percent: percent, kind: kind(for: name, type: type))
         }
         return result.values.sorted { $0.name < $1.name }
     }

@@ -12,7 +12,6 @@ final class ClipboardHistory: ObservableObject {
     }
 
     @Published private(set) var items: [Item] = []
-    var isEnabled = true
     /// Strips tracking parameters from a copied link and puts the clean link back on the pasteboard.
     var cleansLinks = false
 
@@ -47,7 +46,6 @@ final class ClipboardHistory: ObservableObject {
     private func check() {
         guard pasteboard.changeCount != lastChange else { return }
         lastChange = pasteboard.changeCount
-        guard isEnabled else { return }
         let types = Set(pasteboard.types?.map(\.rawValue) ?? [])
         guard types.isDisjoint(with: Self.ignoredTypes),
               var text = pasteboard.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
