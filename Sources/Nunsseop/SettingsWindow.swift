@@ -332,6 +332,7 @@ private struct ServicesPane: View {
 private struct CalendarChoices: View {
     @ObservedObject var settings: AppSettings
     @State private var groups: [(account: String, calendars: [EKCalendar])] = []
+    @State private var expandedAccounts: Set<String> = []
     private let store = EKEventStore()
 
     var body: some View {
@@ -343,12 +344,23 @@ private struct CalendarChoices: View {
                 Text("No calendars yet.").font(.caption).foregroundStyle(.secondary)
             }
             ForEach(groups, id: \.account) { group in
-                Text(group.account).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
-                    Toggle(isOn: shown(calendar.calendarIdentifier)) {
+                let switches = group.calendars.map { shown($0.calendarIdentifier) }
+                DisclosureGroup(isExpanded: expanded(group.account)) {
+                    ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
+                        Toggle(isOn: shown(calendar.calendarIdentifier)) {
+                            HStack(spacing: 6) {
+                                Circle().fill(Color(nsColor: calendar.color ?? .systemBlue)).frame(width: 8, height: 8)
+                                Text(calendar.title)
+                            }
+                        }
+                    }
+                } label: {
+                    // One switch for the whole account; it shows a mixed state when only some calendars are on.
+                    Toggle(sources: switches, isOn: \.self) {
                         HStack(spacing: 6) {
-                            Circle().fill(Color(nsColor: calendar.color ?? .systemBlue)).frame(width: 8, height: 8)
-                            Text(calendar.title)
+                            Text(group.account).fontWeight(.semibold)
+                            Text("\(switches.filter(\.wrappedValue).count)/\(switches.count)")
+                                .monospacedDigit().foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -364,6 +376,14 @@ private struct CalendarChoices: View {
         }
         .onAppear(perform: load)
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in load() }
+    }
+
+    private func expanded(_ account: String) -> Binding<Bool> {
+        Binding {
+            expandedAccounts.contains(account)
+        } set: { open in
+            if open { expandedAccounts.insert(account) } else { expandedAccounts.remove(account) }
+        }
     }
 
     private func shown(_ id: String) -> Binding<Bool> {
