@@ -73,6 +73,8 @@ final class AppSettings: ObservableObject {
     /// Shows when any app uses the camera or microphone.
     @Published var privacyIndicator: Bool = AppSettings.load("privacyIndicator", default: true) { didSet { save(privacyIndicator, "privacyIndicator") } }
     @Published var recordAudio: Bool = AppSettings.load("recordAudio", default: false) { didSet { save(recordAudio, "recordAudio") } }
+    /// A volume slider for each app playing sound, in the Tools tab. Experimental, so off by default.
+    @Published var perAppVolume: Bool = AppSettings.load("perAppVolume", default: false) { didSet { save(perAppVolume, "perAppVolume") } }
     /// Order of the tabs after Home, as NotchTab raw values.
     @Published var tabOrder: [String] = AppSettings.load("tabOrder", default: NotchTab.allCases.filter { $0 != .home }.map(\.rawValue)) { didSet { save(tabOrder, "tabOrder") } }
     @Published var headerDate: Bool = AppSettings.load("headerDate", default: true) { didSet { save(headerDate, "headerDate") } }

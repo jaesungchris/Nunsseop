@@ -11,8 +11,11 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Nunsseop",
+            dependencies: ["NunsseopAtomics"],
             path: "Sources/Nunsseop"
         ),
+        // Lock-free values for the per-app volume audio thread.
+        .target(name: "NunsseopAtomics", path: "Sources/NunsseopAtomics"),
         // Loaded into /usr/bin/perl at runtime; see Resources/nowplaying.pl.
         .target(
             name: "NowPlayingHelper",

@@ -67,7 +67,8 @@ final class ToolsModel: ObservableObject {
             var streams = Self.address(kAudioDevicePropertyStreams, kAudioDevicePropertyScopeOutput)
             var streamSize: UInt32 = 0
             AudioObjectGetPropertyDataSize(id, &streams, 0, nil, &streamSize)
-            guard streamSize > 0 else { return nil }
+            // The per-app volume devices are only for this app.
+            guard streamSize > 0, !AppVolumeModel.isOwnDevice(id) else { return nil }
             var nameAddress = Self.address(kAudioObjectPropertyName)
             var name: Unmanaged<CFString>?
             var nameSize = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
@@ -302,6 +303,8 @@ struct ToolsTab: View {
     @ObservedObject var tools: ToolsModel
     @ObservedObject var recorder: ScreenRecorder
     let recordAudio: Bool
+    /// Set while per-app volume is turned on.
+    let appVolume: AppVolumeModel?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -322,6 +325,9 @@ struct ToolsTab: View {
                 .menuIndicator(.visible)
                 .fixedSize(horizontal: false, vertical: true)
             } action: { tools.refreshAudio() }
+            .overlay(alignment: .topTrailing) {
+                if let appVolume { AppVolumeButton(model: appVolume).padding(8) }
+            }
 
             ToolTile(symbol: tools.micMuted ? "mic.slash.fill" : "mic.fill", title: String(localized: "Microphone"),
                      active: tools.micMuted) {
@@ -350,6 +356,9 @@ struct ToolsTab: View {
                 captureStrip
                 drivesCard
             }
+        }
+        .overlay(alignment: .topLeading) {
+            if let appVolume { AppVolumeOverlay(model: appVolume) }
         }
         .foregroundStyle(.white)
     }
@@ -470,5 +479,91 @@ private struct ToolTile<Detail: View>: View {
         .onTapGesture(perform: action)
         // Laid out before the capture column, which gets what is left but never less than it needs.
         .layoutPriority(1)
+    }
+}
+
+/// Opens the app volume list from the Output tile.
+private struct AppVolumeButton: View {
+    @ObservedObject var model: AppVolumeModel
+
+    var body: some View {
+        let turnedDown = model.apps.contains { $0.volume < 1 }
+        Button { model.isShowingList.toggle() } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 10, weight: .semibold))
+                .frame(width: 22, height: 22)
+                .background(Circle().fill(turnedDown ? Color.accentColor : .white.opacity(0.12)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(Text("App volume"))
+    }
+}
+
+/// The apps playing sound, each with a volume slider, laid over the left of the Tools tab.
+private struct AppVolumeOverlay: View {
+    @ObservedObject var model: AppVolumeModel
+    private static let rowHeight: CGFloat = 20
+    private static let rowSpacing: CGFloat = 3
+
+    var body: some View {
+        if model.isShowingList {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Label("App volume", systemImage: "slider.horizontal.3").font(.system(size: 11, weight: .semibold))
+                    Spacer()
+                    Button { model.isShowingList = false } label: {
+                        Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).frame(width: 18, height: 18)
+                            .background(Circle().fill(.white.opacity(0.12))).contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(Text("Close"))
+                }
+                if model.needsPermission {
+                    Text("Nunsseop needs permission to record system audio to change an app’s volume.")
+                        .font(.system(size: 10)).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                    Button("Open System Settings") {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .controlSize(.small)
+                } else if model.apps.isEmpty {
+                    Text("No apps are playing sound").font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
+                }
+                if !model.apps.isEmpty {
+                    // Four rows show; more scroll.
+                    let shown = CGFloat(min(model.apps.count, 4))
+                    ScrollView(.vertical) {
+                        VStack(spacing: Self.rowSpacing) {
+                            ForEach(model.apps) { app in row(app) }
+                        }
+                    }
+                    .scrollIndicators(model.apps.count > 4 ? .automatic : .never)
+                    .frame(maxHeight: shown * Self.rowHeight + (shown - 1) * Self.rowSpacing)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(8)
+            .frame(width: 280, alignment: .topLeading)
+            .frame(maxHeight: .infinity, alignment: .top)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color(white: 0.09)))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.white.opacity(0.1), lineWidth: 1))
+        }
+    }
+
+    private func row(_ app: AppVolumeModel.App) -> some View {
+        HStack(spacing: 6) {
+            Image(nsImage: app.icon).resizable().frame(width: 16, height: 16)
+            Text(app.name).font(.system(size: 11)).lineLimit(1).frame(width: 74, alignment: .leading)
+            Slider(value: Binding(get: { app.volume }, set: { model.setVolume($0, for: app.id) }), in: 0...1) { editing in
+                if !editing { model.finishEditing(app.id) }
+            }
+            .controlSize(.mini)
+            Text("\(Int((app.volume * 100).rounded()))%")
+                .font(.system(size: 10).monospacedDigit()).foregroundStyle(.white.opacity(0.6))
+                .frame(width: 32, alignment: .trailing)
+        }
+        .frame(height: Self.rowHeight)
     }
 }
