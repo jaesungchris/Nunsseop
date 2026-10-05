@@ -108,14 +108,27 @@ struct SystemTab: View {
     let peripherals: PeripheralMonitor?
 
     var body: some View {
+        // Narrower gauges leave the network card room on a narrow notch.
+        ViewThatFits(in: .horizontal) {
+            row(gaugeWidth: 112)
+            row(gaugeWidth: 96)
+        }
+        .foregroundStyle(.white)
+        .onAppear { stats.start() }
+        .onDisappear { stats.stop() }
+    }
+
+    private func row(gaugeWidth: CGFloat) -> some View {
         HStack(spacing: 10) {
-            Gauge(title: "CPU", value: stats.cpu, caption: String(localized: "\(ProcessInfo.processInfo.activeProcessorCount) cores"), tint: .orange)
+            Gauge(title: "CPU", value: stats.cpu, caption: String(localized: "\(ProcessInfo.processInfo.activeProcessorCount) cores"), tint: .orange,
+                  width: gaugeWidth)
             Gauge(title: String(localized: "Memory"),
                   value: stats.memoryTotal > 0 ? Double(stats.memoryUsed) / Double(stats.memoryTotal) : 0,
-                  caption: "\(Self.bytes(Int64(stats.memoryUsed))) / \(Self.bytes(Int64(stats.memoryTotal)))", tint: .blue)
+                  caption: "\(Self.bytes(Int64(stats.memoryUsed))) / \(Self.bytes(Int64(stats.memoryTotal)))", tint: .blue,
+                  width: gaugeWidth)
             Gauge(title: String(localized: "Disk"),
                   value: stats.diskTotal > 0 ? 1 - Double(stats.diskFree) / Double(stats.diskTotal) : 0,
-                  caption: String(localized: "\(Self.bytes(stats.diskFree)) free"), tint: .purple)
+                  caption: String(localized: "\(Self.bytes(stats.diskFree)) free"), tint: .purple, width: gaugeWidth)
             VStack(alignment: .leading, spacing: 6) {
                 Text("Network").font(.system(size: 12, weight: .semibold))
                 HStack(spacing: 10) {
@@ -124,18 +137,17 @@ struct SystemTab: View {
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 .font(.system(size: 11, weight: .medium).monospacedDigit())
+                .lineLimit(1).minimumScaleFactor(0.7)
                 if let peripherals {
                     Divider().overlay(.white.opacity(0.15)).padding(.vertical, 2)
                     DeviceList(monitor: peripherals)
                 }
             }
             .padding(14)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            // The ideal width is what the network rates need; the card still takes any spare room.
+            .frame(idealWidth: 160, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .surface(RoundedRectangle(cornerRadius: 14))
         }
-        .foregroundStyle(.white)
-        .onAppear { stats.start() }
-        .onDisappear { stats.stop() }
     }
 
     static func bytes(_ value: Int64) -> String {
@@ -173,6 +185,7 @@ private struct Gauge: View {
     let value: Double
     let caption: String
     let tint: Color
+    let width: CGFloat
 
     var body: some View {
         VStack(spacing: 8) {
@@ -191,7 +204,7 @@ private struct Gauge: View {
             Text(caption).font(.system(size: 9).monospacedDigit()).foregroundStyle(.white.opacity(0.55)).lineLimit(1)
         }
         .padding(.vertical, 12).padding(.horizontal, 8)
-        .frame(width: 112)
+        .frame(width: width)
         .frame(maxHeight: .infinity)
         .surface(RoundedRectangle(cornerRadius: 14))
     }

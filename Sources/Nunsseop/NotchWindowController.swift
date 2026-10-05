@@ -95,6 +95,10 @@ final class NotchWindowController {
            let tab = NotchTab(rawValue: CommandLine.arguments[i + 1]) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
                 guard let self else { return }
+                if let j = CommandLine.arguments.firstIndex(of: "--demo-timer-mode"), j + 1 < CommandLine.arguments.count,
+                   let mode = TimerModel.Mode(rawValue: CommandLine.arguments[j + 1]) {
+                    self.model.timer.mode = mode
+                }
                 self.model.tab = tab
                 self.model.expand()
                 self.model.pinned = true
@@ -221,7 +225,7 @@ final class NotchWindowController {
                 self.aiUsageTimer = nil
                 guard shown else { return }
                 self.model.aiUsage.refresh(includeTokens: false)
-                self.aiUsageTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
+                self.aiUsageTimer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] _ in
                     MainActor.assumeIsolated { self?.model.aiUsage.refresh(includeTokens: false) }
                 }
             })

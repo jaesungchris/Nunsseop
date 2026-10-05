@@ -281,17 +281,10 @@ struct ToolsTab: View {
                 }
             } action: { recorder.toggle(withAudio: recordAudio) }
 
-            // At the narrowest notch widths only the two capture buttons fit, stacked.
-            ViewThatFits(in: .horizontal) {
-                VStack(spacing: 8) {
-                    captureStrip
-                    drivesCard
-                }
-                VStack(spacing: 6) {
-                    pickColorButton
-                    captureTextButton
-                    drivesCard
-                }
+            // The tiles narrow first so this column keeps room for both capture buttons.
+            VStack(spacing: 8) {
+                captureStrip
+                drivesCard
             }
         }
         .foregroundStyle(.white)
@@ -351,7 +344,6 @@ struct ToolsTab: View {
             if let error = tools.ejectError {
                 Text(error).font(.system(size: 9)).foregroundStyle(.red.opacity(0.8)).lineLimit(2)
             }
-            Spacer(minLength: 0)
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -401,14 +393,18 @@ private struct ToolTile<Detail: View>: View {
                 .frame(width: 34, height: 34)
                 .background(Circle().fill(active ? Color.accentColor : .white.opacity(0.12)))
             Spacer(minLength: 0)
+            // A single word shrinks rather than breaking mid-word on a narrow tile.
             Text(title).font(.system(size: 12, weight: .semibold))
+                .lineLimit(title.contains(" ") ? 2 : 1).minimumScaleFactor(0.75)
             detail.foregroundStyle(.white.opacity(0.6))
         }
         .padding(12)
-        .frame(width: 98, alignment: .leading)
+        .frame(minWidth: 80, maxWidth: 98, alignment: .leading)
         .frame(maxHeight: .infinity)
         .surface(RoundedRectangle(cornerRadius: 14))
         .contentShape(RoundedRectangle(cornerRadius: 14))
         .onTapGesture(perform: action)
+        // Laid out before the capture column, which gets what is left but never less than it needs.
+        .layoutPriority(1)
     }
 }

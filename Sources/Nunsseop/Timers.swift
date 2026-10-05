@@ -174,6 +174,16 @@ struct TimerTab: View {
     @ObservedObject var timer: TimerModel
 
     var body: some View {
+        // Fewer presets when the notch is too narrow for all of them beside the full-size time.
+        ViewThatFits(in: .horizontal) {
+            row(presets: [1, 3, 5, 10, 15, 25, 45])
+            row(presets: [1, 5, 10, 25, 45])
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func row(presets list: [Int]) -> some View {
         HStack(spacing: 22) {
             VStack(alignment: .leading, spacing: 10) {
                 Picker("", selection: $timer.mode) {
@@ -187,22 +197,11 @@ struct TimerTab: View {
 
                 switch timer.mode {
                 case .countdown:
-                    HStack(spacing: 6) {
-                        ForEach([1, 3, 5, 10, 15, 25, 45], id: \.self) { minutes in
-                            Button("\(minutes)") {
-                                timer.reset()
-                                timer.countdownSeconds = minutes * 60
-                            }
-                            .buttonStyle(.plain)
-                            .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                            .frame(width: 30, height: 22)
-                            .background(Capsule().fill(.white.opacity(timer.countdownSeconds == minutes * 60 ? 0.22 : 0.08)))
-                        }
-                        Text("min").font(.system(size: 10)).foregroundStyle(.white.opacity(0.5)).fixedSize()
-                    }
-                    .disabled(timer.isRunning)
+                    presets(list)
+                        .disabled(timer.isRunning)
                     Text("Scroll or click the time to change it")
                         .font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 case .pomodoro:
                     HStack(spacing: 6) {
                         PhaseChip(title: String(localized: "Focus · \(timer.workMinutes) min"), tint: .orange,
@@ -218,7 +217,9 @@ struct TimerTab: View {
                         .font(.system(size: 11)).foregroundStyle(.white.opacity(0.5))
                 }
             }
-            Spacer()
+            // Keeps its width; the time shrinks instead.
+            .fixedSize(horizontal: true, vertical: false)
+            Spacer(minLength: 0)
             TimeDisplay(timer: timer)
             VStack(spacing: 10) {
                 RoundButton(symbol: timer.isRunning ? "pause.fill" : "play.fill", prominent: true) {
@@ -228,8 +229,22 @@ struct TimerTab: View {
                     .disabled(!timer.isActive)
             }
         }
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func presets(_ list: [Int]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(list, id: \.self) { minutes in
+                Button("\(minutes)") {
+                    timer.reset()
+                    timer.countdownSeconds = minutes * 60
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                .frame(width: 30, height: 22)
+                .background(Capsule().fill(.white.opacity(timer.countdownSeconds == minutes * 60 ? 0.22 : 0.08)))
+            }
+            Text("min").font(.system(size: 10)).foregroundStyle(.white.opacity(0.5)).fixedSize()
+        }
     }
 }
 
@@ -284,6 +299,7 @@ private struct TimeDisplay: View {
                 TimelineView(.periodic(from: .now, by: 0.25)) { context in
                     Text(TimerModel.format(timer.value(at: context.date)))
                         .font(.system(size: 44, weight: .semibold, design: .rounded).monospacedDigit())
+                        .lineLimit(1).minimumScaleFactor(0.5)
                         .contentTransition(.numericText())
                         .opacity(editing ? 0 : 1)
                 }

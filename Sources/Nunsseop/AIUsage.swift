@@ -189,9 +189,12 @@ struct AIUsageTab: View {
         }
         .foregroundStyle(.white)
         .task {
+            // Limits are cheap to read, so they refresh often; the token totals scan logs and refresh every 2 minutes.
+            var tick = 0
             while !Task.isCancelled {
-                usage.refresh()
-                try? await Task.sleep(for: .seconds(120))
+                usage.refresh(includeTokens: tick % 6 == 0)
+                tick += 1
+                try? await Task.sleep(for: .seconds(20))
             }
         }
     }

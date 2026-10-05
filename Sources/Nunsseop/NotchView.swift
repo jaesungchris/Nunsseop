@@ -67,7 +67,8 @@ struct NotchView: View {
                     }
                     .padding(.horizontal, topRadius + 14)
                     .padding(.bottom, 16)
-                    .transition(.opacity.combined(with: .scale(scale: 0.94, anchor: .top)))
+                    // No scale here: scaling the scrolling tab row while it appears leaves it a few points off.
+                    .transition(.opacity)
                 } else if let event = model.hud.event {
                     HUDContent(event: event, height: notchHeight, earWidth: NotchViewModel.hudEarWidth)
                         .padding(.horizontal, topRadius + 6)
@@ -200,7 +201,8 @@ private struct HeaderBar: View {
     private var layout: (strip: CGFloat, camera: CGFloat, side: CGFloat) {
         let content = model.expandedSize.width - 2 * NotchViewModel.headerInset
         let status = model.headerStatusWidth
-        guard model.geometry.hasNotch else { return (content - status - 6, 0, content) }
+        // Without a notch: the gaps after the strip and between the two spacers.
+        guard model.geometry.hasNotch else { return (content - status - 12, 0, content) }
         let camera = model.geometry.collapsedSize.width + 8
         let side = (content - camera - 12) / 2
         return (side, camera, side)
@@ -223,7 +225,7 @@ private struct HeaderBar: View {
             } else {
                 tabStrip(tabs, overflowing: needed > layout.strip)
                     .frame(width: min(needed, layout.strip), alignment: .leading)
-                Spacer()
+                Spacer(minLength: 0)
                 if model.settings.headerDate && needed + 110 < layout.strip {
                     Text(Date.now, format: .dateTime.month().day().weekday(.abbreviated))
                         .font(.system(size: 11, weight: .medium))
@@ -231,7 +233,7 @@ private struct HeaderBar: View {
                         .lineLimit(1)
                         .fixedSize()
                 }
-                Spacer()
+                Spacer(minLength: 0)
                 status
             }
         }
@@ -715,8 +717,10 @@ private struct HomeTab: View {
     var body: some View {
         if let track = nowPlaying.track {
             HStack(spacing: 18) {
+                // Gives way to the controls when the notch is narrow.
                 GlowingArtwork(image: nowPlaying.artwork, tint: nowPlaying.tint, sourceBundleID: track.sourceBundleID)
-                    .frame(width: 104, height: 104)
+                    .aspectRatio(1, contentMode: .fit)
+                    .frame(minWidth: 80, maxWidth: 104, maxHeight: 104)
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .firstTextBaseline) {
                         VStack(alignment: .leading, spacing: 2) {
@@ -766,6 +770,7 @@ private struct HomeTab: View {
                             }
                         }
                         HStack(spacing: 30) { transportButtons(track) }
+                        HStack(spacing: 12) { transportButtons(track) }
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -923,7 +928,7 @@ private struct SpectrumBars: View {
     let tint: Color
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.1, paused: !isPlaying)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 60, paused: !isPlaying)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             HStack(alignment: .center, spacing: 2) {
                 ForEach(0..<4) { i in

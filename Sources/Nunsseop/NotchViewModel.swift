@@ -178,7 +178,7 @@ final class NotchViewModel: ObservableObject {
     /// Battery, weather, Settings and Quit at the right end of the header.
     var headerStatusWidth: CGFloat {
         var width: CGFloat = 2 * (26 + 6)
-        if settings.batteryInHeader && hud.power != nil { width += 58 }
+        if settings.batteryInHeader && hud.power != nil { width += 66 }
         if settings.headerWeather && weather.current != nil { width += 50 }
         return width
     }
@@ -191,7 +191,7 @@ final class NotchViewModel: ObservableObject {
             let side = max(tabs + 2, headerStatusWidth)
             content = 2 * side + geometry.collapsedSize.width + 8 + 12
         } else {
-            content = tabs + 6 + headerStatusWidth
+            content = tabs + 12 + headerStatusWidth
         }
         return content + 2 * Self.headerInset
     }

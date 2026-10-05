@@ -4,8 +4,9 @@ import Foundation
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
-    nonisolated static let expandedWidthRange: ClosedRange<Double> = 520...780
-    nonisolated static let expandedHeightRange: ClosedRange<Double> = 170...260
+    /// Below these every tab no longer fits without clipping.
+    nonisolated static let expandedWidthRange: ClosedRange<Double> = 540...780
+    nonisolated static let expandedHeightRange: ClosedRange<Double> = 180...260
     nonisolated static let pillWidthRange: ClosedRange<Double> = 140...320
     nonisolated static let glassTintRange: ClosedRange<Double> = 20...90
 
@@ -163,8 +164,9 @@ final class AppSettings: ObservableObject {
             "swipeToOpen": true,
             "swipeForTracks": true,
         ])
-        expandedWidth = defaults.double(forKey: "expandedWidth")
-        expandedHeight = defaults.double(forKey: "expandedHeight")
+        // Sizes saved before the minimums were raised come back clamped.
+        expandedWidth = min(max(defaults.double(forKey: "expandedWidth"), Self.expandedWidthRange.lowerBound), Self.expandedWidthRange.upperBound)
+        expandedHeight = min(max(defaults.double(forKey: "expandedHeight"), Self.expandedHeightRange.lowerBound), Self.expandedHeightRange.upperBound)
         pillWidth = defaults.double(forKey: "pillWidth")
         compactLiveActivity = defaults.bool(forKey: "compactLiveActivity")
         sneakPeekEnabled = defaults.bool(forKey: "sneakPeekEnabled")
