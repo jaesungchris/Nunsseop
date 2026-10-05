@@ -73,7 +73,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 
 **🗂️ Get things done**
 - **Shelf.** Drag files onto the notch and back out later. Screenshots and finished downloads can land there automatically.
-- **Calendar and reminders.** Today in large digits, your week with a dot on busy days, today's events, and reminders you can tick off.
+- **Calendar and reminders.** Today in large digits, your week with a dot on busy days, today's events, and reminders you can tick off. Every account added to macOS works (Google, iCloud, Exchange and more), and you choose which calendars show.
 - **Search that can replace Spotlight or Raycast.** Apps (even ones outside Applications), files, system commands and settings, clipboard history, emoji (start with `:`) and sums like `12*(3+4)`, ranked by what you open most. Initials work: `vsc` finds Visual Studio Code. Arrow keys pick, Return opens.
 - **Your shortcut.** <kbd>⇧⌘Space</kbd> by default, or record any combination in Settings. Nunsseop tells you when macOS or another app already uses it.
 - **Timer, clipboard history, notes and an emoji picker.** Clipboard history stays in memory and skips anything a password manager marks as secret. Tracking parameters like `utm_` and `fbclid` are stripped from links you copy.
