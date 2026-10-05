@@ -277,3 +277,9 @@
 "No text found" = "未找到文本";
 "Allow Screen Recording to read other apps’ windows" = "允许“屏幕录制”以读取其他应用的窗口";
 "Text copied" = "已拷贝文本";
+
+/* Call controls */
+"Mute" = "静音";
+"Unmute" = "取消静音";
+"Turn camera off" = "关闭相机";
+"Turn camera on" = "打开相机";

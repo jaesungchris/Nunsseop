@@ -277,3 +277,9 @@
 "No text found" = "テキストが見つかりません";
 "Allow Screen Recording to read other apps’ windows" = "ほかのアプリのウインドウを読み取るには画面収録を許可してください";
 "Text copied" = "テキストをコピーしました";
+
+/* Call controls */
+"Mute" = "ミュート";
+"Unmute" = "ミュート解除";
+"Turn camera off" = "カメラをオフ";
+"Turn camera on" = "カメラをオン";

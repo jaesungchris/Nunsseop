@@ -277,3 +277,9 @@
 "No text found" = "Aucun texte trouvé";
 "Allow Screen Recording to read other apps’ windows" = "Autorisez l’enregistrement de l’écran pour lire les fenêtres des autres apps";
 "Text copied" = "Texte copié";
+
+/* Call controls */
+"Mute" = "Couper le micro";
+"Unmute" = "Réactiver le micro";
+"Turn camera off" = "Désactiver la caméra";
+"Turn camera on" = "Activer la caméra";

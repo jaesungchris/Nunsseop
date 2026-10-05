@@ -277,3 +277,9 @@
 "No text found" = "No se encontró texto";
 "Allow Screen Recording to read other apps’ windows" = "Permite la grabación de pantalla para leer las ventanas de otras apps";
 "Text copied" = "Texto copiado";
+
+/* Call controls */
+"Mute" = "Silenciar";
+"Unmute" = "Activar micrófono";
+"Turn camera off" = "Apagar cámara";
+"Turn camera on" = "Encender cámara";

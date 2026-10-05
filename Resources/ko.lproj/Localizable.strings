@@ -302,3 +302,9 @@
 "No text found" = "텍스트를 찾지 못했습니다";
 "Allow Screen Recording to read other apps’ windows" = "다른 앱 창의 글자를 읽으려면 화면 기록 권한을 허용하세요";
 "Text copied" = "텍스트 복사됨";
+
+/* Call controls */
+"Mute" = "음소거";
+"Unmute" = "음소거 해제";
+"Turn camera off" = "카메라 끄기";
+"Turn camera on" = "카메라 켜기";

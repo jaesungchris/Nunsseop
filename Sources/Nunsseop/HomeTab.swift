@@ -123,6 +123,56 @@ struct HomeTab: View {
     }
 }
 
+/// The call in progress with its microphone and camera toggles, above the Home tab.
+struct CallRow: View {
+    let call: CallMonitor.Call
+    let state: CallControls.State
+    let toggle: (CallControls.Control) -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(nsImage: call.icon).resizable().frame(width: 20, height: 20)
+            Text(call.appName).font(.system(size: 12, weight: .semibold)).lineLimit(1).layoutPriority(1)
+            if let title = call.title {
+                Text(title).font(.system(size: 12)).foregroundStyle(.white.opacity(0.55)).lineLimit(1)
+            }
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                Text(TimerModel.format(context.date.timeIntervalSince(call.startedAt)))
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.green)
+            }
+            .fixedSize()
+            Spacer(minLength: 8)
+            if let mic = state.mic {
+                button(mic, on: "mic.fill", off: "mic.slash.fill", unknown: "mic",
+                       help: mic == .on ? "Mute" : mic == .off ? "Unmute" : "Microphone") { toggle(.mic) }
+            }
+            if let camera = state.camera {
+                button(camera, on: "video.fill", off: "video.slash.fill", unknown: "video",
+                       help: camera == .on ? "Turn camera off" : camera == .off ? "Turn camera on" : "Camera") { toggle(.camera) }
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(.leading, 8).padding(.trailing, 4)
+        .frame(height: 30)
+        .background(RoundedRectangle(cornerRadius: 10).fill(.white.opacity(0.08)))
+    }
+
+    private func button(_ value: CallControls.Toggle, on: String, off: String, unknown: String,
+                        help: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: value == .on ? on : value == .off ? off : unknown)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(value == .off ? .red : .white)
+                .frame(width: 30, height: 22)
+                .background(Capsule().fill(value == .off ? Color.red.opacity(0.18) : .white.opacity(0.1)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(Text(help))
+    }
+}
+
 private struct GlowingArtwork: View {
     let image: NSImage?
     let tint: Color
