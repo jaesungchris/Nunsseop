@@ -5,6 +5,7 @@ struct NotchView: View {
     @ObservedObject var nowPlaying: NowPlayingController
     @State private var isDropTargeted = false
     @State private var isAirDropTargeted = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(model: NotchViewModel) {
         self.model = model
@@ -21,6 +22,8 @@ struct NotchView: View {
         VStack(spacing: 0) {
             ZStack(alignment: .top) {
                 NotchBackground(shape: shape, glass: model.settings.liquidGlass, tint: model.settings.glassTint / 100, expanded: model.isExpanded, notchHeight: notchHeight)
+                    // Without this, content being removed is drawn under the black body and vanishes instead of fading.
+                    .zIndex(-1)
 
                 if model.isExpanded {
                     VStack(spacing: 0) {
@@ -68,11 +71,11 @@ struct NotchView: View {
                     .padding(.horizontal, topRadius + 14)
                     .padding(.bottom, 16)
                     // No scale here: scaling the scrolling tab row while it appears leaves it a few points off.
-                    .transition(.opacity)
+                    .transition(motion.expandedContent)
                 } else if let event = model.hud.event {
                     HUDContent(event: event, height: notchHeight, earWidth: NotchViewModel.hudEarWidth)
                         .padding(.horizontal, topRadius + 6)
-                        .transition(.opacity)
+                        .transition(motion.hudContent)
                 } else if model.showsLiveActivity || model.showsSneakPeek || model.showsIdleEars {
                     VStack(spacing: 0) {
                         if model.showsLiveActivity {
@@ -102,7 +105,7 @@ struct NotchView: View {
                         }
                     }
                     .padding(.horizontal, topRadius + 3)
-                    .transition(.opacity)
+                    .transition(motion.collapsedContent)
                 }
             }
             .frame(width: size.width, height: size.height)
@@ -123,11 +126,54 @@ struct NotchView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .environment(\.liquidGlass, model.settings.liquidGlass)
-        .animation(.spring(response: 0.42, dampingFraction: 0.8), value: model.isExpanded)
-        .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.showsLiveActivity)
-        .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.showsSneakPeek)
-        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: model.hud.event)
+        // Each animation is picked by the state being entered: growing springs overshoot a little, shrinking ones don't.
+        .animation(model.isExpanded ? motion.open : motion.close, value: model.isExpanded)
+        .animation(model.showsLiveActivity ? motion.earsGrow : motion.earsShrink, value: model.showsLiveActivity)
+        .animation(model.showsSneakPeek ? motion.earsGrow : motion.earsShrink, value: model.showsSneakPeek)
+        .animation(model.hud.event != nil ? motion.earsGrow : motion.earsShrink, value: model.hud.event)
         .animation(.easeInOut(duration: 0.18), value: model.tab)
+    }
+
+    private var motion: NotchMotion { NotchMotion(reduceMotion: reduceMotion) }
+}
+
+/// How the notch opens, closes and grows its ears. The shape's size and corner radii move together on one spring;
+/// content fades in once the shape has room for it and fades out before the shape shrinks around it.
+/// With Reduce Motion everything is a short ease without overshoot, and content only fades.
+private struct NotchMotion {
+    let reduceMotion: Bool
+
+    private static let fade = Animation.easeInOut(duration: 0.15)
+    private static let ease = Animation.easeInOut(duration: 0.2)
+
+    /// About 3% overshoot, settled in roughly 0.45 s.
+    var open: Animation { reduceMotion ? Self.ease : .spring(response: 0.4, dampingFraction: 0.75) }
+    /// Critically damped and quicker; it waits a moment for the content to fade out first.
+    var close: Animation { reduceMotion ? Self.ease : .spring(response: 0.3, dampingFraction: 1).delay(0.04) }
+    var earsGrow: Animation { reduceMotion ? Self.ease : .spring(response: 0.34, dampingFraction: 0.75) }
+    var earsShrink: Animation { reduceMotion ? Self.ease : .spring(response: 0.28, dampingFraction: 1) }
+
+    /// Fades and settles down a few points once the shape is about halfway open; gone almost at once on close.
+    /// The offset only moves pixels, so the tab row lays out where it ends up.
+    var expandedContent: AnyTransition {
+        if reduceMotion { return .opacity.animation(Self.fade) }
+        return .asymmetric(
+            insertion: .opacity.combined(with: .offset(y: -6)).animation(.easeOut(duration: 0.22).delay(0.09)),
+            removal: .opacity.animation(.easeIn(duration: 0.08)))
+    }
+
+    /// The music, call and idle ears come back once the shape has nearly closed, and step aside at once when it opens.
+    var collapsedContent: AnyTransition {
+        if reduceMotion { return .opacity.animation(Self.fade) }
+        return .asymmetric(insertion: .opacity.animation(.easeOut(duration: 0.18).delay(0.16)),
+                           removal: .opacity.animation(.easeIn(duration: 0.08)))
+    }
+
+    /// The HUD shows as soon as its ears have started to grow.
+    var hudContent: AnyTransition {
+        if reduceMotion { return .opacity.animation(Self.fade) }
+        return .asymmetric(insertion: .opacity.animation(.easeOut(duration: 0.16).delay(0.06)),
+                           removal: .opacity.animation(.easeIn(duration: 0.08)))
     }
 }
 
