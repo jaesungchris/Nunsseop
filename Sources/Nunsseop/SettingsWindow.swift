@@ -368,6 +368,7 @@ private struct CalendarChoices: View {
                                 .monospacedDigit().foregroundStyle(.secondary)
                         }
                     }
+                    .padding(.vertical, 6)
                 }
             }
             Button("Add an Account…") {
