@@ -92,6 +92,7 @@ final class NotchViewModel: ObservableObject {
     let peripherals = PeripheralMonitor()
     let privacy = PrivacyMonitor()
     let calls = CallMonitor()
+    let appMenus = AppMenuWatcher()
     let emoji = EmojiModel()
     let aiUsage = AIUsageModel()
     lazy var search = QuickSearchModel(clipboard: clipboard, emoji: emoji, tools: tools)
@@ -100,6 +101,7 @@ final class NotchViewModel: ObservableObject {
     @Published var pinned = false
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
+    private var peekFilter = SneakPeekFilter(launchedAt: .now)
     private var callPeekWork: DispatchWorkItem?
 
     static let sneakPeekHeight: CGFloat = 24
@@ -145,10 +147,13 @@ final class NotchViewModel: ObservableObject {
             .store(in: &cancellables)
         nowPlaying.$track
             .compactMap { $0.map { "\($0.identity)|\($0.isPlaying)" } }
-            .removeDuplicates()
+            .filter { [weak self] in self?.peekFilter.shouldPeek($0, at: .now) ?? false }
             .sink { [weak self] _ in self?.triggerSneakPeek() }
             .store(in: &cancellables)
         hud.$event
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        appMenus.$frames
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
         // The idle ears show these. AI limits refresh every 20 s, so only a limit becoming known or unknown,
@@ -177,7 +182,7 @@ final class NotchViewModel: ObservableObject {
         return CGSize(width: width, height: settings.expandedHeight)
     }
 
-    static let tabSlot: CGFloat = 36
+    nonisolated static let tabSlot: CGFloat = 36
     /// Horizontal inset of the expanded content from the shape's edge.
     static let headerInset: CGFloat = 18 + 14
 
@@ -189,15 +194,34 @@ final class NotchViewModel: ObservableObject {
         return width
     }
 
-    /// The width that shows every tab in one row, left of the camera on notched displays.
+    /// The width of a row of `count` tab buttons.
+    nonisolated static func stripWidth(_ count: Int) -> CGFloat {
+        count > 0 ? CGFloat(count) * tabSlot - 6 : 0
+    }
+
+    /// On notched displays the tabs sit on both sides of the camera: the first `left` on the left, the rest on the right
+    /// ahead of the status icons. Picks the split that keeps the wider side narrowest; `side` is that side's width.
+    /// A tab strip's frame is 2 points wider than its buttons.
+    nonisolated static func tabSplit(count: Int, status: CGFloat) -> (left: Int, side: CGFloat) {
+        var best = (left: count, side: CGFloat.infinity)
+        // From the left so a tie keeps more tabs on the left.
+        for left in stride(from: count, through: 0, by: -1) {
+            let right = count - left
+            let side = max(stripWidth(left) + 2, right > 0 ? stripWidth(right) + 2 + status : status)
+            if side < best.side { best = (left, side) }
+        }
+        return best
+    }
+
+    /// The width that shows every tab without scrolling: split around the camera on notched displays, otherwise in one row.
     private var widthFittingTabs: CGFloat {
-        let tabs = CGFloat(settings.visibleTabs.count) * Self.tabSlot - 6
+        let count = settings.visibleTabs.count
         let content: CGFloat
         if geometry.hasNotch {
-            let side = max(tabs + 2, headerStatusWidth)
+            let side = Self.tabSplit(count: count, status: headerStatusWidth).side
             content = 2 * side + geometry.collapsedSize.width + 8 + 12
         } else {
-            content = tabs + 12 + headerStatusWidth
+            content = Self.stripWidth(count) + 12 + headerStatusWidth
         }
         return content + 2 * Self.headerInset
     }
@@ -242,6 +266,37 @@ final class NotchViewModel: ObservableObject {
             size.height += Self.sneakPeekHeight
         }
         return size
+    }
+
+    #if DEBUG
+    /// `--hide-left-ear` acts as if the app's menus always reached the left ear.
+    private static let forcesLeftEarHidden = CommandLine.arguments.contains("--hide-left-ear")
+    #endif
+
+    /// True when the collapsed notch's left side would cover the frontmost app's menus. It then grows to the right only,
+    /// and what the left side showed moves to the right of the camera. Left as is when the menus reach the right side too.
+    var hidesLeftEar: Bool {
+        let notch = geometry.collapsedSize.width
+        let width = collapsedSize.width
+        guard width > notch else { return false }
+        #if DEBUG
+        if Self.forcesLeftEarHidden { return true }
+        #endif
+        let screen = geometry.screenFrame
+        let menus = appMenus.frames.filter { screen.contains(CGPoint(x: $0.midX, y: $0.midY)) }
+        let left = screen.midX - notch / 2, right = screen.midX + notch / 2, ear = (width - notch) / 2
+        let covers = { (from: CGFloat, to: CGFloat) in menus.contains { $0.maxX > from && $0.minX < to } }
+        return covers(left - ear, left) && !covers(right, right + 2 * ear)
+    }
+
+    /// How far right the collapsed shape moves so its left edge stays at the camera's.
+    var collapsedShift: CGFloat {
+        hidesLeftEar ? (collapsedSize.width - geometry.collapsedSize.width) / 2 : 0
+    }
+
+    /// The collapsed shape on screen.
+    var collapsedRect: NSRect {
+        geometry.shapeRect(size: collapsedSize).offsetBy(dx: collapsedShift, dy: 0)
     }
 
     private func triggerSneakPeek() {
@@ -294,5 +349,26 @@ final class NotchViewModel: ObservableObject {
         if tab == .mirror { tab = .home }
         // Search opened by its shortcut may be a tab the header doesn't show.
         leaveHiddenTab()
+    }
+}
+
+/// Which now-playing changes show the sneak peek. A track already loaded when the app starts, playing or paused,
+/// is not news, so the first one seen shortly after launch only becomes the baseline; every later change peeks.
+struct SneakPeekFilter {
+    /// The first track can take a moment to arrive: the helper starts and the players are asked over AppleScript.
+    static let launchWindow: TimeInterval = 5
+
+    let launchedAt: Date
+    private var last: String?
+
+    init(launchedAt: Date) {
+        self.launchedAt = launchedAt
+    }
+
+    /// `key` identifies the track and whether it plays.
+    mutating func shouldPeek(_ key: String, at date: Date) -> Bool {
+        defer { last = key }
+        guard key != last else { return false }
+        return last != nil || date.timeIntervalSince(launchedAt) > Self.launchWindow
     }
 }

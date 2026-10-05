@@ -4,6 +4,8 @@ struct HUDContent: View {
     let event: HUDEvent
     let height: CGFloat
     let earWidth: CGFloat
+    /// Room kept clear before the symbol, so both ears can sit right of the camera.
+    var leadingInset: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,6 +18,7 @@ struct HUDContent: View {
                 trailing
                     .frame(width: earWidth - 16, alignment: .trailing)
             }
+            .padding(.leading, leadingInset)
             .frame(height: height)
             if case .notice(_, let title, let detail) = event {
                 Text(([title] + (detail.map { [$0] } ?? [])).joined(separator: "  ·  "))

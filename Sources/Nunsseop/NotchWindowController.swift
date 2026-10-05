@@ -160,6 +160,7 @@ final class NotchWindowController {
         #endif
         model.nowPlaying.start()
         model.hud.start()
+        model.appMenus.start()
         model.tools.start()
         model.tools.onNotice = { [weak self] symbol, title, detail in
             self?.model.hud.show(.notice(symbol: symbol, title: title, detail: detail), duration: 2.5)
@@ -428,7 +429,7 @@ final class NotchWindowController {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: work)
             }
         } else {
-            let inside = nearPanel && model.geometry.shapeRect(size: model.collapsedSize).contains(point)
+            let inside = nearPanel && model.collapsedRect.contains(point)
             panel.ignoresMouseEvents = !inside
             if !inside {
                 openWork?.cancel()
@@ -437,8 +438,7 @@ final class NotchWindowController {
                 let work = DispatchWorkItem { [weak self] in
                     MainActor.assumeIsolated {
                         self?.openWork = nil
-                        guard let self, self.model.geometry.shapeRect(size: self.model.collapsedSize)
-                            .contains(NSEvent.mouseLocation) else { return }
+                        guard let self, self.model.collapsedRect.contains(NSEvent.mouseLocation) else { return }
                         self.model.expand()
                     }
                 }
