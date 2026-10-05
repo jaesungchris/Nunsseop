@@ -113,12 +113,14 @@
 "Timer" = "Minuteur";
 "Pomodoro" = "Pomodoro";
 "Stopwatch" = "Chronomètre";
-"min" = "min";
 "Completed today: %lld" = "Terminés aujourd’hui : %lld";
 "Counts up until you stop it" = "Compte jusqu’à ce que vous l’arrêtiez";
 "Scroll or click the time to change it" = "Faites défiler ou cliquez sur la durée pour la changer";
-"Focus · %lld min" = "Concentration · %lld min";
-"Break · %lld min" = "Pause · %lld min";
+"Focus %@" = "Concentration %@";
+"Break %@" = "Pause %@";
+"left" = "restant";
+"elapsed" = "écoulé";
+"Paused" = "En pause";
 "Timer finished" = "Minuteur terminé";
 "Time for a break" = "C’est l’heure de la pause";
 "Back to work" = "Retour au travail";

@@ -148,6 +148,13 @@ final class NotchWindowController {
                    let mode = TimerModel.Mode(rawValue: CommandLine.arguments[j + 1]) {
                     self.model.timer.mode = mode
                 }
+                // `--demo-timer-state running|paused` starts the timer (and pauses it after a few seconds).
+                if let j = CommandLine.arguments.firstIndex(of: "--demo-timer-state"), j + 1 < CommandLine.arguments.count {
+                    self.model.timer.start()
+                    if CommandLine.arguments[j + 1] == "paused" {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { self.model.timer.pause() }
+                    }
+                }
                 self.model.tab = tab
                 self.model.expand()
                 self.model.pinned = true

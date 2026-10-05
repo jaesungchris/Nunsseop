@@ -138,12 +138,14 @@
 "Timer" = "타이머";
 "Pomodoro" = "뽀모도로";
 "Stopwatch" = "스톱워치";
-"min" = "분";
 "Completed today: %lld" = "오늘 완료: %lld";
 "Counts up until you stop it" = "멈출 때까지 시간을 셉니다";
 "Scroll or click the time to change it" = "시간을 스크롤하거나 클릭해서 바꾸세요";
-"Focus · %lld min" = "집중 · %lld분";
-"Break · %lld min" = "휴식 · %lld분";
+"Focus %@" = "집중 %@";
+"Break %@" = "휴식 %@";
+"left" = "남음";
+"elapsed" = "경과";
+"Paused" = "일시정지";
 "Timer finished" = "타이머 종료";
 "Time for a break" = "쉴 시간입니다";
 "Back to work" = "다시 집중할 시간입니다";

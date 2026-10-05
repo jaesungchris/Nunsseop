@@ -113,12 +113,14 @@
 "Timer" = "计时器";
 "Pomodoro" = "番茄钟";
 "Stopwatch" = "秒表";
-"min" = "分钟";
 "Completed today: %lld" = "今日完成：%lld";
 "Counts up until you stop it" = "计时直到你停止";
 "Scroll or click the time to change it" = "滚动或点击时间来更改";
-"Focus · %lld min" = "专注 · %lld 分钟";
-"Break · %lld min" = "休息 · %lld 分钟";
+"Focus %@" = "专注 %@";
+"Break %@" = "休息 %@";
+"left" = "剩余";
+"elapsed" = "已用时";
+"Paused" = "已暂停";
 "Timer finished" = "计时结束";
 "Time for a break" = "该休息了";
 "Back to work" = "回到工作";

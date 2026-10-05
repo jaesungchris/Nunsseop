@@ -113,12 +113,14 @@
 "Timer" = "タイマー";
 "Pomodoro" = "ポモドーロ";
 "Stopwatch" = "ストップウォッチ";
-"min" = "分";
 "Completed today: %lld" = "今日の完了: %lld";
 "Counts up until you stop it" = "止めるまで時間を計ります";
 "Scroll or click the time to change it" = "時間をスクロールするかクリックして変更";
-"Focus · %lld min" = "集中 · %lld 分";
-"Break · %lld min" = "休憩 · %lld 分";
+"Focus %@" = "集中 %@";
+"Break %@" = "休憩 %@";
+"left" = "残り";
+"elapsed" = "経過";
+"Paused" = "一時停止中";
 "Timer finished" = "タイマー終了";
 "Time for a break" = "休憩しましょう";
 "Back to work" = "作業に戻りましょう";
