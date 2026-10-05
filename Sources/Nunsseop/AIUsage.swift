@@ -1,9 +1,12 @@
 import Foundation
+import os
+import SQLite3
 import SwiftUI
 
 /// Usage of AI coding tools, read only from files those tools already keep on this Mac.
-/// Claude: the limits the oh-my-claudecode HUD caches, when present, and token totals from
-/// Claude Code's conversation logs. Codex: the limits it records in its session logs.
+/// Limits: Claude's from the oh-my-claudecode HUD cache, Codex's from Codex's session logs, or either from the usage
+/// cache gjc keeps, whichever was fetched last. Token totals add up the logs of every tool that used the provider's
+/// models: Claude Code, Codex, gjc, omo and OpenCode.
 @MainActor
 final class AIUsageModel: ObservableObject {
     struct Window: Equatable {
@@ -19,6 +22,38 @@ final class AIUsageModel: ObservableObject {
         var sessionTokens: Int?
         var weeklyTokens: Int?
         var updatedAt: Date?
+        /// The tool the limits were read from, when it isn't the provider's own.
+        var limitsSource: String?
+        /// The tools whose logs make up the token totals.
+        var tools: [String] = []
+    }
+
+    /// Subscription limits are per account, so every tool's usage of a provider's models counts toward one of these.
+    enum Family: String, CaseIterable, Sendable {
+        case claude, codex
+
+        var name: String { self == .claude ? "Claude" : "Codex" }
+    }
+
+    struct Limits: Equatable {
+        var session: Window?
+        var weekly: Window?
+        var updatedAt: Date
+        var source: String?
+    }
+
+    struct TokenRecord: Equatable, Sendable {
+        /// The message or request id, so the same response logged twice is counted once.
+        let id: String?
+        let family: Family
+        let date: Date
+        let tokens: Int
+    }
+
+    struct Totals: Equatable {
+        var session = 0
+        var weekly = 0
+        var tools: [String] = []
     }
 
     @Published private(set) var providers: [Provider] = []
@@ -29,15 +64,27 @@ final class AIUsageModel: ObservableObject {
         guard !loading else { return }
         loading = true
         Task.detached(priority: .utility) {
-            let found = [Self.claude(includeTokens: includeTokens), Self.codex()].compactMap { $0 }
+            let limits = Self.limits()
+            let totals = includeTokens ? Self.tokenTotals() : nil
             await MainActor.run {
-                self.providers = includeTokens ? found : found.map { provider in
-                    var provider = provider
-                    if let old = self.providers.first(where: { $0.id == provider.id }) {
+                self.providers = Family.allCases.compactMap { family in
+                    var provider = Provider(id: family.rawValue, name: family.name)
+                    if let limits = limits[family] {
+                        provider.session = limits.session
+                        provider.weekly = limits.weekly
+                        provider.updatedAt = limits.updatedAt
+                        provider.limitsSource = limits.source
+                    }
+                    if let totals {
+                        provider.sessionTokens = totals[family]?.session
+                        provider.weeklyTokens = totals[family]?.weekly
+                        provider.tools = totals[family]?.tools ?? []
+                    } else if let old = self.providers.first(where: { $0.id == provider.id }) {
                         provider.sessionTokens = old.sessionTokens
                         provider.weeklyTokens = old.weeklyTokens
+                        provider.tools = old.tools
                     }
-                    return provider
+                    return provider.session == nil && provider.weekly == nil && provider.weeklyTokens == nil ? nil : provider
                 }
                 self.loading = false
             }
@@ -54,7 +101,7 @@ final class AIUsageModel: ObservableObject {
     nonisolated private static let home = URL(fileURLWithPath: NSHomeDirectory())
 
     nonisolated private static func files(under root: URL, modifiedSince date: Date, where match: (URL) -> Bool) -> [(URL, Date)] {
-        guard let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.contentModificationDateKey]) else { return [] }
+        guard let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey]) else { return [] }
         var result: [(URL, Date)] = []
         for case let url as URL in enumerator where match(url) {
             let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
@@ -63,62 +110,75 @@ final class AIUsageModel: ObservableObject {
         return result
     }
 
-    // MARK: Claude
-
-    nonisolated private static func claude(includeTokens: Bool) -> Provider? {
-        var provider = Provider(id: "claude", name: "Claude Code")
-        let cache = home.appendingPathComponent(".claude/plugins/oh-my-claudecode/.usage-cache-anthropic.json")
-        if let data = try? Data(contentsOf: cache),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let usage = json["data"] as? [String: Any],
-           let stamp = json["lastSuccessAt"] as? Double ?? json["timestamp"] as? Double {
-            let iso = ISO8601DateFormatter()
-            iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            func date(_ key: String) -> Date? { (usage[key] as? String).flatMap { iso.date(from: $0) } }
-            provider.session = window(percent: usage["fiveHourPercent"] as? Double, resetsAt: date("fiveHourResetsAt"))
-            provider.weekly = window(percent: usage["weeklyPercent"] as? Double, resetsAt: date("weeklyResetsAt"))
-            provider.updatedAt = Date(timeIntervalSince1970: stamp / 1000)
-        }
-        if includeTokens, let totals = claudeTokens() {
-            provider.sessionTokens = totals.session
-            provider.weeklyTokens = totals.weekly
-        }
-        return provider.session == nil && provider.weekly == nil && provider.weeklyTokens == nil ? nil : provider
-    }
-
-    /// Tokens Claude Code used in the last five hours and seven days, from its conversation logs.
-    nonisolated private static func claudeTokens() -> (session: Int, weekly: Int)? {
-        let now = Date()
-        let weekAgo = now.addingTimeInterval(-7 * 86_400)
-        let sessionStart = now.addingTimeInterval(-5 * 3_600)
-        let logs = files(under: home.appendingPathComponent(".claude/projects"), modifiedSince: weekAgo) { $0.pathExtension == "jsonl" }
-        guard !logs.isEmpty else { return nil }
+    nonisolated private static func isoFormatter() -> ISO8601DateFormatter {
         let iso = ISO8601DateFormatter()
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let marker = Data("\"type\":\"assistant\"".utf8)
-        var seen = Set<String>()
-        var session = 0, weekly = 0
-        for (url, _) in logs {
-            guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else { continue }
-            for line in data.split(separator: UInt8(ascii: "\n")) {
-                guard line.range(of: marker) != nil,
-                      let json = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
-                      let stamp = (json["timestamp"] as? String).flatMap({ iso.date(from: $0) }), stamp >= weekAgo,
-                      let message = json["message"] as? [String: Any],
-                      let usage = message["usage"] as? [String: Any] else { continue }
-                if let id = message["id"] as? String, !seen.insert(id).inserted { continue }
-                let tokens = ["input_tokens", "output_tokens", "cache_creation_input_tokens"]
-                    .reduce(0) { $0 + (usage[$1] as? Int ?? 0) }
-                weekly += tokens
-                if stamp >= sessionStart { session += tokens }
-            }
-        }
-        return (session, weekly)
+        return iso
     }
 
-    // MARK: Codex
+    /// Which provider's subscription a model belongs to; nil for any other provider.
+    nonisolated static func family(provider: String?, model: String?) -> Family? {
+        let provider = provider?.lowercased() ?? "", model = model?.lowercased() ?? ""
+        if model.contains("claude") || provider.hasPrefix("anthropic") { return .claude }
+        if model.contains("gpt") || model.contains("codex") || provider.hasPrefix("openai") || provider == "codex" { return .codex }
+        return nil
+    }
 
-    nonisolated private static func codex() -> Provider? {
+    // MARK: Limits
+
+    /// Each provider's limits from whichever source fetched them last.
+    nonisolated private static func limits() -> [Family: Limits] {
+        var result: [Family: Limits] = [:]
+        func offer(_ family: Family, _ limits: Limits?) {
+            guard let limits, (limits.session ?? limits.weekly) != nil else { return }
+            if let current = result[family], current.updatedAt >= limits.updatedAt { return }
+            result[family] = limits
+        }
+        offer(.claude, (try? Data(contentsOf: home.appendingPathComponent(".claude/plugins/oh-my-claudecode/.usage-cache-anthropic.json"))).flatMap(omcLimits))
+        offer(.codex, codexLimits())
+        let gjc = home.appendingPathComponent(".gjc/agent/agent.db").path
+        // Only the usage cache is read; this database also holds gjc's credentials, which are never touched.
+        for row in query(gjc, "SELECT value FROM cache WHERE key LIKE 'usage_cache:report:%'") {
+            if let (family, limits) = gjcLimits(Data(row[0].utf8)) { offer(family, limits) }
+        }
+        return result
+    }
+
+    /// The oh-my-claudecode HUD's cache of Claude's limits.
+    nonisolated static func omcLimits(_ data: Data) -> Limits? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let usage = json["data"] as? [String: Any],
+              let stamp = json["lastSuccessAt"] as? Double ?? json["timestamp"] as? Double else { return nil }
+        let iso = isoFormatter()
+        func date(_ key: String) -> Date? { (usage[key] as? String).flatMap { iso.date(from: $0) } }
+        return Limits(session: window(percent: usage["fiveHourPercent"] as? Double, resetsAt: date("fiveHourResetsAt")),
+                      weekly: window(percent: usage["weeklyPercent"] as? Double, resetsAt: date("weeklyResetsAt")),
+                      updatedAt: Date(timeIntervalSince1970: stamp / 1000))
+    }
+
+    /// One provider's report from gjc's usage cache: 5-hour and 7-day windows with the time it was fetched.
+    nonisolated static func gjcLimits(_ data: Data) -> (Family, Limits)? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        let report = json["value"] as? [String: Any] ?? json
+        guard let family = family(provider: report["provider"] as? String, model: nil),
+              let fetched = report["fetchedAt"] as? Double,
+              let entries = report["limits"] as? [[String: Any]] else { return nil }
+        var limits = Limits(updatedAt: Date(timeIntervalSince1970: fetched / 1000), source: "gjc")
+        for entry in entries {
+            let span = entry["window"] as? [String: Any], amount = entry["amount"] as? [String: Any]
+            let percent = (amount?["usedFraction"] as? Double).map { $0 * 100 }
+                ?? (amount?["unit"] as? String == "percent" ? amount?["used"] as? Double : nil)
+            let reset = (span?["resetsAt"] as? Double).map { Date(timeIntervalSince1970: $0 / 1000) }
+            switch span?["id"] as? String ?? (entry["scope"] as? [String: Any])?["windowId"] as? String {
+            case "5h" where limits.session == nil: limits.session = window(percent: percent, resetsAt: reset)
+            case "7d" where limits.weekly == nil: limits.weekly = window(percent: percent, resetsAt: reset)
+            default: break
+            }
+        }
+        return (family, limits)
+    }
+
+    nonisolated private static func codexLimits() -> Limits? {
         let logs = files(under: home.appendingPathComponent(".codex/sessions"), modifiedSince: .distantPast) {
             $0.pathExtension == "jsonl" && $0.lastPathComponent.hasPrefix("rollout-")
         }
@@ -127,6 +187,11 @@ final class AIUsageModel: ObservableObject {
         let size = (try? handle.seekToEnd()) ?? 0
         try? handle.seek(toOffset: size > 1_000_000 ? size - 1_000_000 : 0)
         guard let data = try? handle.readToEnd(), let text = String(data: data, encoding: .utf8) else { return nil }
+        return codexLimits(text, modified: modified)
+    }
+
+    /// The last limits a Codex session log recorded, dated by that line (or the file, if the line has no time).
+    nonisolated static func codexLimits(_ text: String, modified: Date) -> Limits? {
         for line in text.split(separator: "\n").reversed() where line.contains("\"rate_limits\"") {
             guard let json = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
                   let limits = (json["payload"] as? [String: Any])?["rate_limits"] as? [String: Any] else { continue }
@@ -135,9 +200,190 @@ final class AIUsageModel: ObservableObject {
                 let reset = (entry["resets_at"] as? Double).map { Date(timeIntervalSince1970: $0) }
                 return window(percent: entry["used_percent"] as? Double, resetsAt: reset)
             }
-            return Provider(id: "codex", name: "Codex", session: parse("primary"), weekly: parse("secondary"), updatedAt: modified)
+            let stamp = (json["timestamp"] as? String).flatMap { isoFormatter().date(from: $0) }
+            return Limits(session: parse("primary"), weekly: parse("secondary"), updatedAt: stamp ?? modified)
         }
         return nil
+    }
+
+    // MARK: Tokens
+
+    /// Tokens used in the last five hours and seven days per provider, from every tool's logs.
+    nonisolated private static func tokenTotals() -> [Family: Totals] {
+        let now = Date()
+        let weekAgo = now.addingTimeInterval(-7 * 86_400)
+        var scanned = Set<String>()
+        func scan(_ roots: [String], where match: (URL) -> Bool = { _ in true }, parse: (Data, String) -> [TokenRecord]) -> [TokenRecord] {
+            roots.flatMap { files(under: home.appendingPathComponent($0), modifiedSince: weekAgo) { $0.pathExtension == "jsonl" && match($0) } }
+                .sorted { $0.0.path < $1.0.path }
+                .flatMap { url, modified in
+                    scanned.insert(url.path)
+                    return records(in: url, modified: modified, since: weekAgo, parse: parse)
+                }
+        }
+        let sources: [(tool: String, records: [TokenRecord])] = [
+            ("Claude Code", scan([".claude/projects"], parse: claudeCodeRecords)),
+            ("Codex", scan([".codex/sessions"], where: { $0.lastPathComponent.hasPrefix("rollout-") }, parse: codexRecords)),
+            ("gjc", scan([".gjc/agent/sessions"], parse: piRecords)),
+            ("omo", scan([".omo/agent/sessions", ".omo/memory"], parse: piRecords)),
+            ("OpenCode", openCodeRecords(since: weekAgo, scanned: &scanned)),
+        ]
+        // Files that left the 7-day window or were deleted are forgotten.
+        let current = scanned
+        parsed.withLock { $0 = $0.filter { current.contains($0.key) } }
+        return totals(sources, now: now)
+    }
+
+    /// What was read from one file: enough to tell whether it changed, how far it was read, and its records.
+    private struct ParsedFile: Sendable {
+        let size: Int
+        let modified: Date
+        let offset: Int
+        let records: [TokenRecord]
+    }
+
+    /// Parse results per path, so a refresh only reads files that changed, and of a log that grew, only the new lines.
+    nonisolated private static let parsed = OSAllocatedUnfairLock<[String: ParsedFile]>(initialState: [:])
+
+    nonisolated private static func records(in url: URL, modified: Date, since: Date, parse: (Data, String) -> [TokenRecord]) -> [TokenRecord] {
+        let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+        let cached = parsed.withLock { $0[url.path] }
+        if let cached, cached.size == size, cached.modified == modified { return cached.records }
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return [] }
+        defer { try? handle.close() }
+        // The logs are append-only: if the file grew and the old end is still the end of a line, read on from there.
+        var start = 0, kept: [TokenRecord] = []
+        if let cached, cached.offset > 0, size > cached.offset {
+            try? handle.seek(toOffset: UInt64(cached.offset - 1))
+            if (try? handle.read(upToCount: 1)) == Data([0x0A]) {
+                start = cached.offset
+                kept = cached.records
+            }
+        }
+        if start == 0 { try? handle.seek(toOffset: 0) }
+        let data = (try? handle.readToEnd()) ?? Data()
+        // A line still being written is left for the next refresh.
+        let end = data.lastIndex(of: 0x0A).map { $0 - data.startIndex + 1 } ?? 0
+        let records = (kept + parse(data.prefix(end), url.path)).filter { $0.date >= since }
+        let file = ParsedFile(size: size, modified: modified, offset: start + end, records: records)
+        parsed.withLock { $0[url.path] = file }
+        return records
+    }
+
+    /// The JSON objects on the lines of a log that contain `marker`, which skips most lines without decoding them.
+    nonisolated private static func objects(in data: Data, containing marker: String) -> [[String: Any]] {
+        let marker = Data(marker.utf8)
+        return data.split(separator: 0x0A).compactMap { line in
+            guard line.range(of: marker) != nil else { return nil }
+            return try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any]
+        }
+    }
+
+    /// Claude Code's conversation logs: input, output and cache-write tokens of each response.
+    nonisolated static func claudeCodeRecords(_ data: Data, file: String = "") -> [TokenRecord] {
+        let iso = isoFormatter()
+        return objects(in: data, containing: "\"type\":\"assistant\"").compactMap { json in
+            guard let date = (json["timestamp"] as? String).flatMap({ iso.date(from: $0) }),
+                  let message = json["message"] as? [String: Any],
+                  let usage = message["usage"] as? [String: Any] else { return nil }
+            let tokens = ["input_tokens", "output_tokens", "cache_creation_input_tokens"].reduce(0) { $0 + (usage[$1] as? Int ?? 0) }
+            return TokenRecord(id: message["id"] as? String, family: .claude, date: date, tokens: tokens)
+        }
+    }
+
+    /// Codex's session logs. Input counts cached tokens, which are left out as they are for Claude.
+    nonisolated static func codexRecords(_ data: Data, file: String = "") -> [TokenRecord] {
+        let iso = isoFormatter()
+        return objects(in: data, containing: "\"token_count\"").compactMap { json in
+            guard let info = (json["payload"] as? [String: Any])?["info"] as? [String: Any],
+                  let last = info["last_token_usage"] as? [String: Any],
+                  let date = (json["timestamp"] as? String).flatMap({ iso.date(from: $0) }) else { return nil }
+            let input = (last["input_tokens"] as? Int ?? 0) - (last["cached_input_tokens"] as? Int ?? 0)
+            let tokens = max(0, input) + (last["output_tokens"] as? Int ?? 0)
+            // Codex logs the same count again when only the limits changed; the running total tells them apart.
+            let total = (info["total_token_usage"] as? [String: Any])?["total_tokens"] as? Int
+            return TokenRecord(id: total.map { "\(file)#\($0)" }, family: .codex, date: date, tokens: tokens)
+        }
+    }
+
+    /// Session logs of gjc and omo, which share a format: each response with its provider, model and usage.
+    nonisolated static func piRecords(_ data: Data, file: String = "") -> [TokenRecord] {
+        let iso = isoFormatter()
+        return objects(in: data, containing: "\"role\":\"assistant\"").compactMap { json in
+            guard let message = json["message"] as? [String: Any],
+                  let usage = message["usage"] as? [String: Any],
+                  let family = family(provider: message["provider"] as? String, model: message["model"] as? String),
+                  let date = (message["timestamp"] as? Double).map({ Date(timeIntervalSince1970: $0 / 1000) })
+                      ?? (json["timestamp"] as? String).flatMap({ iso.date(from: $0) }) else { return nil }
+            let tokens = ["input", "output", "cacheWrite"].reduce(0) { $0 + (usage[$1] as? Int ?? 0) }
+            let id = message["responseId"] as? String ?? (json["id"] as? String).map { "\(file)#\($0)" }
+            return TokenRecord(id: id, family: family, date: date, tokens: tokens)
+        }
+    }
+
+    /// One row of OpenCode's message table.
+    nonisolated static func openCodeRecord(id: String, data: Data) -> TokenRecord? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any], json["role"] as? String == "assistant",
+              let usage = json["tokens"] as? [String: Any],
+              let family = family(provider: json["providerID"] as? String, model: json["modelID"] as? String),
+              let created = (json["time"] as? [String: Any])?["created"] as? Double else { return nil }
+        let tokens = ["input", "output", "reasoning"].reduce(0) { $0 + (usage[$1] as? Int ?? 0) }
+            + ((usage["cache"] as? [String: Any])?["write"] as? Int ?? 0)
+        return TokenRecord(id: id, family: family, date: Date(timeIntervalSince1970: created / 1000), tokens: tokens)
+    }
+
+    /// OpenCode keeps its messages in SQLite, which is only queried again when the database or its log changed.
+    nonisolated private static func openCodeRecords(since: Date, scanned: inout Set<String>) -> [TokenRecord] {
+        let path = home.appendingPathComponent(".local/share/opencode/opencode.db").path
+        let stamps = [path, path + "-wal"].compactMap { try? FileManager.default.attributesOfItem(atPath: $0) }
+        guard let modified = stamps.compactMap({ $0[.modificationDate] as? Date }).max(), modified >= since else { return [] }
+        let size = stamps.reduce(0) { $0 + ($1[.size] as? Int ?? 0) }
+        scanned.insert(path)
+        if let cached = parsed.withLock({ $0[path] }), cached.size == size, cached.modified == modified { return cached.records }
+        let records = query(path, "SELECT id, data FROM message WHERE time_created >= \(Int64(since.timeIntervalSince1970 * 1000))")
+            .compactMap { openCodeRecord(id: $0[0], data: Data($0[1].utf8)) }
+        let file = ParsedFile(size: size, modified: modified, offset: 0, records: records)
+        parsed.withLock { $0[path] = file }
+        return records
+    }
+
+    /// Sums the records per provider, counting each response once even if several tools or files logged it.
+    nonisolated static func totals(_ sources: [(tool: String, records: [TokenRecord])], now: Date = .now) -> [Family: Totals] {
+        let weekAgo = now.addingTimeInterval(-7 * 86_400)
+        let sessionStart = now.addingTimeInterval(-5 * 3_600)
+        var seen = Set<String>()
+        var result: [Family: Totals] = [:]
+        for (tool, records) in sources {
+            for record in records where record.date >= weekAgo {
+                if let id = record.id, !seen.insert(id).inserted { continue }
+                guard record.tokens > 0 else { continue }
+                var totals = result[record.family] ?? Totals()
+                totals.weekly += record.tokens
+                if record.date >= sessionStart { totals.session += record.tokens }
+                if !totals.tools.contains(tool) { totals.tools.append(tool) }
+                result[record.family] = totals
+            }
+        }
+        return result
+    }
+
+    /// Text columns of a read-only query, or nothing if the database can't be opened.
+    nonisolated private static func query(_ path: String, _ sql: String) -> [[String]] {
+        guard FileManager.default.fileExists(atPath: path) else { return [] }
+        var db: OpaquePointer?
+        defer { sqlite3_close(db) }
+        guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else { return [] }
+        sqlite3_busy_timeout(db, 500)
+        var statement: OpaquePointer?
+        defer { sqlite3_finalize(statement) }
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else { return [] }
+        var rows: [[String]] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            rows.append((0..<sqlite3_column_count(statement)).map { column in
+                sqlite3_column_text(statement, column).map { String(cString: $0) } ?? ""
+            })
+        }
+        return rows
     }
 }
 
@@ -160,12 +406,17 @@ struct AIUsageTab: View {
             }
             ForEach(usage.providers) { provider in
                 VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .firstTextBaseline) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(provider.name).font(.system(size: 13, weight: .semibold))
-                        Spacer()
+                        // The tools whose logs are counted, e.g. "Claude Code · gjc".
+                        Text(verbatim: provider.tools.joined(separator: " · "))
+                            .font(.system(size: 10)).foregroundStyle(.white.opacity(0.4)).lineLimit(1)
+                        Spacer(minLength: 0)
                         if let updated = provider.updatedAt {
-                            Text("Updated \(updated, format: .relative(presentation: .named))")
-                                .font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
+                            let text = String(localized: "Updated \(updated.formatted(.relative(presentation: .named)))")
+                            Text(verbatim: provider.limitsSource.map { "\(text) · \($0)" } ?? text)
+                                .font(.system(size: 10)).foregroundStyle(.white.opacity(0.4)).lineLimit(1)
+                                .layoutPriority(1)
                         }
                     }
                     if let window = provider.session {
