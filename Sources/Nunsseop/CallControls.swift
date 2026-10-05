@@ -122,7 +122,18 @@ enum CallControls {
         let mark: String?
     }
 
+    /// Menu items found by a walk of the menu bar, reused by later reads until they stop answering.
+    /// Touched only on the serial queue that reads and presses.
+    final class ItemCache: @unchecked Sendable {
+        fileprivate var pid: pid_t = 0
+        fileprivate var elements: [Shortcut: AXUIElement] = [:]
+        fileprivate var walkedAt = Date.distantPast
+    }
+
+    /// Each element gets its own timeout (elements handed back by Accessibility don't inherit one), so an
+    /// app that hangs costs half a second per question rather than the default six.
     private static func attribute(_ element: AXUIElement, _ name: String) -> AnyObject? {
+        AXUIElementSetMessagingTimeout(element, 0.5)
         var value: AnyObject?
         return AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success ? value : nil
     }
@@ -132,17 +143,48 @@ enum CallControls {
     }
 
     /// The enabled menu-bar items of the running app with these shortcuts, found without opening any menu.
-    private static func menuItems(of app: MenuApp, for shortcuts: [Shortcut]) -> [Shortcut: MenuItem]? {
+    /// Items found before are only read again; the menu bar is walked when one stops answering.
+    private static func menuItems(of app: MenuApp, for shortcuts: [Shortcut], cache: ItemCache) -> [Shortcut: MenuItem]? {
         guard AXIsProcessTrusted(),
               let pid = NSRunningApplication.runningApplications(withBundleIdentifier: app.bundleID).first?.processIdentifier
         else { return nil }
+        if cache.pid == pid, let items = cachedItems(for: shortcuts, in: cache) { return items }
+        let found = walk(pid, for: shortcuts)
+        cache.pid = pid
+        cache.elements = found?.mapValues(\.element) ?? [:]
+        cache.walkedAt = Date()
+        return found
+    }
+
+    /// The cached items, read again; nil when one no longer answers as the same enabled item. A shortcut the
+    /// last walk didn't find counts as still missing for a while, so an app without it isn't walked every poll.
+    private static func cachedItems(for shortcuts: [Shortcut], in cache: ItemCache) -> [Shortcut: MenuItem]? {
+        guard !cache.elements.isEmpty else { return nil }
+        var items: [Shortcut: MenuItem] = [:]
+        for shortcut in shortcuts {
+            guard let element = cache.elements[shortcut] else {
+                if Date().timeIntervalSince(cache.walkedAt) < 10 { continue }
+                return nil
+            }
+            guard shortcut.matches(key: attribute(element, "AXMenuItemCmdChar") as? String,
+                                   modifiers: attribute(element, "AXMenuItemCmdModifiers") as? Int),
+                  attribute(element, kAXEnabledAttribute) as? Bool == true else { return nil }
+            items[shortcut] = MenuItem(element: element, title: attribute(element, kAXTitleAttribute) as? String,
+                                       mark: attribute(element, "AXMenuItemMarkChar") as? String)
+        }
+        return items
+    }
+
+    /// Walks the menu bar for the items; gives up after a couple of seconds so a slow app can't hold the queue.
+    private static func walk(_ pid: pid_t, for shortcuts: [Shortcut]) -> [Shortcut: MenuItem]? {
         let root = AXUIElementCreateApplication(pid)
-        AXUIElementSetMessagingTimeout(root, 1)
         guard let bar = attribute(root, kAXMenuBarAttribute) else { return nil }
+        let deadline = Date().addingTimeInterval(2)
         var found: [Shortcut: MenuItem] = [:]
         // Menu bar › menu title › menu › item, and one level of submenus below that.
         func scan(_ menu: AXUIElement, depth: Int) {
             for item in children(menu) {
+                guard found.count < shortcuts.count, Date() < deadline else { return }
                 let key = attribute(item, "AXMenuItemCmdChar") as? String
                 let modifiers = attribute(item, "AXMenuItemCmdModifiers") as? Int
                 if let shortcut = shortcuts.first(where: { $0.matches(key: key, modifiers: modifiers) }), found[shortcut] == nil,
@@ -198,17 +240,19 @@ enum CallControls {
             case MenuApp.zoom.bundleID: self = .menu(.zoom)
             case MenuApp.faceTime.bundleID: self = .menu(.faceTime)
             default:
-                guard call.appName == "Google Meet", CallMonitor.browser(for: call.bundleID) != nil else { return nil }
+                // Meet is driven through `execute javascript`, which only Chromium browsers have.
+                guard call.appName == "Google Meet", let browser = CallMonitor.browser(for: call.bundleID),
+                      browser.dialect == .chromium else { return nil }
                 self = .meet(browserBundleID: call.bundleID)
             }
         }
 
         /// Blocks on Accessibility or AppleScript; call off the main thread. nil when nothing can be controlled.
-        func read() -> State? {
+        func read(cache: ItemCache) -> State? {
             switch self {
             case .menu(let app):
                 let shortcuts = [app.mic] + (app.camera.map { [$0] } ?? [])
-                guard let items = menuItems(of: app, for: shortcuts) else { return nil }
+                guard let items = menuItems(of: app, for: shortcuts, cache: cache) else { return nil }
                 func toggle(_ shortcut: Shortcut?, _ control: Control) -> Toggle? {
                     guard let shortcut, let item = items[shortcut] else { return nil }
                     return CallControls.toggle(title: item.title, mark: item.mark, titles: app.titles(for: control),
@@ -222,11 +266,11 @@ enum CallControls {
         }
 
         /// Blocks like `read`.
-        func press(_ control: Control) {
+        func press(_ control: Control, cache: ItemCache) {
             switch self {
             case .menu(let app):
                 guard let shortcut = control == .mic ? app.mic : app.camera,
-                      let item = menuItems(of: app, for: [shortcut])?[shortcut] else { return }
+                      let item = menuItems(of: app, for: [shortcut], cache: cache)?[shortcut] else { return }
                 AXUIElementPerformAction(item.element, kAXPressAction as CFString)
             case .meet(let id):
                 _ = BrowserMedia.all.first { $0.bundleID == id }?.runInTabs(onHost: "meet.google.com", meetJS(clicking: control == .mic ? 0 : 1))
@@ -243,6 +287,8 @@ final class CallControlsModel: ObservableObject {
     @Published private(set) var state: CallControls.State?
 
     private var target: CallControls.Target?
+    /// The current target's menu items; a new target starts a new one.
+    private var cache = CallControls.ItemCache()
     private var timer: Timer?
     private var polling = false
     private let queue = DispatchQueue(label: "nunsseop.call-controls")
@@ -251,6 +297,7 @@ final class CallControlsModel: ObservableObject {
         let target = call.flatMap(CallControls.Target.init)
         guard target != self.target else { return }
         self.target = target
+        cache = CallControls.ItemCache()
         timer?.invalidate()
         timer = nil
         state = nil
@@ -283,8 +330,9 @@ final class CallControlsModel: ObservableObject {
             return
         }
         #endif
+        let cache = cache
         queue.async { [weak self] in
-            target.press(control)
+            target.press(control, cache: cache)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { self?.poll() }
         }
     }
@@ -292,8 +340,9 @@ final class CallControlsModel: ObservableObject {
     private func poll() {
         guard !polling, let target else { return }
         polling = true
+        let cache = cache
         queue.async { [weak self] in
-            let state = target.read()
+            let state = target.read(cache: cache)
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.polling = false

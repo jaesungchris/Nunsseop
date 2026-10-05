@@ -30,8 +30,11 @@ final class AppVolumeModel: ObservableObject {
 
     /// Apps playing sound, and apps turned down that are still running.
     @Published private(set) var apps: [App] = []
-    /// Set when a tap could not be made or carried no sound, which means audio recording isn't allowed.
+    /// Set when a tap could not be made, which means audio recording isn't allowed.
     @Published private(set) var needsPermission = false
+    /// Set when a tap has carried only silence for a while. That is what a tap without permission
+    /// hears, but also what a paused tab or a quiet call sounds like, so the volume is left alone.
+    @Published private(set) var mayNeedPermission = false
     /// The list in the Tools tab is open.
     @Published var isShowingList = false
 
@@ -56,6 +59,8 @@ final class AppVolumeModel: ObservableObject {
     private var owners: [AudioObjectID: String?] = [:]
     /// Once a tap has carried sound, audio recording is evidently allowed.
     private var permissionConfirmed = false
+    /// Apps whose tap couldn't be made on a new output device; they get one more try on the next device change.
+    private var retryOnOutputChange: Set<String> = []
     private var listeners: [(selector: AudioObjectPropertySelector, block: AudioObjectPropertyListenerBlock)] = []
     #if DEBUG
     private var isDemo = false
@@ -70,6 +75,7 @@ final class AppVolumeModel: ObservableObject {
                 volumes = [:]
                 apps = []
                 needsPermission = false
+                mayNeedPermission = false
             }
         }
         #if DEBUG
@@ -170,10 +176,17 @@ final class AppVolumeModel: ObservableObject {
                 startTap(for: app)
             } else if tap.heard {
                 permissionConfirmed = true
+                mayNeedPermission = false
             } else if !permissionConfirmed && group.sounding && Date().timeIntervalSince(tap.startedAt) > 3 {
-                // Without permission the tap carries only silence, and the app would stay muted.
-                failed(app)
+                // Without permission the tap carries only silence, but so does a paused tab or a quiet
+                // call: only a hint shows, and the tap and the volume stay.
+                mayNeedPermission = true
             }
+        }
+
+        for app in retryOnOutputChange where groups[app] == nil {
+            removeTap(for: app)
+            volumes[app] = nil
         }
 
         guard isListing else { return }
@@ -201,13 +214,33 @@ final class AppVolumeModel: ObservableObject {
     /// (login window, Control Center, the charging chime) to nothing.
     nonisolated static func appBundleID(for process: CallMonitor.AudioProcess) -> String? {
         if let call = CallMonitor.appBundleID(for: process.bundleID) { return call }
-        // Safari plays through shared WebKit processes.
-        if process.bundleID.lowercased().hasPrefix("com.apple.webkit.") { return "com.apple.Safari" }
-        let url = NSRunningApplication(processIdentifier: process.pid)?.bundleURL
-            ?? installedApp(for: process.bundleID, lookup: InstalledApps.url(for:))
+        let url: URL?
+        if process.bundleID.lowercased().hasPrefix("com.apple.webkit.") {
+            // WebKit's processes play for whichever app hosts the web view: Safari, Mail, Messages or any
+            // app with a WKWebView. Without that app they are left out rather than guessed.
+            guard let host = responsiblePID(for: process.pid), host != process.pid else { return nil }
+            url = NSRunningApplication(processIdentifier: host)?.bundleURL
+        } else {
+            url = NSRunningApplication(processIdentifier: process.pid)?.bundleURL
+                ?? installedApp(for: process.bundleID, lookup: InstalledApps.url(for:))
+        }
         guard let path = url?.path, let app = outermostApp(in: path), !app.hasPrefix("/System/Library/"),
               let id = Bundle(path: app)?.bundleIdentifier, id != Bundle.main.bundleIdentifier else { return nil }
         return id
+    }
+
+    private typealias ResponsibleFunction = @convention(c) (pid_t) -> pid_t
+
+    /// The private libSystem call macOS uses to tie XPC services to the app they work for; looked up at run time.
+    private nonisolated static let responsibleFunction: ResponsibleFunction? = {
+        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "responsibility_get_pid_responsible_for_pid") else { return nil }
+        return unsafeBitCast(symbol, to: ResponsibleFunction.self)
+    }()
+
+    /// The process macOS holds responsible for `pid`, or nil when it can't be told.
+    nonisolated static func responsiblePID(for pid: pid_t) -> pid_t? {
+        guard pid > 0, let responsible = responsibleFunction?(pid), responsible > 0 else { return nil }
+        return responsible
     }
 
     /// The outermost .app bundle in a path, so a helper inside an app maps to that app.
@@ -236,29 +269,44 @@ final class AppVolumeModel: ObservableObject {
     // MARK: Taps
 
     /// Makes the app's tap, replacing one it has. The listeners stay, as this also runs from one of them.
-    private func startTap(for app: String) {
-        taps.removeValue(forKey: app)?.stop()
+    /// `mayRetry` is set after an output device change: a tap that can't be made then is tried once more
+    /// on the next change before the volume is given up.
+    private func startTap(for app: String, mayRetry: Bool = false) {
+        let old = taps.removeValue(forKey: app)
+        retryOnOutputChange.remove(app)
         guard let group = groups[app], let volume = volumes[app], let output = Self.defaultOutputUID() else {
+            old?.stop()
             updateListeners()
             return
         }
-        let tap = ProcessTap(objects: group.objects, gain: Self.gain(for: volume))
+        // A replacement starts at the volume the old tap plays at, and the old tap goes only after the new
+        // one has started (both on the same serial queue), so the app is never heard at full volume between them.
+        let gain = Self.gain(for: volume)
+        let tap = ProcessTap(objects: group.objects, gain: gain, startingGain: old == nil ? 1 : gain)
         taps[app] = tap
         updateListeners()
         tap.start(output: output) { [weak self] started in
             guard let self, self.taps[app] === tap, !started else { return }
-            self.failed(app)
+            if mayRetry {
+                // The listeners stay, as the retry waits for them.
+                self.taps.removeValue(forKey: app)?.stop()
+                self.retryOnOutputChange.insert(app)
+            } else {
+                self.failed(app)
+            }
         }
+        old?.stop()
         // Checks that the tap carries sound once it has had time to start.
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in self?.scan() }
     }
 
     private func removeTap(for app: String) {
         taps.removeValue(forKey: app)?.stop()
+        retryOnOutputChange.remove(app)
         updateListeners()
     }
 
-    /// The tap couldn't be made or stayed silent: the slider goes back and the list asks for permission.
+    /// The tap couldn't be made: the slider goes back and the list asks for permission.
     private func failed(_ app: String) {
         removeTap(for: app)
         volumes[app] = nil
@@ -268,12 +316,14 @@ final class AppVolumeModel: ObservableObject {
 
     private func stopAll() {
         for app in Array(taps.keys) { removeTap(for: app) }
+        retryOnOutputChange = []
+        updateListeners()
     }
 
-    /// While any tap runs: a new output device gets new taps, and process changes are followed at once.
+    /// While any tap runs or waits for a retry: a new output device gets new taps, and process changes are followed at once.
     private func updateListeners() {
         let system = AudioObjectID(kAudioObjectSystemObject)
-        if taps.isEmpty {
+        if taps.isEmpty && retryOnOutputChange.isEmpty {
             for listener in listeners {
                 var address = Self.address(listener.selector)
                 AudioObjectRemovePropertyListenerBlock(system, &address, .main, listener.block)
@@ -283,7 +333,9 @@ final class AppVolumeModel: ObservableObject {
             let outputChanged: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
                 MainActor.assumeIsolated {
                     guard let self else { return }
-                    for app in Array(self.taps.keys) { self.startTap(for: app) }
+                    // An app already retried once reports failure this time.
+                    let retrying = self.retryOnOutputChange
+                    for app in Set(self.taps.keys).union(retrying) { self.startTap(for: app, mayRetry: !retrying.contains(app)) }
                 }
             }
             let processesChanged: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
@@ -356,10 +408,11 @@ final class ProcessTap: @unchecked Sendable {
 
     private static let queue = DispatchQueue(label: "nunsseop.app-volume", qos: .userInitiated)
 
-    init(objects: [AudioObjectID], gain: Float) {
+    /// `startingGain` is where the first buffer's ramp begins: full volume, where an untapped app was,
+    /// or the gain of the tap this one replaces.
+    init(objects: [AudioObjectID], gain: Float, startingGain: Float = 1) {
         self.objects = objects
-        // Starts from full volume, where the app was, and ramps down in the first buffer.
-        state.initialize(from: [gain, 0, 1], count: 3)
+        state.initialize(from: [gain, 0, startingGain], count: 3)
     }
 
     func setGain(_ gain: Float) {
@@ -444,6 +497,11 @@ final class ProcessTap: @unchecked Sendable {
 
     /// An output with a microphone, such as a headset, adds its input to the aggregate device. Only the
     /// tap, the last input stream, is turned on, so the microphone isn't started.
+    ///
+    /// The sub-device's inputs stay in the aggregate all the same. Keeping them out entirely (say, so
+    /// Bluetooth headphones are never asked for their microphone and drop to the call profile) has no
+    /// documented setting: AudioHardware.h describes kAudioSubDeviceInputChannelsKey only as reporting a
+    /// sub-device's channel count, not as something to set, so it isn't relied on here.
     private func useOnlyTapInput(_ procID: AudioDeviceIOProcID) {
         var address = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyStreams, mScope: kAudioObjectPropertyScopeInput,
                                                  mElement: kAudioObjectPropertyElementMain)

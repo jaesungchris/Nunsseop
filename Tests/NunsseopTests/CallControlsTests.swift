@@ -1,3 +1,4 @@
+import AppKit
 import Testing
 @testable import Nunsseop
 
@@ -61,5 +62,23 @@ struct MeetStateTests {
         #expect(CallControls.meetState(#"["true","false","true"]"#) == nil)
         #expect(CallControls.meetState(#"["true",""]"#) == nil)
         #expect(CallControls.meetState("not json") == nil)
+    }
+}
+
+struct CallControlsTargetTests {
+    private func call(_ name: String, _ bundleID: String) -> CallMonitor.Call {
+        CallMonitor.Call(appName: name, bundleID: bundleID, icon: NSImage(), startedAt: Date(), title: nil)
+    }
+
+    @Test func meetIsControlledOnlyInChromiumBrowsers() {
+        #expect(CallControls.Target(call("Google Meet", "com.google.Chrome")) == .meet(browserBundleID: "com.google.Chrome"))
+        #expect(CallControls.Target(call("Google Meet", "com.apple.Safari")) == nil)
+        #expect(CallControls.Target(call("Google Meet", "org.mozilla.firefox")) == nil)
+    }
+
+    @Test func menuAppsAreControlledThroughTheirMenus() {
+        #expect(CallControls.Target(call("zoom.us", "us.zoom.xos")) == .menu(.zoom))
+        #expect(CallControls.Target(call("FaceTime", "com.apple.FaceTime")) == .menu(.faceTime))
+        #expect(CallControls.Target(call("Slack", "com.tinyspeck.slackmacgap")) == nil)
     }
 }

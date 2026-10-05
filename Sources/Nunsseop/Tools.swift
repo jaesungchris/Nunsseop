@@ -528,6 +528,9 @@ private struct AppVolumeOverlay: View {
                         }
                     }
                     .controlSize(.small)
+                } else if model.mayNeedPermission {
+                    Text("No sound has come through yet. If the app is playing, Nunsseop may need permission to record system audio.")
+                        .font(.system(size: 10)).foregroundStyle(.white.opacity(0.55)).fixedSize(horizontal: false, vertical: true)
                 } else if model.apps.isEmpty {
                     Text("No apps are playing sound").font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
                 }

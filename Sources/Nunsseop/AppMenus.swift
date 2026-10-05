@@ -12,6 +12,7 @@ final class AppMenuWatcher: ObservableObject {
     private var frontmost: pid_t?
     private var reading = false
     private var observer: NSObjectProtocol?
+    private var terminationObserver: NSObjectProtocol?
     private let queue = DispatchQueue(label: "nunsseop.appmenus", qos: .utility)
 
     func start() {
@@ -21,6 +22,15 @@ final class AppMenuWatcher: ObservableObject {
         ) { [weak self] note in
             let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
             MainActor.assumeIsolated { self?.activated(app?.processIdentifier) }
+        }
+        // Process IDs get reused, so a quit app's reading goes with it.
+        terminationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didTerminateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let pid = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.processIdentifier
+            MainActor.assumeIsolated {
+                if let pid { self?.cache[pid] = nil }
+            }
         }
         activated(NSWorkspace.shared.frontmostApplication?.processIdentifier)
     }
@@ -56,17 +66,22 @@ final class AppMenuWatcher: ObservableObject {
         }
     }
 
-    /// An app that doesn't answer within the timeout counts as having no menus.
+    /// An app that doesn't answer within the timeout counts as having no menus. Elements handed back by
+    /// Accessibility don't inherit the app's timeout, so each one gets its own.
     nonisolated private static func menuFrames(of pid: pid_t, flippedAt top: CGFloat) -> [CGRect] {
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, 0.25)
         var bar: CFTypeRef?
         guard AXUIElementCopyAttributeValue(app, kAXMenuBarAttribute as CFString, &bar) == .success,
               let bar, CFGetTypeID(bar) == AXUIElementGetTypeID() else { return [] }
+        AXUIElementSetMessagingTimeout(bar as! AXUIElement, 0.25)
         var children: CFTypeRef?
         guard AXUIElementCopyAttributeValue(bar as! AXUIElement, kAXChildrenAttribute as CFString, &children) == .success,
               let items = children as? [AXUIElement] else { return [] }
+        let deadline = Date().addingTimeInterval(1)
         return items.compactMap { item in
+            guard Date() < deadline else { return nil }
+            AXUIElementSetMessagingTimeout(item, 0.25)
             var position = CGPoint.zero, size = CGSize.zero
             guard let positionValue = attribute(kAXPositionAttribute, of: item),
                   AXValueGetValue(positionValue, .cgPoint, &position),

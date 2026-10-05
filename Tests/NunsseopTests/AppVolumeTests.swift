@@ -51,6 +51,20 @@ struct AppVolumeGroupingTests {
         #expect(AppVolumeModel.outermostApp(in: "/usr/libexec/daemon") == nil)
     }
 
+    @Test func webKitWithoutAKnownHostIsNotSafari() {
+        // No process has this ID, so nothing is responsible for it and the process is left out.
+        #expect(AppVolumeModel.appBundleID(for: process(40, pid: 99_999_999, "com.apple.WebKit.GPU", output: true)) == nil)
+        #expect(AppVolumeModel.appBundleID(for: process(41, pid: 99_999_999, "com.apple.WebKit.WebContent", output: true)) == nil)
+    }
+
+    @Test func responsibleProcessIsFoundForARealProcess() {
+        let responsible = AppVolumeModel.responsiblePID(for: getpid())
+        #expect(responsible != nil)
+        #expect((responsible ?? 0) > 0)
+        #expect(AppVolumeModel.responsiblePID(for: 0) == nil)
+        #expect(AppVolumeModel.responsiblePID(for: -1) == nil)
+    }
+
     @Test func sliderMapsToSquaredGain() {
         #expect(AppVolumeModel.gain(for: 0) == 0)
         #expect(AppVolumeModel.gain(for: 0.5) == 0.25)

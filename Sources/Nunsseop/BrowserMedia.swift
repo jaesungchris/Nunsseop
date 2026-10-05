@@ -49,7 +49,7 @@ struct BrowserMedia {
         "genie.co.kr", "music-flo.com", "music.bugs.co.kr", "chzzk.naver.com", "laftel.net",
     ]
 
-    // JavaScript sources use single quotes only so they can sit inside an AppleScript string.
+    // JavaScript sources use single quotes only, which keeps them readable; they are escaped into AppleScript strings all the same.
     private static let stateJS = """
     (() => { const els = [...document.querySelectorAll('video,audio')]; \
     const m = els.find(e => !e.paused) || els.find(e => e.currentTime > 0); \
@@ -98,9 +98,9 @@ struct BrowserMedia {
     private func execute(_ js: String, window: String, tab: String) -> String {
         switch dialect {
         case .chromium:
-            return "execute tab \(tab) of window \(window) javascript \"\(js)\""
+            return "execute tab \(tab) of window \(window) javascript \(Self.appleScriptLiteral(js))"
         case .safari:
-            return "do JavaScript \"\(js)\" in tab \(tab) of window \(window)"
+            return "do JavaScript \(Self.appleScriptLiteral(js)) in tab \(tab) of window \(window)"
         }
     }
 
@@ -185,7 +185,7 @@ struct BrowserMedia {
                 if not isPrivate then
                     repeat with t in tabs of w
                         if URL of t starts with \(Self.appleScriptLiteral("https://" + host + "/")) then
-                            set r to execute t javascript "\(js)"
+                            set r to execute t javascript \(Self.appleScriptLiteral(js))
                             if r is not missing value and r is not "" then return r
                         end if
                     end repeat

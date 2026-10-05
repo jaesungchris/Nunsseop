@@ -158,7 +158,14 @@ final class ShakeShelf {
         hideWork = nil
     }
 
+    /// A drop on the tile ends the drag inside this app, where the global monitor sees no mouse up, so the
+    /// drag pasteboard's count is taken here; otherwise a later text selection would look like a file drag.
+    private func dragLeftTile() {
+        idleDragCount = NSPasteboard(name: .drag).changeCount
+    }
+
     private func dropped(_ urls: [URL]) {
+        dragLeftTile()
         state.targeted = false
         hide(after: 0)
         guard !urls.isEmpty else { return }
@@ -183,7 +190,7 @@ final class ShakeShelf {
         let target = ShakeDropView(frame: CGRect(origin: .zero, size: Self.tileSize))
         target.onTargeted = { [weak self] in
             self?.state.targeted = $0
-            if $0 { self?.cancelHide() }
+            if $0 { self?.cancelHide() } else { self?.dragLeftTile() }
         }
         target.onDrop = { [weak self] in self?.dropped($0) }
         let hosting = NSHostingView(rootView: ShakeTile(state: state).environment(\.liquidGlass, AppSettings.shared.liquidGlass))

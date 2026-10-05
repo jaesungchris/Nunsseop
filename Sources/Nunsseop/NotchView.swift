@@ -148,6 +148,8 @@ struct NotchView: View {
         .animation(model.showsLiveActivity ? motion.earsGrow : motion.earsShrink, value: model.showsLiveActivity)
         .animation(model.showsSneakPeek ? motion.earsGrow : motion.earsShrink, value: model.showsSneakPeek)
         .animation(model.hud.event != nil ? motion.earsGrow : motion.earsShrink, value: model.hud.event)
+        // The shape slides over when the left ear hides or shows, rather than jumping.
+        .animation(motion.earsGrow, value: model.collapsedShift)
         .animation(.easeInOut(duration: 0.18), value: model.tab)
     }
 

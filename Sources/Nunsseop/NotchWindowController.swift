@@ -39,6 +39,8 @@ final class NotchWindowController {
     /// Set when the notch closed with the pointer still over it (Escape, a swipe up, a click elsewhere);
     /// hovering opens it again only after the pointer has left, so it doesn't spring back open.
     private var hoverOpenBlocked = false
+    /// The drag pasteboard's count at the last mouse up; a higher count means the drag running now carries data.
+    private var idleDragCount = NSPasteboard(name: .drag).changeCount
     private var swipe = CGVector.zero
     private var swipeFired = false
     private var swipeIdleWork: DispatchWorkItem?
@@ -340,13 +342,15 @@ final class NotchWindowController {
 
     private func installMonitors() {
         let mask: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .leftMouseUp]
-        if let global = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: { [weak self] _ in
-            MainActor.assumeIsolated { self?.pointerMoved() }
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: { [weak self] event in
+            let type = event.type
+            MainActor.assumeIsolated { self?.pointerMoved(type) }
         }) {
             monitors.append(global)
         }
         if let local = NSEvent.addLocalMonitorForEvents(matching: mask, handler: { [weak self] event in
-            MainActor.assumeIsolated { self?.pointerMoved() }
+            let type = event.type
+            MainActor.assumeIsolated { self?.pointerMoved(type) }
             return event
         }) {
             monitors.append(local)
@@ -424,7 +428,8 @@ final class NotchWindowController {
         }
     }
 
-    private func pointerMoved() {
+    private func pointerMoved(_ type: NSEvent.EventType) {
+        if type == .leftMouseUp { idleDragCount = NSPasteboard(name: .drag).changeCount }
         guard panel.isVisible else { return }
         let point = NSEvent.mouseLocation
         // Every shape fits in the panel, so away from it the pointer is outside without working out the shape's size.
@@ -458,6 +463,11 @@ final class NotchWindowController {
             let inside = nearPanel && model.collapsedRect.contains(point)
             panel.ignoresMouseEvents = !inside
             if wasExpanded && inside { hoverOpenBlocked = true }
+            // Files dragged onto the notch open it even right after it closed; text selections and window moves don't.
+            if hoverOpenBlocked && inside && type == .leftMouseDragged {
+                let drag = NSPasteboard(name: .drag)
+                if drag.changeCount != idleDragCount && drag.types?.contains(.fileURL) == true { hoverOpenBlocked = false }
+            }
             if !inside {
                 openWork?.cancel()
                 openWork = nil
