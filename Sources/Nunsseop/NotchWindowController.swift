@@ -34,6 +34,11 @@ final class NotchWindowController {
     private var monitors: [Any] = []
     private var collapseWork: DispatchWorkItem?
     private var openWork: DispatchWorkItem?
+    /// Whether the notch was open at the last pointer move.
+    private var wasExpanded = false
+    /// Set when the notch closed with the pointer still over it (Escape, a swipe up, a click elsewhere);
+    /// hovering opens it again only after the pointer has left, so it doesn't spring back open.
+    private var hoverOpenBlocked = false
     private var swipe = CGVector.zero
     private var swipeFired = false
     private var swipeIdleWork: DispatchWorkItem?
@@ -414,6 +419,8 @@ final class NotchWindowController {
         // Every shape fits in the panel, so away from it the pointer is outside without working out the shape's size.
         let nearPanel = panel.frame.insetBy(dx: -8, dy: -8).contains(point)
 
+        defer { wasExpanded = model.isExpanded }
+
         if model.isExpanded {
             let inside = nearPanel && model.geometry.shapeRect(size: model.expandedSize).insetBy(dx: -6, dy: -6).contains(point)
             if model.pinned {
@@ -439,10 +446,12 @@ final class NotchWindowController {
         } else {
             let inside = nearPanel && model.geometry.shapeRect(size: model.collapsedSize).contains(point)
             panel.ignoresMouseEvents = !inside
+            if wasExpanded && inside { hoverOpenBlocked = true }
             if !inside {
                 openWork?.cancel()
                 openWork = nil
-            } else if openWork == nil {
+                hoverOpenBlocked = false
+            } else if openWork == nil && !hoverOpenBlocked {
                 let work = DispatchWorkItem { [weak self] in
                     MainActor.assumeIsolated {
                         self?.openWork = nil
