@@ -302,3 +302,7 @@
 "No text found" = "텍스트를 찾지 못했습니다";
 "Allow Screen Recording to read other apps’ windows" = "다른 앱 창의 글자를 읽으려면 화면 기록 권한을 허용하세요";
 "Text copied" = "텍스트 복사됨";
+"Drop to Shelf" = "선반에 놓기";
+"Added to the shelf" = "선반에 추가했습니다";
+"%lld files" = "파일 %lld개";
+"Shake while dragging files to open a shelf" = "파일을 끌면서 흔들면 선반 열기";

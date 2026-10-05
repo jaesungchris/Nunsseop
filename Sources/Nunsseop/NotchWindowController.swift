@@ -45,6 +45,7 @@ final class NotchWindowController {
     private var aiUsageTimer: Timer?
     private var hotKey: GlobalHotKey?
     private var resignObserver: NSObjectProtocol?
+    private lazy var shakeShelf = ShakeShelf(shelf: model.shelf, hud: model.hud)
 
     /// A watcher that only feeds the notch: it runs while its setting is on and the panel is on screen.
     private struct Feature {
@@ -60,6 +61,7 @@ final class NotchWindowController {
     /// timer, lyrics, weather and update checks.
     private lazy var features: [Feature] = {
         let model = model
+        let shakeShelf = shakeShelf
         return [
             Feature(setting: \.clipboardTab, changes: \.$clipboardTab,
                     start: { model.clipboard.start() }, stop: { _ in model.clipboard.stop() }),
@@ -74,6 +76,8 @@ final class NotchWindowController {
                     start: { model.privacy.start() }, stop: { hiding in model.privacy.stop(clearing: !hiding) }),
             Feature(setting: \.peripheralBatteries, changes: \.$peripheralBatteries,
                     start: { model.peripherals.start() }, stop: { _ in model.peripherals.stop() }),
+            Feature(setting: \.shakeToShelf, changes: \.$shakeToShelf,
+                    start: { shakeShelf.start() }, stop: { _ in shakeShelf.stop() }),
         ]
     }()
 
@@ -107,6 +111,11 @@ final class NotchWindowController {
         if let i = CommandLine.arguments.firstIndex(of: "--snapshot-dir"), i + 1 < CommandLine.arguments.count {
             snapshotter = DebugSnapshotter(directory: URL(fileURLWithPath: CommandLine.arguments[i + 1]),
                                            view: hosting, model: model)
+        }
+        if CommandLine.arguments.contains("--demo-shake-shelf") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                self?.shakeShelf.demo { label, view in self?.snapshotter?.capture(label: label, of: view) }
+            }
         }
         if CommandLine.arguments.contains("--demo-settings") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SettingsWindowController.shared.show() }

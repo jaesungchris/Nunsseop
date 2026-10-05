@@ -277,3 +277,7 @@
 "No text found" = "未找到文本";
 "Allow Screen Recording to read other apps’ windows" = "允许“屏幕录制”以读取其他应用的窗口";
 "Text copied" = "已拷贝文本";
+"Drop to Shelf" = "拖放到架子";
+"Added to the shelf" = "已加入架子";
+"%lld files" = "%lld 个文件";
+"Shake while dragging files to open a shelf" = "拖动文件时晃动指针以打开架子";

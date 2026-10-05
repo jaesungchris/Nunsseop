@@ -277,3 +277,7 @@
 "No text found" = "テキストが見つかりません";
 "Allow Screen Recording to read other apps’ windows" = "ほかのアプリのウインドウを読み取るには画面収録を許可してください";
 "Text copied" = "テキストをコピーしました";
+"Drop to Shelf" = "シェルフにドロップ";
+"Added to the shelf" = "シェルフに追加しました";
+"%lld files" = "%lld 個のファイル";
+"Shake while dragging files to open a shelf" = "ファイルをドラッグ中に揺らしてシェルフを開く";

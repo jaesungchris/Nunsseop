@@ -277,3 +277,7 @@
 "No text found" = "Aucun texte trouvé";
 "Allow Screen Recording to read other apps’ windows" = "Autorisez l’enregistrement de l’écran pour lire les fenêtres des autres apps";
 "Text copied" = "Texte copié";
+"Drop to Shelf" = "Déposer sur l’étagère";
+"Added to the shelf" = "Ajouté à l’étagère";
+"%lld files" = "%lld fichiers";
+"Shake while dragging files to open a shelf" = "Secouer en faisant glisser des fichiers pour ouvrir une étagère";

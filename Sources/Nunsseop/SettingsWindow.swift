@@ -247,6 +247,7 @@ private struct AlertsPane: View {
                 Toggle("Add new screenshots to the shelf", isOn: $settings.screenshotsToShelf)
                 Toggle("Show when downloads start and finish", isOn: $settings.downloadAlerts)
                 Toggle("Add finished downloads to the shelf", isOn: $settings.downloadsToShelf)
+                Toggle("Shake while dragging files to open a shelf", isOn: $settings.shakeToShelf)
             }
             Section("Notifications from local tools") {
                 Toggle("Let tools on this Mac show notifications in the notch", isOn: $settings.localNotifications)
