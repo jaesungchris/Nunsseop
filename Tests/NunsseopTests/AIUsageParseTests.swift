@@ -5,24 +5,33 @@ import Testing
 struct AIUsageParseTests {
     private func data(_ lines: String...) -> Data { Data((lines.joined(separator: "\n") + "\n").utf8) }
 
-    @Test func familyFollowsTheModelOrProvider() {
+    @Test func familyFollowsTheProviderThenTheModel() {
         #expect(AIUsageModel.family(provider: "anthropic", model: "claude-sonnet-5") == .claude)
-        #expect(AIUsageModel.family(provider: "openrouter", model: "anthropic/claude-opus") == .claude)
         #expect(AIUsageModel.family(provider: "openai-codex", model: "gpt-5.5") == .codex)
         #expect(AIUsageModel.family(provider: "openai", model: nil) == .codex)
-        #expect(AIUsageModel.family(provider: "google", model: "gemini-3-pro") == nil)
+        #expect(AIUsageModel.family(provider: "Codex", model: nil) == .codex)
+        #expect(AIUsageModel.family(provider: "chatgpt", model: "gpt-5.5") == .codex)
+        // Other providers selling the same models don't count toward the subscriptions.
+        for provider in ["openrouter", "github-copilot", "amazon-bedrock", "ollama", "google"] {
+            #expect(AIUsageModel.family(provider: provider, model: "claude-opus-5") == nil)
+            #expect(AIUsageModel.family(provider: provider, model: "gpt-5.5") == nil)
+        }
+        #expect(AIUsageModel.family(provider: nil, model: "claude-opus-5") == .claude)
+        #expect(AIUsageModel.family(provider: "", model: "gpt-5.5-codex") == .codex)
+        #expect(AIUsageModel.family(provider: nil, model: "gemini-3-pro") == nil)
     }
 
     @Test func claudeCodeCountsInputOutputAndCacheWrites() {
         let records = AIUsageModel.claudeCodeRecords(data(
             #"{"type":"user","timestamp":"2026-10-01T10:00:00.000Z","message":{"role":"user"}}"#,
             #"{"type":"assistant","timestamp":"2026-10-01T10:00:05.000Z","message":{"id":"msg_1","usage":{"input_tokens":10,"output_tokens":20,"cache_creation_input_tokens":300,"cache_read_input_tokens":5000}}}"#,
-            #"{"type":"assistant","timestamp":"not a date","message":{"id":"msg_2","usage":{"input_tokens":1}}}"#
+            #"{"type":"assistant","timestamp":"not a date","message":{"id":"msg_2","usage":{"input_tokens":1}}}"#,
+            #"{"type":"assistant","timestamp":"2026-10-01T10:00:06Z","message":{"id":"msg_3","usage":{"output_tokens":4}}}"#
         ))
-        #expect(records.count == 1)
-        #expect(records.first?.id == "msg_1")
-        #expect(records.first?.tokens == 330)
+        #expect(records.map(\.id) == ["msg_1", "msg_3"])
+        #expect(records.map(\.tokens) == [330, 4])
         #expect(records.first?.family == .claude)
+        #expect(records.last?.date == ISO8601DateFormatter().date(from: "2026-10-01T10:00:06Z"))
     }
 
     @Test func piLogsMapProvidersAndUseResponseIds() {
@@ -48,6 +57,18 @@ struct AIUsageParseTests {
         #expect(totals[.codex]?.weekly == 400)
     }
 
+    @Test func codexForksCopyingEventsAreCountedOnce() {
+        func line(_ time: String, total: Int, output: Int) -> String {
+            #"{"timestamp":"2026-10-01T10:00:\#(time).000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":900,"output_tokens":\#(total - 900),"total_tokens":\#(total)},"last_token_usage":{"input_tokens":0,"output_tokens":\#(output)}}}}"#
+        }
+        let original = AIUsageModel.codexRecords(data(line("00", total: 1000, output: 100)), file: "/a.jsonl")
+        // The fork starts with a copy of the original's event, then goes on by itself; the repeat has a new time.
+        let fork = AIUsageModel.codexRecords(data(line("00", total: 1000, output: 100), line("05", total: 1000, output: 100),
+                                                  line("09", total: 1050, output: 50)), file: "/b.jsonl")
+        let totals = AIUsageModel.totals([("Codex", original + fork)], now: Date(timeIntervalSince1970: 1_790_850_000))
+        #expect(totals[.codex]?.weekly == 150)
+    }
+
     @Test func openCodeRowsCountReasoningAndCacheWrites() {
         let row = Data(#"{"role":"assistant","providerID":"openai","modelID":"gpt-5.5","tokens":{"input":500,"output":160,"reasoning":40,"cache":{"read":80000,"write":10}},"time":{"created":1790848800000}}"#.utf8)
         let record = AIUsageModel.openCodeRecord(id: "msg_oc", data: row)
@@ -63,11 +84,52 @@ struct AIUsageParseTests {
         let totals = AIUsageModel.totals([
             ("Claude Code", [record("m1", hoursAgo: 1, 100), record("m2", hoursAgo: 30, 50), record("old", hoursAgo: 200, 999)]),
             ("gjc", [record("m1", hoursAgo: 1, 100), record("m3", hoursAgo: 2, 7), record(nil, hoursAgo: 3, 0)]),
-            ("omo", [record(nil, hoursAgo: 4, 0)]),
-            ("OpenCode", [record("o1", hoursAgo: 6, 20, .codex)]),
+            ("omo", [record(nil, hoursAgo: 4, 0), record("m4", hoursAgo: 4, 0)]),
+            ("OpenCode", [record("o1", hoursAgo: 6, 20, .codex), record("m4", hoursAgo: 4, 5)]),
         ], now: now)
-        #expect(totals[.claude] == .init(session: 107, weekly: 157, tools: ["Claude Code", "gjc"]))
+        // An empty record doesn't use up its id, so the one with tokens still counts.
+        #expect(totals[.claude] == .init(session: 112, weekly: 162, tools: ["Claude Code", "gjc", "OpenCode"]))
         #expect(totals[.codex] == .init(session: 0, weekly: 20, tools: ["OpenCode"]))
+    }
+
+    @Test func logsAreReadIncrementallyUntilReplaced() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("nunsseop-\(UUID().uuidString).jsonl")
+        defer { try? FileManager.default.removeItem(at: url) }
+        var chunks: [String] = []
+        func read() throws -> [String] {
+            let modified = try #require(url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
+            return AIUsageModel.records(in: url, modified: modified, since: .distantPast) { data, _ in
+                chunks.append(String(decoding: data, as: UTF8.self))
+                return data.split(separator: 0x0A).map { .init(id: String(decoding: $0, as: UTF8.self), family: .claude, date: .now, tokens: 1) }
+            }.compactMap(\.id)
+        }
+        func append(_ text: String) throws {
+            let handle = try FileHandle(forWritingTo: url)
+            try handle.seekToEnd()
+            try handle.write(contentsOf: Data(text.utf8))
+            try handle.close()
+        }
+        try Data("a\nb\n".utf8).write(to: url)
+        #expect(try read() == ["a", "b"])
+        // A line still being written waits until it's finished, and then only the new lines are read.
+        try append("c\nd")
+        #expect(try read() == ["a", "b", "c"])
+        try append("\n")
+        #expect(try read() == ["a", "b", "c", "d"])
+        #expect(chunks == ["a\nb\n", "c\n", "d\n"])
+        // Truncated in place: read again from the start.
+        let handle = try FileHandle(forWritingTo: url)
+        try handle.truncate(atOffset: 0)
+        try handle.write(contentsOf: Data("x\n".utf8))
+        try handle.close()
+        #expect(try read() == ["x"])
+        // Replaced with the same size: read again.
+        try Data("y\n".utf8).write(to: url, options: .atomic)
+        #expect(try read() == ["y"])
+        // Replaced with a longer file whose old end happens to be a line end: still read again, not appended to.
+        try Data("q\nr\n".utf8).write(to: url, options: .atomic)
+        #expect(try read() == ["q", "r"])
+        #expect(chunks.last == "q\nr\n")
     }
 
     @Test func gjcReportGivesBothWindows() throws {

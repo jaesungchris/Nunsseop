@@ -194,14 +194,17 @@ final class TimerModel: ObservableObject {
 struct TimerTab: View {
     @ObservedObject var timer: TimerModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pickerWidth: CGFloat = 0
 
     var body: some View {
         GeometryReader { geometry in
-            // The ring takes the height it's given, within reason, so it grows with taller notches.
-            let diameter = min(150, max(92, geometry.size.height - 4))
+            // The ring takes the height it's given, within reason, so it grows with taller notches, but no more than the
+            // width the picker (its width depends on the language), spacers, side column and buttons leave.
+            let diameter = min(150, max(92, geometry.size.height - 4), geometry.size.width - pickerWidth - 2 * 12 - 18 - 104 - 44)
             HStack(spacing: 0) {
                 ModePicker(mode: $timer.mode, animated: !reduceMotion)
                     .fixedSize()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { pickerWidth = $0 }
                 Spacer(minLength: 12)
                 HStack(spacing: 18) {
                     TimerRing(timer: timer, diameter: diameter, tint: tint, animated: !reduceMotion)

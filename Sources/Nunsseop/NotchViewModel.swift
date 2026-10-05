@@ -1,7 +1,6 @@
 import AppKit
 import Combine
 
-/// What each side of the collapsed notch shows while nothing is playing or running.
 /// Which Claude or Codex limit an idle ear shows as "left".
 enum AIWindow: String, CaseIterable, Identifiable {
     case tighter, session, weekly
@@ -17,6 +16,7 @@ enum AIWindow: String, CaseIterable, Identifiable {
     }
 }
 
+/// What each side of the collapsed notch shows while nothing is playing or running.
 enum IdleItem: String, CaseIterable, Identifiable {
     case none, claude, codex, battery, weather, date
 

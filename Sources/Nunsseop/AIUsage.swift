@@ -58,10 +58,15 @@ final class AIUsageModel: ObservableObject {
 
     @Published private(set) var providers: [Provider] = []
     @Published private(set) var loading = false
+    /// A token refresh asked for while another refresh ran, which runs as soon as that one is done.
+    private var tokensPending = false
 
     /// Without `includeTokens` only the limits are read, which is cheap; the token totals from the last refresh are kept.
     func refresh(includeTokens: Bool = true) {
-        guard !loading else { return }
+        guard !loading else {
+            if includeTokens { tokensPending = true }
+            return
+        }
         loading = true
         Task.detached(priority: .utility) {
             let limits = Self.limits()
@@ -87,6 +92,10 @@ final class AIUsageModel: ObservableObject {
                     return provider.session == nil && provider.weekly == nil && provider.weeklyTokens == nil ? nil : provider
                 }
                 self.loading = false
+                if self.tokensPending {
+                    self.tokensPending = false
+                    self.refresh(includeTokens: true)
+                }
             }
         }
     }
@@ -110,17 +119,24 @@ final class AIUsageModel: ObservableObject {
         return result
     }
 
-    nonisolated private static func isoFormatter() -> ISO8601DateFormatter {
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return iso
+    /// Parses ISO 8601 times with or without fractional seconds.
+    nonisolated private static func isoParser() -> (String) -> Date? {
+        let fractional = ISO8601DateFormatter(), whole = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return { fractional.date(from: $0) ?? whole.date(from: $0) }
     }
 
-    /// Which provider's subscription a model belongs to; nil for any other provider.
+    /// Which subscription a response counts toward: the provider decides, since the same models are also sold by others
+    /// (OpenRouter, Bedrock, Copilot…) whose usage doesn't count; the model name only when no provider is given.
     nonisolated static func family(provider: String?, model: String?) -> Family? {
-        let provider = provider?.lowercased() ?? "", model = model?.lowercased() ?? ""
-        if model.contains("claude") || provider.hasPrefix("anthropic") { return .claude }
-        if model.contains("gpt") || model.contains("codex") || provider.hasPrefix("openai") || provider == "codex" { return .codex }
+        if let provider = provider?.lowercased(), !provider.isEmpty {
+            if provider.hasPrefix("anthropic") { return .claude }
+            if provider.hasPrefix("openai") || provider == "codex" || provider.hasPrefix("chatgpt") { return .codex }
+            return nil
+        }
+        let model = model?.lowercased() ?? ""
+        if model.contains("claude") { return .claude }
+        if model.contains("gpt") || model.contains("codex") { return .codex }
         return nil
     }
 
@@ -138,7 +154,7 @@ final class AIUsageModel: ObservableObject {
         offer(.codex, codexLimits())
         let gjc = home.appendingPathComponent(".gjc/agent/agent.db").path
         // Only the usage cache is read; this database also holds gjc's credentials, which are never touched.
-        for row in query(gjc, "SELECT value FROM cache WHERE key LIKE 'usage_cache:report:%'") {
+        for row in query(gjc, "SELECT value FROM cache WHERE key GLOB 'usage_cache:report:*'") {
             if let (family, limits) = gjcLimits(Data(row[0].utf8)) { offer(family, limits) }
         }
         return result
@@ -149,8 +165,8 @@ final class AIUsageModel: ObservableObject {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let usage = json["data"] as? [String: Any],
               let stamp = json["lastSuccessAt"] as? Double ?? json["timestamp"] as? Double else { return nil }
-        let iso = isoFormatter()
-        func date(_ key: String) -> Date? { (usage[key] as? String).flatMap { iso.date(from: $0) } }
+        let iso = isoParser()
+        func date(_ key: String) -> Date? { (usage[key] as? String).flatMap { iso($0) } }
         return Limits(session: window(percent: usage["fiveHourPercent"] as? Double, resetsAt: date("fiveHourResetsAt")),
                       weekly: window(percent: usage["weeklyPercent"] as? Double, resetsAt: date("weeklyResetsAt")),
                       updatedAt: Date(timeIntervalSince1970: stamp / 1000))
@@ -178,9 +194,20 @@ final class AIUsageModel: ObservableObject {
         return (family, limits)
     }
 
+    /// Codex files each session's log under the YYYY/MM/DD it started, so only the latest few days' folders are searched
+    /// for the newest log, rather than every session ever.
     nonisolated private static func codexLimits() -> Limits? {
-        let logs = files(under: home.appendingPathComponent(".codex/sessions"), modifiedSince: .distantPast) {
-            $0.pathExtension == "jsonl" && $0.lastPathComponent.hasPrefix("rollout-")
+        var days: [URL] = []
+        func newest(in folder: URL, depth: Int) {
+            let names = ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []).filter { Int($0) != nil }
+            for name in names.sorted(by: >) where days.count < 8 {
+                let child = folder.appendingPathComponent(name)
+                if depth == 2 { days.append(child) } else { newest(in: child, depth: depth + 1) }
+            }
+        }
+        newest(in: home.appendingPathComponent(".codex/sessions"), depth: 0)
+        let logs = days.flatMap {
+            files(under: $0, modifiedSince: .distantPast) { $0.pathExtension == "jsonl" && $0.lastPathComponent.hasPrefix("rollout-") }
         }
         guard let (file, modified) = logs.max(by: { $0.1 < $1.1 }), let handle = try? FileHandle(forReadingFrom: file) else { return nil }
         defer { try? handle.close() }
@@ -200,7 +227,7 @@ final class AIUsageModel: ObservableObject {
                 let reset = (entry["resets_at"] as? Double).map { Date(timeIntervalSince1970: $0) }
                 return window(percent: entry["used_percent"] as? Double, resetsAt: reset)
             }
-            let stamp = (json["timestamp"] as? String).flatMap { isoFormatter().date(from: $0) }
+            let stamp = (json["timestamp"] as? String).flatMap(isoParser())
             return Limits(session: parse("primary"), weekly: parse("secondary"), updatedAt: stamp ?? modified)
         }
         return nil
@@ -238,6 +265,8 @@ final class AIUsageModel: ObservableObject {
     private struct ParsedFile: Sendable {
         let size: Int
         let modified: Date
+        /// The file's inode, which changes when a log is replaced rather than appended to.
+        var inode = 0
         let offset: Int
         let records: [TokenRecord]
     }
@@ -245,9 +274,10 @@ final class AIUsageModel: ObservableObject {
     /// Parse results per path, so a refresh only reads files that changed, and of a log that grew, only the new lines.
     nonisolated private static let parsed = OSAllocatedUnfairLock<[String: ParsedFile]>(initialState: [:])
 
-    nonisolated private static func records(in url: URL, modified: Date, since: Date, parse: (Data, String) -> [TokenRecord]) -> [TokenRecord] {
-        let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
-        let cached = parsed.withLock { $0[url.path] }
+    nonisolated static func records(in url: URL, modified: Date, since: Date, parse: (Data, String) -> [TokenRecord]) -> [TokenRecord] {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+        let size = attributes?[.size] as? Int ?? 0, inode = attributes?[.systemFileNumber] as? Int ?? 0
+        let cached = parsed.withLock { $0[url.path] }.flatMap { $0.inode == inode ? $0 : nil }
         if let cached, cached.size == size, cached.modified == modified { return cached.records }
         guard let handle = try? FileHandle(forReadingFrom: url) else { return [] }
         defer { try? handle.close() }
@@ -265,7 +295,7 @@ final class AIUsageModel: ObservableObject {
         // A line still being written is left for the next refresh.
         let end = data.lastIndex(of: 0x0A).map { $0 - data.startIndex + 1 } ?? 0
         let records = (kept + parse(data.prefix(end), url.path)).filter { $0.date >= since }
-        let file = ParsedFile(size: size, modified: modified, offset: start + end, records: records)
+        let file = ParsedFile(size: size, modified: modified, inode: inode, offset: start + end, records: records)
         parsed.withLock { $0[url.path] = file }
         return records
     }
@@ -281,9 +311,9 @@ final class AIUsageModel: ObservableObject {
 
     /// Claude Code's conversation logs: input, output and cache-write tokens of each response.
     nonisolated static func claudeCodeRecords(_ data: Data, file: String = "") -> [TokenRecord] {
-        let iso = isoFormatter()
+        let iso = isoParser()
         return objects(in: data, containing: "\"type\":\"assistant\"").compactMap { json in
-            guard let date = (json["timestamp"] as? String).flatMap({ iso.date(from: $0) }),
+            guard let date = (json["timestamp"] as? String).flatMap({ iso($0) }),
                   let message = json["message"] as? [String: Any],
                   let usage = message["usage"] as? [String: Any] else { return nil }
             let tokens = ["input_tokens", "output_tokens", "cache_creation_input_tokens"].reduce(0) { $0 + (usage[$1] as? Int ?? 0) }
@@ -293,28 +323,32 @@ final class AIUsageModel: ObservableObject {
 
     /// Codex's session logs. Input counts cached tokens, which are left out as they are for Claude.
     nonisolated static func codexRecords(_ data: Data, file: String = "") -> [TokenRecord] {
-        let iso = isoFormatter()
+        let iso = isoParser()
         return objects(in: data, containing: "\"token_count\"").compactMap { json in
             guard let info = (json["payload"] as? [String: Any])?["info"] as? [String: Any],
                   let last = info["last_token_usage"] as? [String: Any],
-                  let date = (json["timestamp"] as? String).flatMap({ iso.date(from: $0) }) else { return nil }
+                  let date = (json["timestamp"] as? String).flatMap({ iso($0) }) else { return nil }
             let input = (last["input_tokens"] as? Int ?? 0) - (last["cached_input_tokens"] as? Int ?? 0)
             let tokens = max(0, input) + (last["output_tokens"] as? Int ?? 0)
-            // Codex logs the same count again when only the limits changed; the running total tells them apart.
-            let total = (info["total_token_usage"] as? [String: Any])?["total_tokens"] as? Int
-            return TokenRecord(id: total.map { "\(file)#\($0)" }, family: .codex, date: date, tokens: tokens)
+            // Codex logs the same count again when only the limits changed, and a forked session's log starts with a copy
+            // of the original's events; the running totals tell them apart without depending on the file.
+            let total = (info["total_token_usage"] as? [String: Any]).map { usage in
+                ["input_tokens", "cached_input_tokens", "output_tokens", "reasoning_output_tokens", "total_tokens"]
+                    .map { String(usage[$0] as? Int ?? 0) }.joined(separator: "/")
+            }
+            return TokenRecord(id: total.map { "codex#\($0)" }, family: .codex, date: date, tokens: tokens)
         }
     }
 
     /// Session logs of gjc and omo, which share a format: each response with its provider, model and usage.
     nonisolated static func piRecords(_ data: Data, file: String = "") -> [TokenRecord] {
-        let iso = isoFormatter()
+        let iso = isoParser()
         return objects(in: data, containing: "\"role\":\"assistant\"").compactMap { json in
             guard let message = json["message"] as? [String: Any],
                   let usage = message["usage"] as? [String: Any],
                   let family = family(provider: message["provider"] as? String, model: message["model"] as? String),
                   let date = (message["timestamp"] as? Double).map({ Date(timeIntervalSince1970: $0 / 1000) })
-                      ?? (json["timestamp"] as? String).flatMap({ iso.date(from: $0) }) else { return nil }
+                      ?? (json["timestamp"] as? String).flatMap({ iso($0) }) else { return nil }
             let tokens = ["input", "output", "cacheWrite"].reduce(0) { $0 + (usage[$1] as? Int ?? 0) }
             let id = message["responseId"] as? String ?? (json["id"] as? String).map { "\(file)#\($0)" }
             return TokenRecord(id: id, family: family, date: date, tokens: tokens)
@@ -355,8 +389,8 @@ final class AIUsageModel: ObservableObject {
         var result: [Family: Totals] = [:]
         for (tool, records) in sources {
             for record in records where record.date >= weekAgo {
-                if let id = record.id, !seen.insert(id).inserted { continue }
                 guard record.tokens > 0 else { continue }
+                if let id = record.id, !seen.insert(id).inserted { continue }
                 var totals = result[record.family] ?? Totals()
                 totals.weekly += record.tokens
                 if record.date >= sessionStart { totals.session += record.tokens }
