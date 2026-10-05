@@ -81,6 +81,7 @@ final class CapsLockWatcher {
                 }
             }
         }
+        timer?.tolerance = 0.025
     }
 }
 

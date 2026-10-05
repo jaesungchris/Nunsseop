@@ -165,7 +165,7 @@ final class NotchWindowController {
                                          detail: "\(device.name) \(device.percent)%"), duration: 5)
         }
         settingsObservers.append(model.settings.$peripheralBatteries.sink { [weak self] enabled in
-            if enabled { self?.model.peripherals.start() } else { self?.model.peripherals.stop() }
+            if enabled && self?.panel.isVisible == true { self?.model.peripherals.start() } else { self?.model.peripherals.stop() }
         })
         model.privacy.onChange = { [weak self] camera, mic in
             guard let self, self.model.settings.privacyIndicator else { return }
@@ -174,7 +174,7 @@ final class NotchWindowController {
             self.model.hud.show(.notice(symbol: camera ? "video.fill" : "mic.fill", title: title, detail: nil), duration: 3)
         }
         settingsObservers.append(model.settings.$privacyIndicator.sink { [weak self] enabled in
-            if enabled { self?.model.privacy.start() } else { self?.model.privacy.stop() }
+            if enabled && self?.panel.isVisible == true { self?.model.privacy.start() } else { self?.model.privacy.stop() }
         })
         settingsObservers.append(model.settings.$callIsland.sink { [weak self] enabled in
             if enabled && self?.panel.isVisible == true { self?.model.calls.start() } else { self?.model.calls.stop() }
@@ -231,6 +231,7 @@ final class NotchWindowController {
                 self.aiUsageTimer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] _ in
                     MainActor.assumeIsolated { self?.model.aiUsage.refresh(includeTokens: false) }
                 }
+                self.aiUsageTimer?.tolerance = 2
             })
         settingsObservers.append(model.settings.$lyricsEnabled.sink { [weak self] enabled in
             guard let self else { return }
@@ -292,12 +293,16 @@ final class NotchWindowController {
             model.capsLock.stop()
             model.notifyServer.stop()
             model.calls.stop()
+            model.privacy.stop(clearing: false)
+            model.peripherals.stop()
         } else if !panel.isVisible {
             panel.orderFrontRegardless()
             if settings.clipboardTab { model.clipboard.start() }
             if settings.capsLockHUD { model.capsLock.start() }
             if settings.localNotifications { model.notifyServer.start() }
             if settings.callIsland { model.calls.start() }
+            if settings.privacyIndicator { model.privacy.start() }
+            if settings.peripheralBatteries { model.peripherals.start() }
         }
     }
 
@@ -390,11 +395,11 @@ final class NotchWindowController {
     private func pointerMoved() {
         guard panel.isVisible else { return }
         let point = NSEvent.mouseLocation
-        let collapsedRect = model.geometry.shapeRect(size: model.collapsedSize)
-        let expandedRect = model.geometry.shapeRect(size: model.expandedSize)
+        // Every shape fits in the panel, so away from it the pointer is outside without working out the shape's size.
+        let nearPanel = panel.frame.insetBy(dx: -8, dy: -8).contains(point)
 
         if model.isExpanded {
-            let inside = expandedRect.insetBy(dx: -6, dy: -6).contains(point)
+            let inside = nearPanel && model.geometry.shapeRect(size: model.expandedSize).insetBy(dx: -6, dy: -6).contains(point)
             if model.pinned {
                 if inside { model.pinned = false }
                 panel.ignoresMouseEvents = false
@@ -416,7 +421,7 @@ final class NotchWindowController {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: work)
             }
         } else {
-            let inside = collapsedRect.contains(point)
+            let inside = nearPanel && model.geometry.shapeRect(size: model.collapsedSize).contains(point)
             panel.ignoresMouseEvents = !inside
             if !inside {
                 openWork?.cancel()

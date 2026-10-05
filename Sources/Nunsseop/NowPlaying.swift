@@ -100,6 +100,8 @@ final class NowPlayingController: ObservableObject {
     private let queue = DispatchQueue(label: "nunsseop.nowplaying")
     private var timer: Timer?
     private var artworkIdentity: String?
+    /// The MediaRemote artwork bytes behind `artwork`, so unchanged artwork isn't decoded again.
+    private var artworkBytes: Data?
     private var browserHit: BrowserMedia.Hit?
     private var pollInFlight = false
     private let mediaRemote = MediaRemoteBridge()
@@ -128,6 +130,7 @@ final class NowPlayingController: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.poll() }
         }
+        timer?.tolerance = 0.15
     }
 
     func send(_ command: NowPlayingCommand) {
@@ -220,6 +223,8 @@ final class NowPlayingController: ObservableObject {
     }
 
     private func apply(_ update: MediaRemoteUpdate) {
+        // A restarted helper sends its artwork again, and the other sources may have replaced it meanwhile.
+        if !mediaRemoteActive { artworkBytes = nil }
         mediaRemoteActive = true
         browserHit = nil
         needsAutomationPermission = false
@@ -233,14 +238,24 @@ final class NowPlayingController: ObservableObject {
         guard let newTrack else {
             artwork = nil
             artworkIdentity = nil
+            artworkBytes = nil
+            return
+        }
+        // Same artwork as before, also on the next track of the same album.
+        if update.artworkUnchanged {
+            artworkIdentity = newTrack.identity
+            // Out of step with the helper: there is nothing to keep.
+            if artworkBytes == nil { mediaRemote.resendArtwork() }
             return
         }
         if newTrack.identity != artworkIdentity {
             artworkIdentity = newTrack.identity
             artwork = nil
+            artworkBytes = nil
         }
-        if let data = update.artwork, let image = NSImage(data: data) {
+        if let data = update.artwork, data != artworkBytes, let image = NSImage(data: data) {
             artwork = image
+            artworkBytes = data
         }
     }
 
@@ -312,8 +327,9 @@ final class NowPlayingController: ObservableObject {
         return artworkHosts.contains { host == $0 || host.hasSuffix("." + $0) }
     }
 
+    /// For the AppleScript and browser sources; a late fetch must not replace MediaRemote's artwork.
     private func setArtwork(_ image: NSImage, for identity: String) {
-        if identity == artworkIdentity { artwork = image }
+        if !mediaRemoteActive && identity == artworkIdentity { artwork = image }
     }
 
     /// Fixed track with generated artwork, for checking the layout without a player.

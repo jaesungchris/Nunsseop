@@ -119,6 +119,7 @@ final class HUDCenter: ObservableObject {
                     if MediaKeyInterceptor.isTrusted { self?.retryInterception() }
                 }
             }
+            trustPoll?.tolerance = 0.2
             return
         }
         interceptorNeedsPermission = !interceptor.start()

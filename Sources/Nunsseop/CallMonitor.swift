@@ -90,6 +90,7 @@ final class CallMonitor: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.poll() }
         }
+        timer?.tolerance = 0.2
     }
 
     func stop() {

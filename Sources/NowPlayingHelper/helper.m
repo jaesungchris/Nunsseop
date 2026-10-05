@@ -55,6 +55,8 @@ void nunsseop_nowplaying_run(void *perl, void *cv) {
 
     // Set after a rate change so the next poll reports the real rate even if the app ignored it.
     static volatile BOOL forceEmit = NO;
+    // Set when the app has lost the artwork it was told to keep, so the next emit carries it again.
+    static volatile BOOL resendArtwork = NO;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         char line[64];
         while (fgets(line, sizeof line, stdin)) {
@@ -70,6 +72,11 @@ void nunsseop_nowplaying_run(void *perl, void *cv) {
                 forceEmit = YES;
                 continue;
             }
+            if (strncmp(line, "resend", 6) == 0) {
+                resendArtwork = YES;
+                forceEmit = YES;
+                continue;
+            }
             int code = commandCode(line);
             if (code >= 0) send(code, nil);
         }
@@ -78,6 +85,7 @@ void nunsseop_nowplaying_run(void *perl, void *cv) {
 
     dispatch_queue_t queue = dispatch_queue_create("nunsseop.nowplaying", DISPATCH_QUEUE_SERIAL);
     __block NSString *lastSignature = nil;
+    __block NSData *lastArtwork = nil;
 
     void (^poll)(void) = ^{
         getInfo(queue, ^(NSDictionary *info) {
@@ -117,7 +125,20 @@ void nunsseop_nowplaying_run(void *perl, void *cv) {
                 if (!forceEmit && [signature isEqualToString:lastSignature]) return;
                 forceEmit = NO;
                 lastSignature = signature;
-                if (artwork) out[@"artwork"] = [artwork base64EncodedStringWithOptions:0];
+                if (resendArtwork) {
+                    resendArtwork = NO;
+                    lastArtwork = nil;
+                }
+                // Artwork goes out only when it changes; "artworkUnchanged" tells the app to keep what it has.
+                // Without a title the app drops the update, so the next one with a title sends the artwork again.
+                if (!artwork || title.length == 0) {
+                    lastArtwork = nil;
+                } else if ([artwork isEqualToData:lastArtwork]) {
+                    out[@"artworkUnchanged"] = @YES;
+                } else {
+                    lastArtwork = artwork;
+                    out[@"artwork"] = [artwork base64EncodedStringWithOptions:0];
+                }
                 emit(out);
             });
             };

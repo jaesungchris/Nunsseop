@@ -37,6 +37,7 @@ final class WeatherModel: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 30 * 60, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
         }
+        timer?.tolerance = 3 * 60
     }
 
     private func refresh() {

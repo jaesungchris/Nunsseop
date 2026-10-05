@@ -35,6 +35,7 @@ final class ClipboardHistory: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.check() }
         }
+        timer?.tolerance = 0.06
     }
 
     func stop() {

@@ -658,7 +658,8 @@ private struct SneakPeekLine: View {
     let lyrics: LyricsModel?
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.5)) { context in
+        // Only the lyrics follow the clock, and they move only while playing.
+        TimelineView(.animation(minimumInterval: 0.5, paused: !track.isPlaying)) { context in
             HStack(spacing: 6) {
                 Image(systemName: track.isPlaying ? "play.fill" : "pause.fill")
                     .font(.system(size: 8))
@@ -839,7 +840,7 @@ private struct ProgressRow: View {
     @State private var dragFraction: Double?
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.5)) { context in
+        TimelineView(.animation(minimumInterval: 0.5, paused: !track.isPlaying)) { context in
             let live = track.duration > 0 ? track.position(at: context.date) / track.duration : 0
             let fraction = min(1, max(0, dragFraction ?? live))
             let position = fraction * track.duration
@@ -923,22 +924,102 @@ private struct ArtworkView: View {
     }
 }
 
-private struct SpectrumBars: View {
+/// Four bars bouncing between 30% and full height while playing, flat at 25% while paused.
+/// Core Animation repeats the bounce in the render server, so playing music costs the app no redraws.
+/// With Reduce Motion on, the bars stand still at uneven heights while playing.
+private struct SpectrumBars: NSViewRepresentable {
     let isPlaying: Bool
     let tint: Color
 
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 60, paused: !isPlaying)) { context in
-            let t = context.date.timeIntervalSinceReferenceDate
-            HStack(alignment: .center, spacing: 2) {
-                ForEach(0..<4) { i in
-                    let phase = sin(t * (4.3 + Double(i) * 1.9) + Double(i) * 1.3)
-                    Capsule()
-                        .fill(tint)
-                        .frame(maxHeight: .infinity)
-                        .scaleEffect(y: isPlaying ? 0.3 + 0.7 * abs(phase) : 0.25)
-                }
+    func makeNSView(context: Context) -> BarsView { BarsView() }
+
+    func updateNSView(_ view: BarsView, context: Context) {
+        view.update(isPlaying: isPlaying, reduceMotion: context.environment.accessibilityReduceMotion,
+                    color: NSColor(tint).cgColor)
+    }
+
+    final class BarsView: NSView {
+        /// Seconds each bar takes to rise or fall, and where in that it starts, so the bars move out of step.
+        private static let durations: [CFTimeInterval] = [0.36, 0.25, 0.19, 0.16]
+        private static let starts: [Double] = [0.4, 1, 0.1, 0.7]
+        private let bars = (0..<4).map { _ in CALayer() }
+        private var isPlaying = false
+        private var reduceMotion = false
+
+        override init(frame: NSRect) {
+            super.init(frame: frame)
+            wantsLayer = true
+            bars.forEach { layer?.addSublayer($0) }
+        }
+
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        /// Clicks go to the SwiftUI views around the bars.
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+        override func setFrameSize(_ newSize: NSSize) {
+            super.setFrameSize(newSize)
+            layoutBars()
+        }
+
+        override func layout() {
+            super.layout()
+            layoutBars()
+        }
+
+        /// Animations can be dropped while the view is out of a window, so they are added again.
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if window != nil { applyState() }
+        }
+
+        private func layoutBars() {
+            let spacing: CGFloat = 2
+            let width = max(0, (bounds.width - spacing * 3) / 4)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            for (i, bar) in bars.enumerated() {
+                bar.bounds = CGRect(x: 0, y: 0, width: width, height: bounds.height)
+                bar.position = CGPoint(x: (width + spacing) * CGFloat(i) + width / 2, y: bounds.midY)
+                bar.cornerRadius = min(width, bounds.height) / 2
             }
+            CATransaction.commit()
+        }
+
+        func update(isPlaying: Bool, reduceMotion: Bool, color: CGColor) {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            bars.forEach { $0.backgroundColor = color }
+            CATransaction.commit()
+            let animating = isPlaying && !reduceMotion
+            guard isPlaying != self.isPlaying || reduceMotion != self.reduceMotion
+                    || animating != (bars[0].animation(forKey: "bounce") != nil) else { return }
+            self.isPlaying = isPlaying
+            self.reduceMotion = reduceMotion
+            applyState()
+        }
+
+        private func applyState() {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            for (i, bar) in bars.enumerated() {
+                bar.removeAllAnimations()
+                // While playing this resting height shows with Reduce Motion and in snapshots; otherwise the bounce covers it.
+                let start = Self.starts[i]
+                bar.transform = CATransform3DMakeScale(1, isPlaying ? 0.3 + 0.7 * start : 0.25, 1)
+                guard isPlaying && !reduceMotion else { continue }
+                let bounce = CABasicAnimation(keyPath: "transform.scale.y")
+                bounce.fromValue = 0.3
+                bounce.toValue = 1
+                bounce.duration = Self.durations[i]
+                bounce.timeOffset = start * Self.durations[i]
+                bounce.autoreverses = true
+                bounce.repeatCount = .infinity
+                bounce.isRemovedOnCompletion = false
+                bounce.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                bar.add(bounce, forKey: "bounce")
+            }
+            CATransaction.commit()
         }
     }
 }

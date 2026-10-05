@@ -3,6 +3,9 @@ import AppKit
 struct MediaRemoteUpdate {
     var track: NowPlayingTrack?
     var artwork: Data?
+    /// The helper sends artwork only when it changes: true means keep the current artwork,
+    /// while no artwork and false means the track has none.
+    var artworkUnchanged = false
 }
 
 /// Runs the MediaRemote helper (Resources/nowplaying.pl + libNowPlayingHelper.dylib)
@@ -68,6 +71,11 @@ final class MediaRemoteBridge {
         try? input?.write(contentsOf: Data((word + "\n").utf8))
     }
 
+    /// Asks the helper to send the artwork again with its next update.
+    func resendArtwork() {
+        try? input?.write(contentsOf: Data("resend\n".utf8))
+    }
+
     private func helperExited() {
         output?.readabilityHandler = nil
         process = nil
@@ -122,6 +130,6 @@ final class MediaRemoteBridge {
             canChangeRate: commands?.contains(19) ?? false
         )
         let artwork = (info["artwork"] as? String).flatMap { Data(base64Encoded: $0) }
-        onUpdate?(MediaRemoteUpdate(track: track, artwork: artwork))
+        onUpdate?(MediaRemoteUpdate(track: track, artwork: artwork, artworkUnchanged: info["artworkUnchanged"] as? Bool == true))
     }
 }

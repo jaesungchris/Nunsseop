@@ -27,6 +27,7 @@ final class UpdateChecker: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 24 * 60 * 60, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.check() }
         }
+        timer?.tolerance = 60 * 60
     }
 
     func check() {

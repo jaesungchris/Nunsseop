@@ -2,6 +2,7 @@ import AppKit
 import CoreAudio
 import CoreMediaIO
 import IOKit
+import os
 
 struct PeripheralBattery: Identifiable, Equatable {
     var id: String { name }
@@ -38,6 +39,7 @@ final class PeripheralMonitor: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
         }
+        timer?.tolerance = 30
     }
 
     func stop() {
@@ -124,6 +126,7 @@ final class PrivacyMonitor: ObservableObject {
     var onChange: ((_ camera: Bool, _ mic: Bool) -> Void)?
 
     private var timer: Timer?
+    private var checking = false
 
     func start() {
         guard timer == nil else { return }
@@ -137,18 +140,34 @@ final class PrivacyMonitor: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.check() }
         }
+        timer?.tolerance = 0.2
     }
 
-    func stop() {
+    /// `clearing: false` keeps the last state, so starting again during a call that was already announced stays quiet.
+    func stop(clearing: Bool = true) {
         timer?.invalidate()
         timer = nil
+        guard clearing else { return }
         cameraInUse = false
         micInUse = false
     }
 
+    /// Reads the devices off the main thread; the result is dropped if monitoring stopped meanwhile.
     private func check() {
-        let camera = Self.anyCameraRunning()
-        let mic = Self.anyMicRunning()
+        guard !checking else { return }
+        checking = true
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            let camera = Self.anyCameraRunning()
+            let mic = Self.anyMicRunning()
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.checking = false
+                if self.timer != nil { self.apply(camera: camera, mic: mic) }
+            }
+        }
+    }
+
+    private func apply(camera: Bool, mic: Bool) {
         guard camera != cameraInUse || mic != micInUse else { return }
         let startedCamera = camera && !cameraInUse
         let startedMic = mic && !micInUse
@@ -157,7 +176,7 @@ final class PrivacyMonitor: ObservableObject {
         if startedCamera || startedMic { onChange?(startedCamera, startedMic) }
     }
 
-    private static func anyCameraRunning() -> Bool {
+    nonisolated private static func anyCameraRunning() -> Bool {
         var address = CMIOObjectPropertyAddress(mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyDevices),
                                                 mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
                                                 mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
@@ -179,7 +198,20 @@ final class PrivacyMonitor: ObservableObject {
         return false
     }
 
+    /// The last microphone reading and the uptime it was taken at. The privacy and call monitors
+    /// both poll every 2 s, so a reading under a second old is reused instead of asking CoreAudio again;
+    /// how often that saves a read depends on how their timers line up.
+    nonisolated private static let micReading = OSAllocatedUnfairLock<(at: TimeInterval, running: Bool)?>(initialState: nil)
+
     nonisolated static func anyMicRunning() -> Bool {
+        let now = ProcessInfo.processInfo.systemUptime
+        if let reading = micReading.withLock({ $0 }), now - reading.at < 1 { return reading.running }
+        let running = readMicRunning()
+        micReading.withLock { $0 = (now, running) }
+        return running
+    }
+
+    nonisolated private static func readMicRunning() -> Bool {
         var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDevices, mScope: kAudioObjectPropertyScopeGlobal,
                                                  mElement: kAudioObjectPropertyElementMain)
         var size: UInt32 = 0

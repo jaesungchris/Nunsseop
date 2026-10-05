@@ -29,6 +29,7 @@ final class SystemStats: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.sample() }
         }
+        timer?.tolerance = 0.15
     }
 
     func stop() {

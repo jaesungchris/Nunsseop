@@ -144,6 +144,7 @@ final class TimerModel: ObservableObject {
         ticker = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
+        ticker?.tolerance = 0.05
     }
 
     private func tick() {
@@ -297,7 +298,7 @@ private struct TimeDisplay: View {
         VStack(spacing: 0) {
             arrow("chevron.up", delta: 1).opacity(editable && !editing ? 1 : 0)
             ZStack {
-                TimelineView(.periodic(from: .now, by: 0.25)) { context in
+                TimelineView(.animation(minimumInterval: 0.25, paused: !timer.isRunning)) { context in
                     Text(TimerModel.format(timer.value(at: context.date)))
                         .font(.system(size: 44, weight: .semibold, design: .rounded).monospacedDigit())
                         .lineLimit(1).minimumScaleFactor(0.5)
