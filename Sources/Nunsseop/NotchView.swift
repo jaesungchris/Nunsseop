@@ -18,6 +18,9 @@ struct NotchView: View {
         let bottomRadius: CGFloat = model.isExpanded ? 26 : 14
         let notchHeight = model.geometry.collapsedSize.height
         let shape = NotchShape(topRadius: topRadius, bottomRadius: bottomRadius)
+        // With the left ear hidden, the collapsed shape grows right only and its top row starts past the camera.
+        let shift = model.isExpanded ? 0 : model.collapsedShift
+        let earLead = shift > 0 ? model.geometry.collapsedSize.width - 6 : 0
 
         VStack(spacing: 0) {
             ZStack(alignment: .top) {
@@ -78,7 +81,7 @@ struct NotchView: View {
                     // No scale here: scaling the scrolling tab row while it appears leaves it a few points off.
                     .transition(motion.expandedContent)
                 } else if let event = model.hud.event {
-                    HUDContent(event: event, height: notchHeight, earWidth: NotchViewModel.hudEarWidth)
+                    HUDContent(event: event, height: notchHeight, earWidth: NotchViewModel.hudEarWidth, leadingInset: earLead)
                         .padding(.horizontal, topRadius + 6)
                         .transition(motion.hudContent)
                 } else if model.showsLiveActivity || model.showsSneakPeek || model.showsIdleEars {
@@ -89,8 +92,10 @@ struct NotchView: View {
                                               callMuted: model.callControls.state?.mic == .off,
                                               height: notchHeight, earWidth: model.earWidth,
                                               showsMusic: model.settings.collapsedMusic, showsTimer: model.settings.collapsedTimer)
+                            .padding(.leading, earLead)
                         } else if model.showsIdleEars {
                             IdleEars(model: model, height: notchHeight)
+                                .padding(.leading, earLead)
                         } else {
                             Color.clear.frame(height: notchHeight)
                         }
@@ -128,6 +133,11 @@ struct NotchView: View {
                 isAirDropTargeted: $isAirDropTargeted,
                 airDropRect: airDropRect(in: size)
             ))
+            .offset(x: shift)
+            // Ears appearing is when the app's menus matter, so they are read again then.
+            .onChange(of: model.collapsedSize.width) { old, new in
+                if new > old { model.appMenus.refresh() }
+            }
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
