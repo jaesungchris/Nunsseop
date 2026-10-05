@@ -348,11 +348,16 @@ private struct CalendarChoices: View {
                 DisclosureGroup(isExpanded: expanded(group.account)) {
                     ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
                         Toggle(isOn: shown(calendar.calendarIdentifier)) {
-                            HStack(spacing: 6) {
+                            HStack(spacing: 8) {
                                 Circle().fill(Color(nsColor: calendar.color ?? .systemBlue)).frame(width: 8, height: 8)
                                 Text(calendar.title)
                             }
                         }
+                        // Rows inside a disclosure group lose the form's row spacing, so give it back.
+                        .padding(.vertical, 6)
+                        .padding(.leading, 6)
+                        // Line the switches up with the account's switch, which sits inset from the edge.
+                        .padding(.trailing, 4)
                     }
                 } label: {
                     // One switch for the whole account; it shows a mixed state when only some calendars are on.
