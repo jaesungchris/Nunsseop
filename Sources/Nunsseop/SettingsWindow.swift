@@ -346,19 +346,23 @@ private struct CalendarChoices: View {
             ForEach(groups, id: \.account) { group in
                 let switches = group.calendars.map { shown($0.calendarIdentifier) }
                 DisclosureGroup(isExpanded: expanded(group.account)) {
-                    ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
-                        Toggle(isOn: shown(calendar.calendarIdentifier)) {
-                            HStack(spacing: 8) {
-                                Circle().fill(Color(nsColor: calendar.color ?? .systemBlue)).frame(width: 8, height: 8)
-                                Text(calendar.title)
+                    // Rows inside a disclosure group lose the form's row spacing, so give it back,
+                    // with a gap above the first one so it doesn't touch the account row.
+                    VStack(spacing: 0) {
+                        ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
+                            Toggle(isOn: shown(calendar.calendarIdentifier)) {
+                                HStack(spacing: 8) {
+                                    Circle().fill(Color(nsColor: calendar.color ?? .systemBlue)).frame(width: 8, height: 8)
+                                    Text(calendar.title)
+                                }
                             }
+                            .padding(.vertical, 6)
                         }
-                        // Rows inside a disclosure group lose the form's row spacing, so give it back.
-                        .padding(.vertical, 6)
-                        .padding(.leading, 6)
-                        // Line the switches up with the account's switch, which sits inset from the edge.
-                        .padding(.trailing, 4)
                     }
+                    .padding(.top, 6)
+                    .padding(.leading, 6)
+                    // Line the switches up with the account's switch, which sits inset from the edge.
+                    .padding(.trailing, 4)
                 } label: {
                     // One switch for the whole account; it shows a mixed state when only some calendars are on.
                     Toggle(sources: switches, isOn: \.self) {
@@ -368,7 +372,6 @@ private struct CalendarChoices: View {
                                 .monospacedDigit().foregroundStyle(.secondary)
                         }
                     }
-                    .padding(.vertical, 6)
                 }
             }
             Button("Add an Account…") {
