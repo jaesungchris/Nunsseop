@@ -126,7 +126,8 @@ final class TimerModel: ObservableObject {
 
     nonisolated static func parseLength(_ text: String) -> Int? {
         let parts = text.trimmingCharacters(in: .whitespaces).split(separator: ":", omittingEmptySubsequences: false)
-        guard (1...3).contains(parts.count) else { return nil }
+        // Six digits per part is far beyond any real length and keeps the arithmetic from overflowing.
+        guard (1...3).contains(parts.count), parts.allSatisfy({ $0.count <= 6 }) else { return nil }
         let numbers = parts.map { Int($0) }
         guard numbers.allSatisfy({ $0 != nil && $0! >= 0 }) else { return nil }
         let n = numbers.map { $0! }

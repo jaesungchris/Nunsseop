@@ -5,6 +5,8 @@ import SwiftUI
 /// Evaluates arithmetic such as `12*(3+4)/2`, `2^10` or `15%`. Returns nil for anything else.
 enum Calculator {
     static func evaluate(_ input: String) -> Double? {
+        // The parser recurses per sign and bracket, so very long input could exhaust the stack.
+        guard input.count <= 256 else { return nil }
         let text = input.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: ",", with: "")
             .replacingOccurrences(of: "×", with: "*").replacingOccurrences(of: "÷", with: "/")
         guard !text.isEmpty, text.contains(where: { "+-*/^%(".contains($0) }) || text.hasSuffix("%"),
@@ -38,31 +40,31 @@ enum Calculator {
         }
 
         mutating func term() -> Double? {
-            guard var value = power() else { return nil }
+            guard var value = unary() else { return nil }
             while let op = peek(), op == "*" || op == "/" {
                 index += 1
-                guard let rhs = power() else { return nil }
+                guard let rhs = unary() else { return nil }
                 value = op == "*" ? value * rhs : value / rhs
             }
             return value
         }
 
-        mutating func power() -> Double? {
-            guard let base = unary() else { return nil }
-            if peek() == "^" {
-                index += 1
-                guard let exponent = power() else { return nil }
-                return pow(base, exponent)
-            }
-            return base
-        }
-
+        /// A sign binds looser than `^`, so `-2^2` is -4, while `2^-1` still takes a signed exponent.
         mutating func unary() -> Double? {
             if peek() == "-" { index += 1; return unary().map { -$0 } }
             if peek() == "+" { index += 1; return unary() }
-            guard var value = primary() else { return nil }
-            if peek() == "%" { index += 1; value /= 100 }
-            return value
+            return power()
+        }
+
+        mutating func power() -> Double? {
+            guard var base = primary() else { return nil }
+            if peek() == "%" { index += 1; base /= 100 }
+            if peek() == "^" {
+                index += 1
+                guard let exponent = unary() else { return nil }
+                return pow(base, exponent)
+            }
+            return base
         }
 
         mutating func primary() -> Double? {

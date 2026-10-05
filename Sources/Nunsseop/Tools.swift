@@ -29,7 +29,6 @@ final class ToolsModel: ObservableObject {
     var onNotice: ((String, String, String?) -> Void)?
 
     private var assertionID: IOPMAssertionID = 0
-    private var savedInputVolume: Float32?
     private var observers: [NSObjectProtocol] = []
 
     func start() {
@@ -96,34 +95,99 @@ final class ToolsModel: ObservableObject {
             AudioObjectGetPropertyData(input, &mute, 0, nil, &size, &value)
             if value != 0 { return true }
         }
-        return savedInputVolume != nil
+        return Self.volumeMute(for: input)?.isMuted ?? false
     }
 
     /// Uses the device's mute switch when it has one, otherwise drops input volume to zero.
     func toggleMic() {
         let input = Self.defaultDevice(kAudioHardwarePropertyDefaultInputDevice)
-        let muting = !micMuted
+        let muting = !inputIsMuted
         var mute = Self.address(kAudioDevicePropertyMute, kAudioDevicePropertyScopeInput)
         var settable: DarwinBoolean = false
         if AudioObjectHasProperty(input, &mute),
            AudioObjectIsPropertySettable(input, &mute, &settable) == noErr, settable.boolValue {
             var value: UInt32 = muting ? 1 : 0
             AudioObjectSetPropertyData(input, &mute, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value)
-        } else {
-            var volume = Self.address(kAudioDevicePropertyVolumeScalar, kAudioDevicePropertyScopeInput)
-            var size = UInt32(MemoryLayout<Float32>.size)
-            if muting {
-                var current: Float32 = 0
-                AudioObjectGetPropertyData(input, &volume, 0, nil, &size, &current)
-                savedInputVolume = current
-                var zero: Float32 = 0
-                AudioObjectSetPropertyData(input, &volume, 0, nil, size, &zero)
-            } else if var restore = savedInputVolume {
-                AudioObjectSetPropertyData(input, &volume, 0, nil, size, &restore)
-            }
+        } else if let fallback = Self.volumeMute(for: input) {
+            if muting { fallback.mute() } else { fallback.unmute() }
         }
-        if !muting { savedInputVolume = nil }
-        micMuted = muting
+        micMuted = inputIsMuted
+    }
+
+    /// The zero-volume mute for inputs without a mute switch. The volume before muting is kept in
+    /// UserDefaults by device, so the mute lasts across relaunches until the user unmutes.
+    struct VolumeMute {
+        var volume: () -> Float32?
+        /// Returns false when the device refused the volume.
+        var setVolume: (Float32) -> Bool
+        var saved: () -> Float32?
+        var setSaved: (Float32?) -> Void
+
+        var isMuted: Bool { volume() == 0 && saved() != nil }
+
+        func mute() {
+            guard let current = volume() else { return }
+            let previous = saved()
+            // A volume already at zero under a saved one is this mute, so keep the volume saved before it.
+            if current > 0 || previous == nil { setSaved(current) }
+            if !setVolume(0) { setSaved(previous) }
+        }
+
+        func unmute() {
+            // If the user raised the volume meanwhile, it stays; only the saved value goes.
+            if let restore = saved(), volume() == 0, !setVolume(restore) { return }
+            setSaved(nil)
+        }
+    }
+
+    private static func volumeMute(for device: AudioDeviceID) -> VolumeMute? {
+        guard let uid = uid(of: device) else { return nil }
+        return VolumeMute(volume: { inputVolume(of: device) },
+                          setVolume: { setInputVolume($0, of: device) },
+                          saved: { savedInputVolume(for: uid) },
+                          setSaved: { setSavedInputVolume($0, for: uid) })
+    }
+
+    private static let savedInputVolumesKey = "savedInputVolumes"
+
+    static func savedInputVolumes(_ defaults: UserDefaults = .standard) -> [String: Float32] {
+        (defaults.dictionary(forKey: savedInputVolumesKey) as? [String: NSNumber] ?? [:]).mapValues(\.floatValue)
+    }
+
+    static func savedInputVolume(for uid: String, defaults: UserDefaults = .standard) -> Float32? {
+        savedInputVolumes(defaults)[uid]
+    }
+
+    static func setSavedInputVolume(_ volume: Float32?, for uid: String, defaults: UserDefaults = .standard) {
+        var saved = savedInputVolumes(defaults)
+        saved[uid] = volume
+        if saved.isEmpty {
+            defaults.removeObject(forKey: savedInputVolumesKey)
+        } else {
+            defaults.set(saved.mapValues { NSNumber(value: $0) }, forKey: savedInputVolumesKey)
+        }
+    }
+
+    private static func uid(of device: AudioDeviceID) -> String? {
+        var address = address(kAudioDevicePropertyDeviceUID)
+        var uid: Unmanaged<CFString>?
+        var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        guard device != 0, AudioObjectGetPropertyData(device, &address, 0, nil, &size, &uid) == noErr else { return nil }
+        return uid?.takeRetainedValue() as String?
+    }
+
+    private static func inputVolume(of device: AudioDeviceID) -> Float32? {
+        var address = address(kAudioDevicePropertyVolumeScalar, kAudioDevicePropertyScopeInput)
+        var volume: Float32 = 0
+        var size = UInt32(MemoryLayout<Float32>.size)
+        guard AudioObjectGetPropertyData(device, &address, 0, nil, &size, &volume) == noErr else { return nil }
+        return volume
+    }
+
+    private static func setInputVolume(_ volume: Float32, of device: AudioDeviceID) -> Bool {
+        var address = address(kAudioDevicePropertyVolumeScalar, kAudioDevicePropertyScopeInput)
+        var volume = volume
+        return AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<Float32>.size), &volume) == noErr
     }
 
     // MARK: Keep awake

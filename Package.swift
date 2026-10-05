@@ -19,5 +19,10 @@ let package = Package(
             path: "Sources/NowPlayingHelper",
             linkerSettings: [.linkedFramework("Foundation"), .linkedFramework("AppKit")]
         ),
+        .testTarget(
+            name: "NunsseopTests",
+            dependencies: ["Nunsseop"],
+            path: "Tests/NunsseopTests"
+        ),
     ]
 )
