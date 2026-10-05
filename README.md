@@ -91,7 +91,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 - **Music and timers.** Tiny artwork and a visualizer while music plays, and the time left while a timer runs.
 
 **🤖 For developers**
-- **AI usage.** Claude Code and Codex limits with reset times, and Claude Code's token use over the last 5 hours and 7 days. Read from files those tools already keep on your Mac, so there's nothing to sign in to.
+- **AI usage.** Claude and Codex limits with reset times, and token use over the last 5 hours and 7 days, counted across Claude Code, Codex, gjc, omo and OpenCode. Read from files those tools already keep on your Mac, so there's nothing to sign in to.
 - **Claude Code notifications.** The notch tells you when Claude Code is waiting for you ([setup below](#claude-code-notifications)).
 
 **🧩 Make it yours**
