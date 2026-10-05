@@ -7,4 +7,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller = NotchWindowController()
         controller?.show()
     }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        controller?.prepareToQuit()
+    }
 }

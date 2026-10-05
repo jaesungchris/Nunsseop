@@ -5,3 +5,4 @@
 "NSDesktopFolderUsageDescription" = "Detecta capturas nuevas para añadirlas al estante.";
 "NSDownloadsFolderUsageDescription" = "Avisa cuando las descargas empiezan y terminan.";
 "NSMicrophoneUsageDescription" = "Graba el audio del micrófono con la grabación de pantalla si lo activas en Ajustes.";
+"NSAudioCaptureUsageDescription" = "Cambia el volumen de cada app cuando activas el volumen por app. El audio solo se reproduce al nivel que elijas; no se graba ni se guarda nada.";

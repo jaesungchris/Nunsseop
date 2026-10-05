@@ -81,6 +81,7 @@ final class NotchViewModel: ObservableObject {
     let clipboard = ClipboardHistory()
     let notes = NotesModel()
     let tools = ToolsModel()
+    let appVolume = AppVolumeModel()
     let screenshots = ScreenshotWatcher()
     let capsLock = CapsLockWatcher()
     let notifyServer = NotifyServer()

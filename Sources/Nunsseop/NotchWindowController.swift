@@ -277,6 +277,11 @@ final class NotchWindowController {
         model.notifyServer.onNotify = { [weak self] title, message in
             self?.model.hud.show(.notice(symbol: "sparkles", title: title, detail: message), duration: 6)
         }
+        // App volume taps run whenever the setting is on; the list of apps refreshes only while the Tools tab shows.
+        settingsObservers.append(model.settings.$perAppVolume.combineLatest(model.$isExpanded, model.$tab)
+            .sink { [weak self] enabled, expanded, tab in
+                self?.model.appVolume.update(enabled: enabled, listing: expanded && tab == .tools)
+            })
         settingsObservers.append(model.settings.$cleanLinks.sink { [weak self] in self?.model.clipboard.cleansLinks = $0 })
         settingsObservers.append(model.settings.$screenshotsToShelf.sink { [weak self] in self?.model.screenshots.isEnabled = $0 })
         model.timer.onFinished = { [weak self] message in
@@ -304,6 +309,11 @@ final class NotchWindowController {
             .sink { [weak self] _ in
                 DispatchQueue.main.async { self?.relayout() }
             }
+    }
+
+    /// Puts every app back to full volume before quitting.
+    func prepareToQuit() {
+        model.appVolume.shutdown()
     }
 
     private func relayout() {

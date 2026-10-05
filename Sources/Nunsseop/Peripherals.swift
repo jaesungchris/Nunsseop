@@ -203,7 +203,8 @@ final class PrivacyMonitor: ObservableObject {
                                                      mElement: kAudioObjectPropertyElementMain)
             var streamSize: UInt32 = 0
             AudioObjectGetPropertyDataSize(id, &streams, 0, nil, &streamSize)
-            guard streamSize > 0 else { continue }
+            // A per-app volume device takes input from its tap, not a microphone.
+            guard streamSize > 0, !AppVolumeModel.isOwnDevice(id) else { continue }
             var running = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyDeviceIsRunningSomewhere,
                                                      mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
             var value: UInt32 = 0

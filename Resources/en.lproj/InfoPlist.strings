@@ -5,3 +5,4 @@
 "NSDesktopFolderUsageDescription" = "Watches for new screenshots so they can be added to the shelf.";
 "NSDownloadsFolderUsageDescription" = "Shows when downloads start and finish.";
 "NSMicrophoneUsageDescription" = "Records microphone audio with a screen recording when you turn that on in Settings.";
+"NSAudioCaptureUsageDescription" = "Changes the volume of individual apps when you turn on per-app volume. Audio is only passed through at the level you choose; nothing is recorded or saved.";

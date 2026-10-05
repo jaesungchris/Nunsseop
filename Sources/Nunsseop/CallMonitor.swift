@@ -24,6 +24,8 @@ final class CallMonitor: ObservableObject {
         let bundleID: String
         let isRunningInput: Bool
         let isRunningOutput: Bool
+        /// The CoreAudio process object, which a process tap is made from.
+        var objectID: AudioObjectID = 0
     }
 
     /// Keeps a call alive through short gaps in input, such as Zoom briefly releasing the mic.
@@ -283,7 +285,7 @@ final class CallMonitor: ObservableObject {
             guard AudioObjectGetPropertyData(id, &bundleAddress, 0, nil, &bundleSize, &bundleID) == noErr,
                   let bundleID = bundleID?.takeRetainedValue() as String?, !bundleID.isEmpty else { return nil }
             return AudioProcess(pid: pid, bundleID: bundleID, isRunningInput: flag(kAudioProcessPropertyIsRunningInput),
-                                isRunningOutput: flag(kAudioProcessPropertyIsRunningOutput))
+                                isRunningOutput: flag(kAudioProcessPropertyIsRunningOutput), objectID: id)
         }
     }
 
