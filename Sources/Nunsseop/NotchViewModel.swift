@@ -2,6 +2,21 @@ import AppKit
 import Combine
 
 /// What each side of the collapsed notch shows while nothing is playing or running.
+/// Which Claude or Codex limit an idle ear shows as "left".
+enum AIWindow: String, CaseIterable, Identifiable {
+    case tighter, session, weekly
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .tighter: return String(localized: "Whichever is tighter")
+        case .session: return String(localized: "5-hour")
+        case .weekly: return String(localized: "Weekly")
+        }
+    }
+}
+
 enum IdleItem: String, CaseIterable, Identifiable {
     case none, claude, codex, battery, weather, date
 
@@ -168,7 +183,8 @@ final class NotchViewModel: ObservableObject {
         // which resizes the notch, reaches the whole view; IdleEars watches the values itself.
         hud.$power.map { _ in () }
             .merge(with: weather.$current.map { _ in () },
-                   aiUsage.$providers.map { providers in [IdleItem.claude, .codex].map { Self.aiLeft($0, in: providers) != nil } }
+                   aiUsage.$providers.combineLatest(settings.$idleAIWindow)
+                       .map { providers, window in [IdleItem.claude, .codex].map { Self.aiLeft($0, in: providers, window: window) != nil } }
                        .removeDuplicates().map { _ in () })
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)

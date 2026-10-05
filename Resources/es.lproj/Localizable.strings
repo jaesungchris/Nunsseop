@@ -174,6 +174,8 @@
 "Codex left" = "Codex restante";
 "Left side when idle" = "Izquierda en reposo";
 "Right side when idle" = "Derecha en reposo";
+"Whichever is tighter" = "El límite más ajustado";
+"AI usage limit to show" = "Límite de uso de IA que se muestra";
 "Artwork and visualizer while music plays" = "Carátula y visualizador durante la música";
 "Time left while a timer runs" = "Tiempo restante del temporizador";
 "Call app and duration during calls" = "App y duración durante las llamadas";

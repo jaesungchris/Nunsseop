@@ -175,6 +175,11 @@ private struct LayoutPane: View {
                 Picker("Right side when idle", selection: $settings.idleRight) {
                     ForEach(IdleItem.allCases) { Text($0.title).tag($0) }
                 }
+                if [settings.idleLeft, settings.idleRight].contains(where: \.usesAIUsage) {
+                    Picker("AI usage limit to show", selection: $settings.idleAIWindow) {
+                        ForEach(AIWindow.allCases) { Text($0.title).tag($0) }
+                    }
+                }
                 Toggle("Title under the notch when the track changes", isOn: $settings.sneakPeekEnabled)
                 Toggle("Always show the title while something is playing", isOn: $settings.sneakPeekAlways)
                     .disabled(!settings.sneakPeekEnabled)

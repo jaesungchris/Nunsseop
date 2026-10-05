@@ -85,6 +85,7 @@ final class AppSettings: ObservableObject {
     @Published var callIsland: Bool = AppSettings.load("callIsland", default: true) { didSet { save(callIsland, "callIsland") } }
     @Published var idleLeft: IdleItem = AppSettings.load("idleLeft", default: .none) { didSet { save(idleLeft.rawValue, "idleLeft") } }
     @Published var idleRight: IdleItem = AppSettings.load("idleRight", default: .none) { didSet { save(idleRight.rawValue, "idleRight") } }
+    @Published var idleAIWindow: AIWindow = AppSettings.load("idleAIWindow", default: .tighter) { didSet { save(idleAIWindow.rawValue, "idleAIWindow") } }
     @Published var systemTab: Bool = AppSettings.load("systemTab", default: true) { didSet { save(systemTab, "systemTab") } }
     @Published var appsTab: Bool = AppSettings.load("appsTab", default: true) { didSet { save(appsTab, "appsTab") } }
     @Published var lyricsEnabled: Bool = AppSettings.load("lyricsEnabled", default: true) { didSet { save(lyricsEnabled, "lyricsEnabled") } }
@@ -139,6 +140,10 @@ final class AppSettings: ObservableObject {
 
     nonisolated private static func load(_ key: String, default value: IdleItem) -> IdleItem {
         IdleItem(rawValue: load(key, default: value.rawValue)) ?? value
+    }
+
+    nonisolated private static func load(_ key: String, default value: AIWindow) -> AIWindow {
+        AIWindow(rawValue: load(key, default: value.rawValue)) ?? value
     }
 
     nonisolated private static func loadSearchHotKey() -> HotKeyCombo {

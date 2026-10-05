@@ -14,7 +14,7 @@ extension NotchViewModel {
         case .none:
             return nil
         case .claude, .codex:
-            guard let left = Self.aiLeft(item, in: aiUsage.providers) else { return nil }
+            guard let left = Self.aiLeft(item, in: aiUsage.providers, window: settings.idleAIWindow) else { return nil }
             return IdleValue(symbol: item == .claude ? "sparkles" : "terminal",
                              tint: left < 15 ? .red : (item == .claude ? .orange : .white), text: "\(left)%")
         case .battery:
@@ -31,11 +31,16 @@ extension NotchViewModel {
     }
 
     /// Percent left of an AI tool's limits, or nil while none is known.
-    nonisolated static func aiLeft(_ item: IdleItem, in providers: [AIUsageModel.Provider]) -> Int? {
-        // The tightest limit decides what is left. A window that already reset has no known usage since, so it is skipped.
-        guard let provider = providers.first(where: { $0.id == item.rawValue }),
-              let used = [provider.session, provider.weekly].compactMap({ $0 }).filter({ $0.resetsAt != nil }).map(\.percent).max()
-        else { return nil }
+    /// A window that already reset has no known usage since, so it counts as unknown. When the chosen window is
+    /// unknown the ear shows nothing rather than quietly switching to the other limit.
+    nonisolated static func aiLeft(_ item: IdleItem, in providers: [AIUsageModel.Provider], window: AIWindow = .tighter) -> Int? {
+        guard let provider = providers.first(where: { $0.id == item.rawValue }) else { return nil }
+        let windows: [AIUsageModel.Window?] = switch window {
+        case .tighter: [provider.session, provider.weekly]
+        case .session: [provider.session]
+        case .weekly: [provider.weekly]
+        }
+        guard let used = windows.compactMap({ $0 }).filter({ $0.resetsAt != nil }).map(\.percent).max() else { return nil }
         return max(0, 100 - Int(used.rounded()))
     }
 
