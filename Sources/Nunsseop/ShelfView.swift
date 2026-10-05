@@ -1,3 +1,4 @@
+import QuickLookThumbnailing
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -55,12 +56,23 @@ private struct ShelfTile: View {
     let item: ShelfItem
     let onRemove: () -> Void
     @State private var hovering = false
+    @State private var thumbnail: NSImage?
 
     var body: some View {
         VStack(spacing: 3) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: item.url.path))
-                .resizable()
-                .frame(width: 40, height: 40)
+            Group {
+                if let thumbnail {
+                    Image(nsImage: thumbnail)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                } else {
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: item.url.path))
+                        .resizable()
+                }
+            }
+            .frame(width: 40, height: 40)
+            .task(id: item.url) { thumbnail = await Self.thumbnail(for: item.url) }
             Text(item.url.lastPathComponent)
                 .font(.system(size: 9))
                 .lineLimit(2)
@@ -150,5 +162,15 @@ extension ShelfStore {
             }
         }
         return true
+    }
+}
+
+private extension ShelfTile {
+    /// A Quick Look preview of the file (screenshots, images, PDFs, videos), or nil to fall back to its icon.
+    static func thumbnail(for url: URL) async -> NSImage? {
+        let request = QLThumbnailGenerator.Request(fileAt: url, size: CGSize(width: 40, height: 40),
+                                                   scale: NSScreen.main?.backingScaleFactor ?? 2,
+                                                   representationTypes: .thumbnail)
+        return try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request).nsImage
     }
 }
