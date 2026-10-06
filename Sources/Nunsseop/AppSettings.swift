@@ -48,6 +48,8 @@ final class AppSettings: ObservableObject {
     @Published var screenshotsToShelf: Bool = AppSettings.load("screenshotsToShelf", default: true) { didSet { save(screenshotsToShelf, "screenshotsToShelf") } }
     /// Shows the notifications agents running in Muxy send.
     @Published var muxyNotifications: Bool = AppSettings.load("muxyNotifications", default: true) { didSet { save(muxyNotifications, "muxyNotifications") } }
+    @Published var cmuxNotifications: Bool = AppSettings.load("cmuxNotifications", default: true) { didSet { save(cmuxNotifications, "cmuxNotifications") } }
+    @Published var herdrNotifications: Bool = AppSettings.load("herdrNotifications", default: true) { didSet { save(herdrNotifications, "herdrNotifications") } }
     @Published var localNotifications: Bool = AppSettings.load("localNotifications", default: true) { didSet { save(localNotifications, "localNotifications") } }
     @Published var timerTab: Bool = AppSettings.load("timerTab", default: true) { didSet { save(timerTab, "timerTab") } }
     @Published var shelfTab: Bool = AppSettings.load("shelfTab", default: true) { didSet { save(shelfTab, "shelfTab") } }

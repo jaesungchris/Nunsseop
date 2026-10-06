@@ -34,15 +34,7 @@ struct MuxyNotice: Equatable {
     }
 
     /// The tool whose own Nunsseop hook, when connected, already sends this notification.
-    var integration: NotifyIntegration? {
-        switch provider?.lowercased() {
-        case "claude": .claudeCode
-        case "codex": .codex
-        case "gemini": .gemini
-        case "opencode": .openCode
-        default: nil
-        }
-    }
+    var integration: NotifyIntegration? { NotifyIntegration.forAgent(provider) }
 }
 
 /// Which of Muxy's notifications are new: the list read first is only remembered, so history isn't replayed.
