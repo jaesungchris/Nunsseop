@@ -58,9 +58,8 @@
   .brand small { color: var(--faint); font-weight: 500; }
   .nav-links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; color: var(--muted); }
   .nav-links a:hover { color: var(--text); }
-  .lang { display: inline-flex; border: 1px solid var(--card-border); border-radius: 999px; padding: 2px; }
-  .lang button { background: transparent; border: 0; color: var(--muted); font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
-  .lang button[aria-pressed="true"] { background: rgba(255,255,255,0.1); color: var(--text); }
+  .lang { -webkit-appearance: none; appearance: none; border: 1px solid var(--card-border); border-radius: 999px; background: transparent; color: var(--text); font: inherit; font-size: 12px; padding: 5px 12px; cursor: pointer; }
+  .lang option { background: var(--bg-2); color: var(--text); }
   @media (max-width: 720px) { .nav-links { display: none; } .lang { margin-left: auto; } }
 
   .hero { position: relative; padding: 72px 0 40px; text-align: center; isolation: isolate; }
@@ -216,7 +215,8 @@
 
   .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
   .reveal.in { opacity: 1; transform: none; }
-  [data-lang="ko"] .en, [data-lang="en"] .ko { display: none !important; }
+  body:not([data-lang="en"]) .en, body:not([data-lang="ko"]) .ko, body:not([data-lang="ja"]) .ja, body:not([data-lang="zh"]) .zh,
+  body:not([data-lang="es"]) .es, body:not([data-lang="de"]) .de, body:not([data-lang="fr"]) .fr { display: none !important; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .reveal { opacity: 1; transform: none; }
@@ -229,41 +229,56 @@
   <div class="wrap">
     <a class="brand" href="#"><img src="images/icon.png" alt="">Nunsseop <small>눈썹</small></a>
     <div class="nav-links">
-      <a href="#tour"><span class="en">Tour</span><span class="ko">둘러보기</span></a>
-      <a href="#features"><span class="en">Features</span><span class="ko">기능</span></a>
-      <a href="#install"><span class="en">Install</span><span class="ko">설치</span></a>
+      <a href="#tour"><span class="en">Tour</span><span class="ko">둘러보기</span><span class="ja">ツアー</span><span class="zh">导览</span><span class="es">Recorrido</span><span class="de">Tour</span><span class="fr">Aperçu</span></a>
+      <a href="#features"><span class="en">Features</span><span class="ko">기능</span><span class="ja">機能</span><span class="zh">功能</span><span class="es">Funciones</span><span class="de">Funktionen</span><span class="fr">Fonctionnalités</span></a>
+      <a href="#install"><span class="en">Install</span><span class="ko">설치</span><span class="ja">インストール</span><span class="zh">安装</span><span class="es">Instalación</span><span class="de">Installieren</span><span class="fr">Installation</span></a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/namekun/Nunsseop">GitHub</a>
     </div>
-    <div class="lang" role="group" aria-label="Language">
-      <button type="button" data-set="en" aria-pressed="true">EN</button>
-      <button type="button" data-set="ko" aria-pressed="false">한국어</button>
-    </div>
+    <select class="lang" id="lang" aria-label="Language">
+      <option value="en">English</option>
+      <option value="ko">한국어</option>
+      <option value="ja">日本語</option>
+      <option value="zh">简体中文</option>
+      <option value="es">Español</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+    </select>
   </div>
 </nav>
 
 <header class="hero">
   <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
   <div class="wrap">
-    <span class="eyebrow"><b>v0.14.1</b> <span class="en">Free &amp; open source · macOS 14+</span><span class="ko">무료 오픈소스 · macOS 14 이상</span></span>
+    <span class="eyebrow"><b>v0.14.1</b> <span class="en">Free &amp; open source · macOS 14+</span><span class="ko">무료 오픈소스 · macOS 14 이상</span><span class="ja">無料・オープンソース · macOS 14 以上</span><span class="zh">免费开源 · macOS 14 及以上</span><span class="es">Gratis y de código abierto · macOS 14+</span><span class="de">Kostenlos &amp; Open Source · macOS 14+</span><span class="fr">Gratuit &amp; open source · macOS 14+</span></span>
     <h1 class="en">Your notch,<br><span class="grad-text">finally useful.</span></h1>
     <h1 class="ko">노치,<br><span class="grad-text">이제 쓸모 있게.</span></h1>
+    <h1 class="ja">あなたのノッチが、<br><span class="grad-text">ついに役立つ。</span></h1>
+    <h1 class="zh">刘海，<br><span class="grad-text">终于有用了。</span></h1>
+    <h1 class="es">Tu notch,<br><span class="grad-text">por fin útil.</span></h1>
+    <h1 class="de">Deine Notch,<br><span class="grad-text">endlich nützlich.</span></h1>
+    <h1 class="fr">Votre encoche,<br><span class="grad-text">enfin utile.</span></h1>
     <p class="lead en">Music, files, your calendar and system HUDs live right where the camera sits. Hover to open. That's it.</p>
     <p class="lead ko">음악, 파일, 일정, 시스템 HUD가 카메라 바로 아래에 있습니다. 마우스를 올리면 열립니다. 그게 전부예요.</p>
+    <p class="lead ja">音楽、ファイル、カレンダー、システム HUD が、カメラのあるその場所に。ホバーで開く。それだけです。</p>
+    <p class="lead zh">音乐、文件、日历和系统 HUD，都藏在摄像头下方。鼠标悬停即可打开，仅此而已。</p>
+    <p class="lead es">La música, los archivos, tu calendario y los HUD del sistema viven justo donde está la cámara. Pasa el cursor para abrir. Así de simple.</p>
+    <p class="lead de">Musik, Dateien, dein Kalender und System-HUDs leben genau dort, wo die Kamera sitzt. Zum Öffnen einfach darüberhovern. Das war’s.</p>
+    <p class="lead fr">La musique, les fichiers, votre calendrier et les HUD système se trouvent juste à l’endroit où se loge la caméra. Survolez pour ouvrir. C’est tout.</p>
     <div class="cta">
       <a class="btn primary" href="https://github.com/namekun/Nunsseop/releases/latest">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8s2 .8 3.4.8 2.3-1.3 3.1-2.5c1-1.4 1.4-2.8 1.4-2.9-.1 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.3 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg>
-        <span class="en">Download for Mac</span><span class="ko">Mac용 다운로드</span>
+        <span class="en">Download for Mac</span><span class="ko">Mac용 다운로드</span><span class="ja">Mac版をダウンロード</span><span class="zh">下载 Mac 版</span><span class="es">Descargar para Mac</span><span class="de">Für Mac herunterladen</span><span class="fr">Télécharger pour Mac</span>
       </a>
       <div class="brew">
         <code>brew install --cask namekun/tap/nunsseop</code>
-        <button class="copy" type="button" data-copy="brew install --cask namekun/tap/nunsseop"><span class="en">Copy</span><span class="ko">복사</span></button>
+        <button class="copy" type="button" data-copy="brew install --cask namekun/tap/nunsseop"><span class="en">Copy</span><span class="ko">복사</span><span class="ja">コピー</span><span class="zh">复制</span><span class="es">Copiar</span><span class="de">Kopieren</span><span class="fr">Copier</span></button>
       </div>
     </div>
 
     <div class="device reveal">
       <div class="screen">
-        <div class="menubar"><div class="l"><b></b><b>Nunsseop</b><span class="en">File</span><span class="ko">파일</span><span class="en">Edit</span><span class="ko">편집</span></div><div class="r"><span>100%</span><span id="clock">9:41</span></div></div>
+        <div class="menubar"><div class="l"><b></b><b>Nunsseop</b><span class="en">File</span><span class="ko">파일</span><span class="ja">ファイル</span><span class="zh">文件</span><span class="es">Archivo</span><span class="de">Datei</span><span class="fr">Fichier</span><span class="en">Edit</span><span class="ko">편집</span><span class="ja">編集</span><span class="zh">编辑</span><span class="es">Editar</span><span class="de">Bearbeiten</span><span class="fr">Édition</span></div><div class="r"><span>100%</span><span id="clock">9:41</span></div></div>
         <div class="live-notch" id="notch" role="button" tabindex="0" aria-label="Open the notch">
           <div class="body"></div>
           <img class="mini" src="images/collapsed-music.png" alt="" width="272" height="32">
@@ -271,18 +286,18 @@
         </div>
       </div>
     </div>
-    <p class="hint"><span class="en">Hover the notch above — just like on your Mac.</span><span class="ko">위의 노치에 마우스를 올려 보세요. Mac에서와 똑같이요.</span></p>
+    <p class="hint"><span class="en">Hover the notch above — just like on your Mac.</span><span class="ko">위의 노치에 마우스를 올려 보세요. Mac에서와 똑같이요.</span><span class="ja">上のノッチにマウスを乗せてみてください。Mac と同じように。</span><span class="zh">把鼠标移到上面的刘海上——就像在你的 Mac 上一样。</span><span class="es">Pasa el cursor por el notch de arriba, igual que en tu Mac.</span><span class="de">Bewege die Maus über die Notch oben – genau wie auf deinem Mac.</span><span class="fr">Survolez l’encoche ci-dessus — comme sur votre Mac.</span></p>
     <div class="stats">
-      <div><b>12</b><span class="en">tabs to choose from</span><span class="ko">고를 수 있는 탭</span></div>
-      <div><b>7</b><span class="en">languages</span><span class="ko">개 언어</span></div>
-      <div><b>0</b><span class="en">accounts or trackers</span><span class="ko">계정·추적 없음</span></div>
-      <div><b>1.6 MB</b><span class="en">download, native Swift</span><span class="ko">다운로드, 네이티브 앱</span></div>
+      <div><b>12</b><span class="en">tabs to choose from</span><span class="ko">고를 수 있는 탭</span><span class="ja">選べるタブ</span><span class="zh">个可选标签</span><span class="es">pestañas para elegir</span><span class="de">Tabs zur Auswahl</span><span class="fr">onglets au choix</span></div>
+      <div><b>7</b><span class="en">languages</span><span class="ko">개 언어</span><span class="ja">言語</span><span class="zh">种语言</span><span class="es">idiomas</span><span class="de">Sprachen</span><span class="fr">langues</span></div>
+      <div><b>0</b><span class="en">accounts or trackers</span><span class="ko">계정·추적 없음</span><span class="ja">アカウントもトラッカーもなし</span><span class="zh">账户或追踪</span><span class="es">cuentas ni rastreadores</span><span class="de">Accounts oder Tracker</span><span class="fr">comptes ni traqueurs</span></div>
+      <div><b>1.6 MB</b><span class="en">download, native Swift</span><span class="ko">다운로드, 네이티브 앱</span><span class="ja">のダウンロード、ネイティブ Swift</span><span class="zh">下载，原生 Swift 打造</span><span class="es">de descarga, Swift nativo</span><span class="de">Download, natives Swift</span><span class="fr">téléchargement, natif en Swift</span></div>
     </div>
   </div>
 </header>
 
 <div class="works">
-  <p class="en">Picks up whatever is playing</p><p class="ko">무엇을 재생하든 잡아냅니다</p>
+  <p class="en">Picks up whatever is playing</p><p class="ko">무엇을 재생하든 잡아냅니다</p><p class="ja">再生中のものを自動で検出</p><p class="zh">自动识别正在播放的内容</p><p class="es">Capta lo que sea que estés reproduciendo</p><p class="de">Erkennt, was auch immer gerade läuft</p><p class="fr">Détecte tout ce qui est en train de jouer</p>
   <div class="marquee"><div class="track" id="track">
     <span class="chip">Apple Music</span><span class="chip">Spotify</span><span class="chip">YouTube Music</span><span class="chip">Safari</span><span class="chip">Chrome</span><span class="chip">Arc</span><span class="chip">Dia</span><span class="chip">Aside</span><span class="chip">Firefox</span><span class="chip">Edge</span><span class="chip">Brave</span><span class="chip">Whale</span><span class="chip">SoundCloud</span><span class="chip">Melon</span><span class="chip">Podcasts</span><span class="chip">QuickTime</span>
   </div></div>
@@ -291,10 +306,15 @@
 <main class="wrap">
   <section class="block" id="tour">
     <div class="section-head reveal">
-      <div class="kicker en">Take the tour</div><div class="kicker ko">둘러보기</div>
-      <h2 class="en">One hover, a dozen tools.</h2><h2 class="ko">마우스 한 번에, 도구 열두 개.</h2>
+      <div class="kicker en">Take the tour</div><div class="kicker ko">둘러보기</div><div class="kicker ja">ツアーを見る</div><div class="kicker zh">开始导览</div><div class="kicker es">Haz el recorrido</div><div class="kicker de">Zur Tour</div><div class="kicker fr">Voir l’aperçu</div>
+      <h2 class="en">One hover, a dozen tools.</h2><h2 class="ko">마우스 한 번에, 도구 열두 개.</h2><h2 class="ja">マウスを乗せるだけで、十数個のツール。</h2><h2 class="zh">悬停一次，十余种工具。</h2><h2 class="es">Un gesto, una docena de herramientas.</h2><h2 class="de">Ein Hover, ein Dutzend Werkzeuge.</h2><h2 class="fr">Un survol, une douzaine d’outils.</h2>
       <p class="en">These are real screenshots. Pick a tab to see it.</p>
       <p class="ko">모두 실제 화면입니다. 탭을 골라 보세요.</p>
+      <p class="ja">すべて実際のスクリーンショットです。タブを選んでご覧ください。</p>
+      <p class="zh">这些都是真实截图，选一个标签看看。</p>
+      <p class="es">Son capturas reales. Elige una pestaña para verla.</p>
+      <p class="de">Das sind echte Screenshots. Wähle einen Tab, um ihn zu sehen.</p>
+      <p class="fr">Ce sont de vraies captures d’écran. Choisissez un onglet pour les voir.</p>
     </div>
     <div class="tour reveal" id="tourBox">
       <div class="tour-list" role="tablist" id="tourList"></div>
@@ -307,18 +327,28 @@
 
   <section class="block" id="features">
     <div class="section-head reveal">
-      <div class="kicker en">And quietly, in the background</div><div class="kicker ko">그리고 조용히, 뒤에서</div>
-      <h2 class="en">It notices, so you don't have to.</h2><h2 class="ko">알아서 챙기니까, 신경 끄셔도 돼요.</h2>
+      <div class="kicker en">And quietly, in the background</div><div class="kicker ko">그리고 조용히, 뒤에서</div><div class="kicker ja">そして静かに、裏側で</div><div class="kicker zh">而且，在后台默默工作</div><div class="kicker es">Y en silencio, de fondo</div><div class="kicker de">Und still, im Hintergrund</div><div class="kicker fr">Et discrètement, en arrière-plan</div>
+      <h2 class="en">It notices, so you don't have to.</h2><h2 class="ko">알아서 챙기니까, 신경 끄셔도 돼요.</h2><h2 class="ja">気づいてくれるから、気にしなくていい。</h2><h2 class="zh">它会留意一切，你不用操心。</h2><h2 class="es">Se da cuenta, para que tú no tengas que hacerlo.</h2><h2 class="de">Es behält den Überblick, damit du es nicht musst.</h2><h2 class="fr">Il s’en occupe, pour que vous n’ayez pas à y penser.</h2>
       <p class="en">Built natively in Swift and SwiftUI. No Electron, no account, no tracking.</p>
       <p class="ko">Swift와 SwiftUI로 만든 네이티브 앱. Electron도, 계정도, 추적도 없습니다.</p>
+      <p class="ja">Swift と SwiftUI で作られたネイティブアプリ。Electron も、アカウントも、トラッキングもありません。</p>
+      <p class="zh">原生 Swift 与 SwiftUI 打造，没有 Electron，没有账户，没有追踪。</p>
+      <p class="es">Creada de forma nativa en Swift y SwiftUI. Sin Electron, sin cuenta, sin rastreo.</p>
+      <p class="de">Nativ gebaut mit Swift und SwiftUI. Kein Electron, kein Account, kein Tracking.</p>
+      <p class="fr">Conçu nativement en Swift et SwiftUI. Pas d’Electron, pas de compte, pas de suivi.</p>
     </div>
 
     <div class="bento">
       <article class="tile t-half reveal">
         <div class="ico">🔊</div>
-        <h3><span class="en">System HUDs, reimagined</span><span class="ko">새로워진 시스템 HUD</span></h3>
+        <h3><span class="en">System HUDs, reimagined</span><span class="ko">새로워진 시스템 HUD</span><span class="ja">システム HUD を、再発明。</span><span class="zh">重新设计的系统 HUD</span><span class="es">Los HUD del sistema, reinventados</span><span class="de">System-HUDs, neu gedacht</span><span class="fr">Les HUD système, réinventés</span></h3>
         <p class="en">Volume, brightness (even external displays over DDC), keyboard backlight, charging and AirPods battery, right in the notch.</p>
         <p class="ko">볼륨, 밝기(DDC 외부 모니터 포함), 키보드 백라이트, 충전, AirPods 배터리까지 노치 안에서.</p>
+        <p class="ja">音量、明るさ（DDC 対応の外部ディスプレイも）、キーボードバックライト、充電、AirPods のバッテリーまで、ノッチの中に。</p>
+        <p class="zh">音量、亮度（包括通过 DDC 连接的外接显示器）、键盘背光、充电状态和 AirPods 电量，都在刘海里显示。</p>
+        <p class="es">Volumen, brillo (incluso en pantallas externas mediante DDC), retroiluminación del teclado, carga y batería de los AirPods, todo en el notch.</p>
+        <p class="de">Lautstärke, Helligkeit (auch externe Bildschirme über DDC), Tastaturbeleuchtung, Laden und AirPods-Akku – direkt in der Notch.</p>
+        <p class="fr">Volume, luminosité (même sur les écrans externes compatibles DDC), rétroéclairage du clavier, charge et batterie des AirPods, directement dans l’encoche.</p>
         <div class="hud-stack">
           <img src="images/hud-headphones.png" alt="Headphone battery HUD" width="405" height="66" loading="lazy">
           <img src="images/hud-brightness.png" alt="Brightness HUD" width="405" height="42" loading="lazy">
@@ -326,76 +356,136 @@
       </article>
       <article class="tile t-half reveal">
         <div class="ico">✳️</div>
-        <h3><span class="en">Claude Code, in your notch</span><span class="ko">노치로 오는 Claude Code 알림</span></h3>
+        <h3><span class="en">Claude Code, in your notch</span><span class="ko">노치로 오는 Claude Code 알림</span><span class="ja">Claude Code が、ノッチに。</span><span class="zh">Claude Code 通知，直达刘海</span><span class="es">Claude Code, en tu notch</span><span class="de">Claude Code, in deiner Notch</span><span class="fr">Claude Code, dans votre encoche</span></h3>
         <p class="en">Paste one hook and the notch tells you when Claude Code is waiting for you. Any local script can send a message the same way.</p>
         <p class="ko">훅 하나만 붙여 넣으면 Claude Code가 기다릴 때 노치가 알려 줍니다. 어떤 로컬 스크립트든 같은 방식으로 보낼 수 있어요.</p>
-        <div class="mini-note"><div class="dot">✳︎</div><div><b>Claude Code</b><span class="en">Needs your permission to run a command</span><span class="ko">명령을 실행하려면 허락이 필요해요</span></div></div>
+        <p class="ja">フックを1つ貼るだけで、Claude Code が待っているときにノッチが知らせます。ローカルのスクリプトも同じ方法でメッセージを送れます。</p>
+        <p class="zh">粘贴一个钩子，Claude Code 等待你时刘海就会提醒。任何本地脚本都能用同样的方式发送消息。</p>
+        <p class="es">Pega un hook y el notch te avisa cuando Claude Code está esperando tu respuesta. Cualquier script local puede enviar un mensaje de la misma forma.</p>
+        <p class="de">Füge einen Hook ein, und die Notch sagt dir, wenn Claude Code auf dich wartet. Jedes lokale Skript kann auf die gleiche Weise eine Nachricht senden.</p>
+        <p class="fr">Collez un hook et l’encoche vous prévient quand Claude Code attend votre réponse. N’importe quel script local peut envoyer un message de la même façon.</p>
+        <div class="mini-note"><div class="dot">✳︎</div><div><b>Claude Code</b><span class="en">Needs your permission to run a command</span><span class="ko">명령을 실행하려면 허락이 필요해요</span><span class="ja">コマンドの実行に許可が必要です</span><span class="zh">需要你的许可才能执行命令</span><span class="es">Necesita tu permiso para ejecutar un comando</span><span class="de">Braucht deine Erlaubnis, um einen Befehl auszuführen</span><span class="fr">A besoin de votre autorisation pour exécuter une commande</span></div></div>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">🎤</div>
-        <h3><span class="en">Sneak peek &amp; lyrics</span><span class="ko">미리보기와 가사</span></h3>
+        <h3><span class="en">Sneak peek &amp; lyrics</span><span class="ko">미리보기와 가사</span><span class="ja">スニークピークと歌詞</span><span class="zh">预览与歌词</span><span class="es">Vista previa y letras</span><span class="de">Vorschau &amp; Songtexte</span><span class="fr">Aperçu &amp; paroles</span></h3>
         <p class="en">When the track changes the title slides out for a moment, and the line being sung can stay under the notch while you work.</p>
         <p class="ko">곡이 바뀌면 제목이 잠깐 나왔다 사라지고, 원하면 지금 부르는 가사가 작업 중에도 노치 아래에 흐릅니다.</p>
+        <p class="ja">曲が変わると、タイトルが一瞬スライドして現れます。今流れている歌詞も、作業中ずっとノッチの下に表示できます。</p>
+        <p class="zh">曲目切换时标题会短暂滑出，正在演唱的歌词也可以留在刘海下方，陪你一起工作。</p>
+        <p class="es">Cuando cambia la canción, el título aparece un momento y, si quieres, la letra que se está cantando se queda bajo el notch mientras trabajas.</p>
+        <p class="de">Wenn sich der Titel ändert, gleitet er kurz heraus, und die aktuelle Textzeile kann während der Arbeit unter der Notch bleiben.</p>
+        <p class="fr">Quand le morceau change, le titre apparaît un instant, et la ligne chantée peut rester sous l’encoche pendant que vous travaillez.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">📅</div>
-        <h3><span class="en">Calendar &amp; reminders</span><span class="ko">캘린더와 미리 알림</span></h3>
+        <h3><span class="en">Calendar &amp; reminders</span><span class="ko">캘린더와 미리 알림</span><span class="ja">カレンダーとリマインダー</span><span class="zh">日历与提醒事项</span><span class="es">Calendario y recordatorios</span><span class="de">Kalender &amp; Erinnerungen</span><span class="fr">Calendrier &amp; rappels</span></h3>
         <p class="en">This week, today's events and what's due. Tick reminders off without leaving what you're doing.</p>
         <p class="ko">이번 주, 오늘 일정, 기한이 다가온 일. 하던 일을 멈추지 않고 미리 알림을 완료하세요.</p>
+        <p class="ja">今週の予定、今日の予定、期限が近いこと。作業の手を止めずにリマインダーを完了にできます。</p>
+        <p class="zh">本周安排、今日日程和待办事项，不打断手头的工作就能勾掉提醒事项。</p>
+        <p class="es">Esta semana, los eventos de hoy y lo que vence. Marca los recordatorios como hechos sin dejar lo que estás haciendo.</p>
+        <p class="de">Diese Woche, die heutigen Termine und was fällig ist. Hake Erinnerungen ab, ohne das zu unterbrechen, was du gerade tust.</p>
+        <p class="fr">Votre semaine, les évènements du jour et les échéances. Cochez vos rappels sans interrompre ce que vous faites.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">🟢</div>
-        <h3><span class="en">Camera &amp; mic indicator</span><span class="ko">카메라·마이크 표시</span></h3>
+        <h3><span class="en">Camera &amp; mic indicator</span><span class="ko">카메라·마이크 표시</span><span class="ja">カメラ・マイクのインジケーター</span><span class="zh">相机与麦克风提示</span><span class="es">Indicador de cámara y micrófono</span><span class="de">Kamera- &amp; Mikrofonanzeige</span><span class="fr">Indicateur caméra &amp; micro</span></h3>
         <p class="en">A dot on the notch whenever any app is using your camera or microphone, so nothing listens in unnoticed.</p>
         <p class="ko">어떤 앱이든 카메라나 마이크를 쓰는 동안 노치에 표시가 뜹니다. 몰래 듣는 앱은 없어요.</p>
+        <p class="ja">どのアプリかがカメラやマイクを使っているとき、ノッチに点が表示されます。こっそり使われることはありません。</p>
+        <p class="zh">任何应用使用相机或麦克风时，刘海上都会出现一个小点，不会有应用偷偷窃听。</p>
+        <p class="es">Un punto en el notch cuando cualquier app usa tu cámara o micrófono, así nada te escucha sin que lo notes.</p>
+        <p class="de">Ein Punkt auf der Notch, sobald eine App deine Kamera oder dein Mikrofon nutzt, damit nichts unbemerkt mithört.</p>
+        <p class="fr">Un point sur l’encoche dès qu’une app utilise votre caméra ou votre microphone, pour qu’aucune écoute ne passe inaperçue.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">⏺️</div>
-        <h3><span class="en">Screen recording</span><span class="ko">화면 녹화</span></h3>
+        <h3><span class="en">Screen recording</span><span class="ko">화면 녹화</span><span class="ja">画面収録</span><span class="zh">屏幕录制</span><span class="es">Grabación de pantalla</span><span class="de">Bildschirmaufnahme</span><span class="fr">Enregistrement de l’écran</span></h3>
         <p class="en">Start it from Tools; a red dot and timer stay on the notch, and the video lands on the shelf when you stop.</p>
         <p class="ko">도구 탭에서 시작하면 노치에 빨간 점과 시간이 남고, 멈추면 영상이 선반에 들어갑니다.</p>
+        <p class="ja">ツールタブから開始すると、ノッチに赤い点と時間が表示され、停止すると動画がシェルフに届きます。</p>
+        <p class="zh">在“工具”中开始录制，刘海上会留下红点和计时，停止后视频会自动进入架子。</p>
+        <p class="es">Inícialo desde Herramientas; un punto rojo y un cronómetro se quedan en el notch, y el vídeo cae en el estante cuando lo detienes.</p>
+        <p class="de">Starte sie über Werkzeuge; ein roter Punkt und ein Timer bleiben auf der Notch, und das Video landet beim Stoppen in der Ablage.</p>
+        <p class="fr">Lancez-le depuis Outils ; un point rouge et un chronomètre restent sur l’encoche, et la vidéo atterrit sur l’étagère à l’arrêt.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">📋</div>
-        <h3><span class="en">Clipboard &amp; notes</span><span class="ko">클립보드와 메모</span></h3>
+        <h3><span class="en">Clipboard &amp; notes</span><span class="ko">클립보드와 메모</span><span class="ja">クリップボードとメモ</span><span class="zh">剪贴板与便笺</span><span class="es">Portapapeles y notas</span><span class="de">Zwischenablage &amp; Notizen</span><span class="fr">Presse-papiers &amp; notes</span></h3>
         <p class="en">Search what you copied and copy it again in one click. Jot notes without opening another app.</p>
         <p class="ko">복사한 내용을 검색해 한 번에 다시 복사하고, 다른 앱 없이 바로 메모하세요.</p>
+        <p class="ja">コピーした内容を検索して、ワンクリックで再コピー。別のアプリを開かずにメモも書けます。</p>
+        <p class="zh">搜索你复制过的内容，一键再次复制；无需打开其他应用即可随手记笔记。</p>
+        <p class="es">Busca lo que copiaste y vuelve a copiarlo con un clic. Anota algo sin abrir otra app.</p>
+        <p class="de">Durchsuche, was du kopiert hast, und kopiere es mit einem Klick erneut. Notiere dir etwas, ohne eine weitere App zu öffnen.</p>
+        <p class="fr">Recherchez ce que vous avez copié et recopiez-le en un clic. Notez vos idées sans ouvrir une autre app.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">⛅</div>
-        <h3><span class="en">Weather &amp; downloads</span><span class="ko">날씨와 다운로드</span></h3>
+        <h3><span class="en">Weather &amp; downloads</span><span class="ko">날씨와 다운로드</span><span class="ja">天気とダウンロード</span><span class="zh">天气与下载</span><span class="es">Tiempo y descargas</span><span class="de">Wetter &amp; Downloads</span><span class="fr">Météo &amp; téléchargements</span></h3>
         <p class="en">Today's weather in the header, and a nudge when a download finishes. Screenshots drop onto the shelf by themselves.</p>
         <p class="ko">헤더에 오늘 날씨를, 다운로드가 끝나면 살짝 알려 줍니다. 스크린샷은 알아서 선반에 들어가요.</p>
+        <p class="ja">ヘッダーに今日の天気を表示し、ダウンロードが終わるとお知らせします。スクリーンショットは自動でシェルフに入ります。</p>
+        <p class="zh">顶部栏显示今日天气，下载完成时轻轻提示，截图会自动进入架子。</p>
+        <p class="es">El tiempo de hoy en la cabecera, y un aviso cuando termina una descarga. Las capturas de pantalla caen solas en el estante.</p>
+        <p class="de">Das heutige Wetter in der Kopfzeile und ein Hinweis, wenn ein Download fertig ist. Screenshots landen von selbst in der Ablage.</p>
+        <p class="fr">La météo du jour dans l’en-tête, et un signal quand un téléchargement se termine. Les captures d’écran arrivent seules sur l’étagère.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">🔋</div>
-        <h3><span class="en">Little heads-ups</span><span class="ko">작은 알림들</span></h3>
+        <h3><span class="en">Little heads-ups</span><span class="ko">작은 알림들</span><span class="ja">ちょっとした通知</span><span class="zh">小提醒</span><span class="es">Pequeños avisos</span><span class="de">Kleine Hinweise</span><span class="fr">Petites alertes</span></h3>
         <p class="en">Low battery on the Mac, mouse or keyboard, fully charged, Caps Lock on. Glanceable, then gone.</p>
         <p class="ko">Mac·마우스·키보드 배터리 부족, 충전 완료, Caps Lock 켜짐. 한눈에 보이고 금방 사라집니다.</p>
+        <p class="ja">Mac・マウス・キーボードのバッテリー残量低下、満充電、Caps Lock オン。一目でわかって、すぐ消えます。</p>
+        <p class="zh">Mac、鼠标或键盘电量不足、充满电、大写锁定开启——一眼看到，随即消失。</p>
+        <p class="es">Batería baja del Mac, el ratón o el teclado, carga completa, Bloq Mayús activado. Un vistazo y desaparece.</p>
+        <p class="de">Niedriger Akkustand bei Mac, Maus oder Tastatur, vollständig geladen, Feststelltaste an. Ein kurzer Blick, dann sind sie weg.</p>
+        <p class="fr">Batterie faible du Mac, de la souris ou du clavier, charge complète, verrouillage des majuscules activé. Un coup d’œil, puis ça disparaît.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">👆</div>
-        <h3><span class="en">Gestures</span><span class="ko">제스처</span></h3>
+        <h3><span class="en">Gestures</span><span class="ko">제스처</span><span class="ja">ジェスチャー</span><span class="zh">手势</span><span class="es">Gestos</span><span class="de">Gesten</span><span class="fr">Gestes</span></h3>
         <p class="en">Swipe down to open, up to close, sideways on Home to skip the track.</p>
         <p class="ko">아래로 쓸면 열기, 위로 쓸면 닫기, 홈 탭에서 옆으로 쓸면 다음 곡.</p>
+        <p class="ja">下にスワイプで開く、上にスワイプで閉じる、ホームタブで横にスワイプすると曲をスキップ。</p>
+        <p class="zh">向下轻扫打开，向上轻扫关闭，在主页左右轻扫切换曲目。</p>
+        <p class="es">Desliza hacia abajo para abrir, hacia arriba para cerrar, y a los lados en Inicio para cambiar de pista.</p>
+        <p class="de">Nach unten wischen zum Öffnen, nach oben zum Schließen, seitlich auf Start, um den Titel zu wechseln.</p>
+        <p class="fr">Balayez vers le bas pour ouvrir, vers le haut pour fermer, sur le côté dans l’onglet Accueil pour changer de morceau.</p>
       </article>
       <article class="tile t-third reveal">
         <div class="ico">📷</div>
-        <h3><span class="en">Mirror</span><span class="ko">미러</span></h3>
+        <h3><span class="en">Mirror</span><span class="ko">미러</span><span class="ja">ミラー</span><span class="zh">镜子</span><span class="es">Espejo</span><span class="de">Spiegel</span><span class="fr">Miroir</span></h3>
         <p class="en">Check your hair before the call. The camera runs only while the tab is open.</p>
         <p class="ko">통화 전에 머리 한 번 확인. 카메라는 탭이 열려 있을 때만 켜집니다.</p>
+        <p class="ja">通話前に身だしなみを確認。カメラはタブが開いている間だけ動きます。</p>
+        <p class="zh">通话前照一照镜子，相机只在该标签打开时运行。</p>
+        <p class="es">Revisa tu peinado antes de la llamada. La cámara solo funciona mientras la pestaña está abierta.</p>
+        <p class="de">Prüf dein Haar vor dem Call. Die Kamera läuft nur, solange der Tab geöffnet ist.</p>
+        <p class="fr">Vérifiez votre coiffure avant l’appel. La caméra ne fonctionne que lorsque l’onglet est ouvert.</p>
       </article>
       <article class="tile t-half reveal">
         <div class="ico">🧩</div>
-        <h3><span class="en">Make it yours</span><span class="ko">내게 맞게 구성</span></h3>
+        <h3><span class="en">Make it yours</span><span class="ko">내게 맞게 구성</span><span class="ja">自分好みに設定</span><span class="zh">打造专属体验</span><span class="es">Hazlo tuyo</span><span class="de">Mach es zu deinem</span><span class="fr">Faites-le vôtre</span></h3>
         <p class="en">Pick your tabs and their order, what the header and the collapsed notch show, and which pop-ups you get. During a call it shows the call app and how long you've been talking, and when idle each side of the collapsed notch can show Claude Code usage left, battery, weather or the date. Anything you turn off stops running. On macOS 26 it wears Liquid Glass, and it can hide while the lid is closed.</p>
         <p class="ko">탭과 순서, 헤더와 접힌 노치에 보일 것, 받을 알림을 직접 고르세요. 통화 중에는 통화 앱과 통화 시간이, 평소에는 접힌 노치 양쪽에 Claude Code 남은 양, 배터리, 날씨, 날짜를 띄워 둘 수 있어요. 꺼 둔 기능은 동작하지 않습니다. macOS 26에서는 Liquid Glass로 그려지고, 덮개를 닫았을 때 숨길 수도 있어요.</p>
+        <p class="ja">タブとその順番、ヘッダーと折りたたみ時のノッチに表示する内容、受け取る通知を自由に選べます。通話中は通話アプリと通話時間を、待機中は折りたたみ時のノッチの両側に Claude Code の残り使用量、バッテリー、天気、日付を表示できます。オフにした機能は動作しません。macOS 26 では Liquid Glass で描かれ、蓋を閉じている間は隠すこともできます。</p>
+        <p class="zh">自由选择标签及其顺序、顶部栏和收起刘海要显示的内容，以及想收到的提示。通话时会显示通话应用和时长；空闲时收起刘海两侧可以显示 Claude Code 剩余额度、电量、天气或日期。关闭的功能完全不运行。在 macOS 26 上呈现 Liquid Glass 效果，合上盖子时也可以隐藏。</p>
+        <p class="es">Elige tus pestañas y su orden, qué muestran la cabecera y el notch plegado, y qué avisos recibes. Durante una llamada muestra la app de la llamada y cuánto tiempo lleváis hablando, y en reposo cada lado del notch plegado puede mostrar el Claude Code restante, la batería, el tiempo o la fecha. Lo que desactives deja de funcionar. En macOS 26 luce Liquid Glass, y puede ocultarse mientras la tapa está cerrada.</p>
+        <p class="de">Wähle deine Tabs und ihre Reihenfolge, was Kopfzeile und eingeklappte Notch zeigen, und welche Hinweise du bekommst. Während eines Anrufs zeigt sie die Anruf-App und wie lange du schon sprichst, und im Ruhezustand kann jede Seite der eingeklappten Notch die verbleibende Claude Code-Nutzung, den Akkustand, das Wetter oder das Datum zeigen. Alles, was du ausschaltest, läuft nicht mehr. Auf macOS 26 trägt sie Liquid Glass und kann sich verstecken, während der Deckel geschlossen ist.</p>
+        <p class="fr">Choisissez vos onglets et leur ordre, ce que l’en-tête et l’encoche repliée affichent, et les notifications que vous recevez. Pendant un appel, elle affiche l’app d’appel et sa durée, et au repos, chaque côté de l’encoche repliée peut afficher l’usage restant de Claude Code, la batterie, la météo ou la date. Tout ce que vous désactivez s’arrête complètement. Sur macOS 26, elle adopte le Liquid Glass, et peut se cacher quand le capot est fermé.</p>
       </article>
       <article class="tile t-half reveal">
         <div class="ico">🌏</div>
-        <h3><span class="en">Speaks your language</span><span class="ko">7개 언어</span></h3>
+        <h3><span class="en">Speaks your language</span><span class="ko">7개 언어</span><span class="ja">あなたの言葉で話します</span><span class="zh">跟随你的语言</span><span class="es">Habla tu idioma</span><span class="de">Spricht deine Sprache</span><span class="fr">Parle votre langue</span></h3>
         <p class="en">Follows your Mac's language. Screens without a notch get a neat pill at the top instead.</p>
         <p class="ko">Mac 언어 설정을 따릅니다. 노치가 없는 화면에는 위쪽 가운데에 작은 알약 모양으로 나타나요.</p>
+        <p class="ja">Mac の言語設定に従います。ノッチのない画面には、上部にすっきりしたピル型で表示されます。</p>
+        <p class="zh">跟随 Mac 的系统语言。没有刘海的屏幕则会在顶部显示一个简洁的小药丸。</p>
+        <p class="es">Sigue el idioma de tu Mac. En pantallas sin notch aparece una pequeña píldora en la parte superior.</p>
+        <p class="de">Folgt der Sprache deines Macs. Bildschirme ohne Notch bekommen stattdessen eine schlanke Pille oben.</p>
+        <p class="fr">Suit la langue de votre Mac. Les écrans sans encoche affichent à la place une pastille discrète en haut.</p>
         <div class="langs"><span>English</span><span>한국어</span><span>日本語</span><span>简体中文</span><span>Español</span><span>Deutsch</span><span>Français</span></div>
       </article>
     </div>
@@ -403,70 +493,105 @@
 
   <section class="block" id="install">
     <div class="section-head reveal">
-      <div class="kicker en">Install</div><div class="kicker ko">설치</div>
-      <h2 class="en">Up and running in a minute.</h2><h2 class="ko">1분이면 충분합니다.</h2>
-      <p class="en">macOS 14 Sonoma or later, on Apple silicon or Intel.</p><p class="ko">macOS 14 Sonoma 이상, Apple 실리콘과 Intel 모두.</p>
+      <div class="kicker en">Install</div><div class="kicker ko">설치</div><div class="kicker ja">インストール</div><div class="kicker zh">安装</div><div class="kicker es">Instalación</div><div class="kicker de">Installieren</div><div class="kicker fr">Installation</div>
+      <h2 class="en">Up and running in a minute.</h2><h2 class="ko">1분이면 충분합니다.</h2><h2 class="ja">1分で使い始められます。</h2><h2 class="zh">一分钟就能用起来。</h2><h2 class="es">Listo en un minuto.</h2><h2 class="de">In einer Minute startklar.</h2><h2 class="fr">Opérationnel en une minute.</h2>
+      <p class="en">macOS 14 Sonoma or later, on Apple silicon or Intel.</p><p class="ko">macOS 14 Sonoma 이상, Apple 실리콘과 Intel 모두.</p><p class="ja">macOS 14 Sonoma 以降、Apple シリコンと Intel の両方で。</p><p class="zh">macOS 14 Sonoma 或更高版本，支持 Apple 芯片和 Intel。</p><p class="es">macOS 14 Sonoma o posterior, en Apple silicon o Intel.</p><p class="de">macOS 14 Sonoma oder neuer, auf Apple Silicon oder Intel.</p><p class="fr">macOS 14 Sonoma ou version ultérieure, sur Apple silicon ou Intel.</p>
     </div>
     <div class="steps reveal">
-      <div class="step"><div class="n">1</div><h3><span class="en">Install</span><span class="ko">설치</span></h3><p class="en">One Homebrew line, or drag it from the dmg. It lives in the notch, not the Dock.</p><p class="ko">Homebrew 한 줄, 또는 dmg에서 끌어다 놓기. Dock이 아니라 노치에 삽니다.</p></div>
-      <div class="step"><div class="n">2</div><h3><span class="en">Hover the notch</span><span class="ko">노치에 마우스 올리기</span></h3><p class="en">It opens. Move away and it tucks itself back. Play some music and watch it come alive.</p><p class="ko">열립니다. 마우스를 떼면 다시 접혀요. 음악을 틀면 살아 움직입니다.</p></div>
-      <div class="step"><div class="n">3</div><h3><span class="en">Make it yours</span><span class="ko">내 맞게 고르기</span></h3><p class="en">Right-click the notch and open Settings to choose tabs, pop-ups and size.</p><p class="ko">노치를 우클릭해 설정을 열고 탭, 알림, 크기를 고르세요.</p></div>
+      <div class="step"><div class="n">1</div><h3><span class="en">Install</span><span class="ko">설치</span><span class="ja">インストール</span><span class="zh">安装</span><span class="es">Instalación</span><span class="de">Installieren</span><span class="fr">Installation</span></h3><p class="en">One Homebrew line, or drag it from the dmg. It lives in the notch, not the Dock.</p><p class="ko">Homebrew 한 줄, 또는 dmg에서 끌어다 놓기. Dock이 아니라 노치에 삽니다.</p><p class="ja">Homebrew のコマンド1行、または dmg からドラッグ。Dock ではなくノッチに常駐します。</p><p class="zh">一行 Homebrew 命令，或从 dmg 拖入即可。它常驻在刘海里，不在 Dock 中。</p><p class="es">Una línea de Homebrew, o arrástralo desde el dmg. Vive en el notch, no en el Dock.</p><p class="de">Eine Zeile mit Homebrew, oder einfach aus dem dmg ziehen. Sie lebt in der Notch, nicht im Dock.</p><p class="fr">Une ligne Homebrew, ou glissez-le depuis le dmg. Il vit dans l’encoche, pas dans le Dock.</p></div>
+      <div class="step"><div class="n">2</div><h3><span class="en">Hover the notch</span><span class="ko">노치에 마우스 올리기</span><span class="ja">ノッチにマウスを乗せる</span><span class="zh">把鼠标移到刘海上</span><span class="es">Pasa el cursor por el notch</span><span class="de">Maus über die Notch</span><span class="fr">Survolez l’encoche</span></h3><p class="en">It opens. Move away and it tucks itself back. Play some music and watch it come alive.</p><p class="ko">열립니다. 마우스를 떼면 다시 접혀요. 음악을 틀면 살아 움직입니다.</p><p class="ja">開きます。マウスを離すとまた閉じます。音楽を再生すると動き出します。</p><p class="zh">它会打开；移开鼠标又会自动收起。播放点音乐，看它变得生动起来。</p><p class="es">Se abre. Aparta el cursor y se repliega. Pon música y mira cómo cobra vida.</p><p class="de">Sie öffnet sich. Geh weg, und sie zieht sich wieder ein. Spiel etwas Musik und sieh zu, wie sie lebendig wird.</p><p class="fr">Elle s’ouvre. Éloignez-vous et elle se replie. Lancez de la musique et regardez-la s’animer.</p></div>
+      <div class="step"><div class="n">3</div><h3><span class="en">Make it yours</span><span class="ko">내 맞게 고르기</span><span class="ja">自分好みに設定</span><span class="zh">打造专属体验</span><span class="es">Hazlo tuyo</span><span class="de">Mach es zu deinem</span><span class="fr">Configurez-la à votre façon</span></h3><p class="en">Right-click the notch and open Settings to choose tabs, pop-ups and size.</p><p class="ko">노치를 우클릭해 설정을 열고 탭, 알림, 크기를 고르세요.</p><p class="ja">ノッチを右クリックして設定を開き、タブ、通知、サイズを選んでください。</p><p class="zh">右键点击刘海打开设置，选择标签、提示和尺寸。</p><p class="es">Haz clic derecho en el notch y abre Ajustes para elegir pestañas, avisos y tamaño.</p><p class="de">Klicke mit der rechten Maustaste auf die Notch und öffne die Einstellungen, um Tabs, Hinweise und Größe zu wählen.</p><p class="fr">Clic droit sur l’encoche puis ouvrez Réglages pour choisir les onglets, les notifications et la taille.</p></div>
     </div>
     <div class="install reveal">
       <div class="tabs" role="tablist">
         <button role="tab" aria-selected="true" data-tab="brew">Homebrew</button>
         <button role="tab" aria-selected="false" data-tab="dmg">DMG</button>
-        <button role="tab" aria-selected="false" data-tab="src"><span class="en">Source</span><span class="ko">소스</span></button>
+        <button role="tab" aria-selected="false" data-tab="src"><span class="en">Source</span><span class="ko">소스</span><span class="ja">ソース</span><span class="zh">来源</span><span class="es">Código fuente</span><span class="de">Quelle</span><span class="fr">Source</span></button>
       </div>
       <div class="panel active" data-panel="brew">
-        <div class="code"><button class="copy" type="button" data-copy="brew install --cask namekun/tap/nunsseop"><span class="en">Copy</span><span class="ko">복사</span></button><pre>brew install --cask namekun/tap/nunsseop</pre></div>
+        <div class="code"><button class="copy" type="button" data-copy="brew install --cask namekun/tap/nunsseop"><span class="en">Copy</span><span class="ko">복사</span><span class="ja">コピー</span><span class="zh">复制</span><span class="es">Copiar</span><span class="de">Kopieren</span><span class="fr">Copier</span></button><pre>brew install --cask namekun/tap/nunsseop</pre></div>
         <p class="note en">Homebrew clears the quarantine flag for you, so the app opens right away.</p>
         <p class="note ko">Homebrew가 격리 표시를 알아서 지워 주기 때문에 바로 실행됩니다.</p>
+        <p class="note ja">Homebrew が隔離フラグを自動で解除するので、すぐに起動できます。</p>
+        <p class="note zh">Homebrew 会自动清除隔离标记，应用可以直接打开。</p>
+        <p class="note es">Homebrew quita la marca de cuarentena por ti, así que la app se abre al instante.</p>
+        <p class="note de">Homebrew entfernt die Quarantäne-Markierung für dich, sodass die App sofort startet.</p>
+        <p class="note fr">Homebrew retire le drapeau de quarantaine à votre place, l’app s’ouvre donc immédiatement.</p>
       </div>
       <div class="panel" data-panel="dmg">
-        <div class="code"><button class="copy" type="button" data-copy="xattr -dr com.apple.quarantine /Applications/Nunsseop.app"><span class="en">Copy</span><span class="ko">복사</span></button><pre><span class="c"># <span class="en">after dragging Nunsseop to Applications</span><span class="ko">Nunsseop을 응용 프로그램 폴더로 옮긴 뒤</span></span>
+        <div class="code"><button class="copy" type="button" data-copy="xattr -dr com.apple.quarantine /Applications/Nunsseop.app"><span class="en">Copy</span><span class="ko">복사</span><span class="ja">コピー</span><span class="zh">复制</span><span class="es">Copiar</span><span class="de">Kopieren</span><span class="fr">Copier</span></button><pre><span class="c"># <span class="en">after dragging Nunsseop to Applications</span><span class="ko">Nunsseop을 응용 프로그램 폴더로 옮긴 뒤</span><span class="ja">Nunsseop をアプリケーションフォルダに移動した後</span><span class="zh">将 Nunsseop 拖入“应用程序”文件夹后</span><span class="es">después de arrastrar Nunsseop a Aplicaciones</span><span class="de">nachdem du Nunsseop in den Programme-Ordner gezogen hast</span><span class="fr">après avoir glissé Nunsseop dans Applications</span></span>
 xattr -dr com.apple.quarantine /Applications/Nunsseop.app</pre></div>
         <p class="note en">Download the dmg from <a href="https://github.com/namekun/Nunsseop/releases/latest" style="color:var(--violet)">Releases</a>. The app isn't notarized yet, so run the line above once.</p>
         <p class="note ko"><a href="https://github.com/namekun/Nunsseop/releases/latest" style="color:var(--violet)">Releases</a>에서 dmg를 받으세요. 아직 공증되지 않은 앱이라 위 명령을 한 번 실행해야 합니다.</p>
+        <p class="note ja"><a href="https://github.com/namekun/Nunsseop/releases/latest" style="color:var(--violet)">Releases</a> から dmg をダウンロードしてください。まだ公証されていないアプリなので、上のコマンドを一度実行する必要があります。</p>
+        <p class="note zh">从 <a href="https://github.com/namekun/Nunsseop/releases/latest" style="color:var(--violet)">Releases</a> 下载 dmg。应用尚未经过公证，所以需要先运行上面那条命令一次。</p>
+        <p class="note es">Descarga el dmg desde <a href="https://github.com/namekun/Nunsseop/releases/latest" style="color:var(--violet)">Releases</a>. La app todavía no está notarizada, así que ejecuta la línea de arriba una vez.</p>
+        <p class="note de">Lade das dmg von <a href="https://github.com/namekun/Nunsseop/releases/latest" style="color:var(--violet)">Releases</a> herunter. Die App ist noch nicht notarisiert, führe die Zeile oben also einmal aus.</p>
+        <p class="note fr">Téléchargez le dmg depuis <a href="https://github.com/namekun/Nunsseop/releases/latest" style="color:var(--violet)">Releases</a>. L’app n’est pas encore notariée, exécutez donc la ligne ci-dessus une fois.</p>
       </div>
       <div class="panel" data-panel="src">
-        <div class="code"><button class="copy" type="button" data-copy="git clone https://github.com/namekun/Nunsseop.git && cd Nunsseop && ./scripts/bundle.sh release && open build/Nunsseop.app"><span class="en">Copy</span><span class="ko">복사</span></button><pre>git clone https://github.com/namekun/Nunsseop.git
+        <div class="code"><button class="copy" type="button" data-copy="git clone https://github.com/namekun/Nunsseop.git && cd Nunsseop && ./scripts/bundle.sh release && open build/Nunsseop.app"><span class="en">Copy</span><span class="ko">복사</span><span class="ja">コピー</span><span class="zh">复制</span><span class="es">Copiar</span><span class="de">Kopieren</span><span class="fr">Copier</span></button><pre>git clone https://github.com/namekun/Nunsseop.git
 cd Nunsseop
 ./scripts/bundle.sh release
 open build/Nunsseop.app</pre></div>
         <p class="note en">Needs the Xcode command line tools (Swift 5.10+).</p>
         <p class="note ko">Xcode 명령줄 도구(Swift 5.10 이상)가 필요합니다.</p>
+        <p class="note ja">Xcode コマンドラインツール（Swift 5.10 以上）が必要です。</p>
+        <p class="note zh">需要 Xcode 命令行工具（Swift 5.10 及以上）。</p>
+        <p class="note es">Necesita las herramientas de línea de comandos de Xcode (Swift 5.10 o superior).</p>
+        <p class="note de">Benötigt die Xcode-Kommandozeilen-Tools (Swift 5.10+).</p>
+        <p class="note fr">Nécessite les outils en ligne de commande Xcode (Swift 5.10+).</p>
       </div>
     </div>
   </section>
 
   <section class="block" id="how">
     <div class="section-head reveal">
-      <div class="kicker en">Under the hood</div><div class="kicker ko">작동 방식</div>
-      <h2 class="en">Private by design.</h2><h2 class="ko">처음부터 프라이버시를 지키게.</h2>
+      <div class="kicker en">Under the hood</div><div class="kicker ko">작동 방식</div><div class="kicker ja">内部の仕組み</div><div class="kicker zh">幕后原理</div><div class="kicker es">Por dentro</div><div class="kicker de">Unter der Haube</div><div class="kicker fr">Sous le capot</div>
+      <h2 class="en">Private by design.</h2><h2 class="ko">처음부터 프라이버시를 지키게.</h2><h2 class="ja">プライバシーを、最初から。</h2><h2 class="zh">从设计上保护隐私。</h2><h2 class="es">Privada desde el diseño.</h2><h2 class="de">Privat von Grund auf.</h2><h2 class="fr">Privé par conception.</h2>
     </div>
     <div class="two">
       <div class="plain reveal">
-        <h3><span class="en">How now playing works</span><span class="ko">재생 정보를 읽는 방법</span></h3>
+        <h3><span class="en">How now playing works</span><span class="ko">재생 정보를 읽는 방법</span><span class="ja">再生情報の取得方法</span><span class="zh">“正在播放”的实现方式</span><span class="es">Cómo funciona la reproducción</span><span class="de">So funktioniert die Titelerkennung</span><span class="fr">Comment la lecture en cours est détectée</span></h3>
         <p class="en">Since macOS 15.4, the private MediaRemote framework only answers apps signed by Apple. Nunsseop runs a tiny helper inside the system's <code>/usr/bin/perl</code> to read what's playing and send play, pause, skip and seek.</p>
         <p class="ko">macOS 15.4부터 비공개 MediaRemote 프레임워크는 Apple이 서명한 앱에만 응답합니다. Nunsseop은 시스템의 <code>/usr/bin/perl</code> 안에서 작은 헬퍼를 실행해 재생 정보를 읽고 재생·일시정지·건너뛰기·위치 이동을 보냅니다.</p>
+        <p class="ja">macOS 15.4 以降、非公開の MediaRemote フレームワークは Apple が署名したアプリにしか応答しません。Nunsseop はシステムの <code>/usr/bin/perl</code> 内で小さなヘルパーを実行し、再生情報を読み取って再生・一時停止・スキップ・シークを送信します。</p>
+        <p class="zh">从 macOS 15.4 开始，私有的 MediaRemote 框架只响应 Apple 签名的应用。Nunsseop 在系统的 <code>/usr/bin/perl</code> 中运行一个小型辅助程序来读取播放信息，并发送播放、暂停、切换和跳转指令。</p>
+        <p class="es">Desde macOS 15.4, el framework privado MediaRemote solo responde a apps firmadas por Apple. Nunsseop ejecuta un pequeño ayudante dentro del <code>/usr/bin/perl</code> del sistema para leer lo que se está reproduciendo y enviar reproducir, pausar, saltar y avanzar.</p>
+        <p class="de">Seit macOS 15.4 antwortet das private MediaRemote-Framework nur noch Apps, die von Apple signiert sind. Nunsseop führt dafür einen winzigen Helfer im systemeigenen <code>/usr/bin/perl</code> aus, um zu lesen, was läuft, und um Abspielen, Pause, Überspringen und Spulen zu senden.</p>
+        <p class="fr">Depuis macOS 15.4, le framework privé MediaRemote ne répond qu’aux apps signées par Apple. Nunsseop exécute un petit assistant au sein du <code>/usr/bin/perl</code> du système pour lire ce qui joue et envoyer lecture, pause, saut et déplacement.</p>
         <p class="en">If a future macOS update blocks it, Nunsseop falls back to AppleScript for Music and Spotify and to reading media tabs in browsers.</p>
         <p class="ko">이후 macOS 업데이트로 막히면 Music·Spotify는 AppleScript로, 브라우저는 미디어 탭 읽기로 자동 전환됩니다.</p>
+        <p class="ja">将来の macOS アップデートでこれが使えなくなった場合、Nunsseop は Music と Spotify に AppleScript で、ブラウザにはメディアタブの読み取りで対応します。</p>
+        <p class="zh">如果未来的 macOS 更新阻止了这种方式，Nunsseop 会改用 AppleScript 控制 Music 和 Spotify，并读取浏览器的媒体标签页。</p>
+        <p class="es">Si una futura actualización de macOS lo bloquea, Nunsseop recurre a AppleScript para Music y Spotify, y a leer las pestañas de medios en los navegadores.</p>
+        <p class="de">Falls ein zukünftiges macOS-Update dies blockiert, weicht Nunsseop für Music und Spotify auf AppleScript aus und liest bei Browsern die Medien-Tabs.</p>
+        <p class="fr">Si une future mise à jour de macOS bloque cela, Nunsseop se replie sur AppleScript pour Music et Spotify, et sur la lecture des onglets média dans les navigateurs.</p>
         <p class="en">No personal data is collected or sent. Network use is limited to a daily release check, lyrics from LRCLIB, weather from Open-Meteo for the city you choose, and fallback artwork — each can be turned off. AI usage is read from files Claude Code and Codex already keep on your Mac.</p>
         <p class="ko">개인 정보는 수집하거나 전송하지 않습니다. 네트워크는 하루 한 번 새 버전 확인, LRCLIB 가사, 지정한 도시의 Open-Meteo 날씨, 대체 경로의 앨범아트에만 쓰며 모두 끌 수 있습니다. AI 사용량은 Claude Code와 Codex가 이 Mac에 이미 남기는 파일에서 읽습니다.</p>
+        <p class="ja">個人情報は収集も送信もしません。ネットワーク通信は、1日1回の新バージョン確認、LRCLIB からの歌詞、指定した都市の Open-Meteo の天気、代替アートワークの取得に限られ、いずれもオフにできます。AI 使用量は、Claude Code と Codex がこの Mac に保存しているファイルから読み取ります。</p>
+        <p class="zh">不会收集或发送任何个人数据。网络访问仅限于每日版本检查、来自 LRCLIB 的歌词、你所选城市在 Open-Meteo 上的天气，以及备用封面——每一项都可以关闭。AI 用量则直接读取 Claude Code 和 Codex 已经保存在你 Mac 上的文件。</p>
+        <p class="es">No se recopilan ni se envían datos personales. El uso de red se limita a una comprobación diaria de nuevas versiones, las letras de LRCLIB, el tiempo de Open-Meteo para la ciudad que elijas y una carátula alternativa; todo se puede desactivar. El uso de IA se lee de los archivos que Claude Code y Codex ya guardan en tu Mac.</p>
+        <p class="de">Es werden keine persönlichen Daten gesammelt oder gesendet. Netzwerkzugriffe beschränken sich auf eine tägliche Versionsprüfung, Songtexte von LRCLIB, Wetter von Open-Meteo für die gewählte Stadt und Ersatz-Cover – jedes davon lässt sich abschalten. Die KI-Nutzung wird aus Dateien gelesen, die Claude Code und Codex bereits auf deinem Mac führen.</p>
+        <p class="fr">Aucune donnée personnelle n’est collectée ni envoyée. L’usage du réseau se limite à une vérification quotidienne des nouvelles versions, aux paroles via LRCLIB, à la météo via Open-Meteo pour la ville choisie, et aux pochettes de secours — chacun peut être désactivé. L’usage de l’IA est lu dans les fichiers que Claude Code et Codex conservent déjà sur votre Mac.</p>
       </div>
       <div class="plain reveal">
-        <h3><span class="en">Permissions, only when you ask</span><span class="ko">권한은 필요할 때만</span></h3>
+        <h3><span class="en">Permissions, only when you ask</span><span class="ko">권한은 필요할 때만</span><span class="ja">権限は、必要なときだけ</span><span class="zh">权限，只在你需要时请求</span><span class="es">Permisos, solo cuando los necesites</span><span class="de">Berechtigungen, nur wenn nötig</span><span class="fr">Des autorisations, seulement à la demande</span></h3>
         <p class="en">Each permission is requested the first time you use the feature that needs it.</p>
         <p class="ko">권한은 그 기능을 처음 쓸 때만 요청합니다.</p>
+        <p class="ja">各権限は、その機能を初めて使うときに要求されます。</p>
+        <p class="zh">每项权限只在你第一次使用相关功能时才会请求。</p>
+        <p class="es">Cada permiso se solicita la primera vez que usas la función que lo necesita.</p>
+        <p class="de">Jede Berechtigung wird beim ersten Mal angefragt, wenn du die Funktion nutzt, die sie braucht.</p>
+        <p class="fr">Chaque autorisation est demandée la première fois que vous utilisez la fonction qui en a besoin.</p>
         <div class="perm">
-          <div><span class="en">Calendar</span><span class="ko">캘린더</span></div><div><span class="en">Calendars</span><span class="ko">캘린더</span></div>
-          <div><span class="en">Reminders</span><span class="ko">미리 알림</span></div><div><span class="en">Reminders</span><span class="ko">미리 알림</span></div>
-          <div><span class="en">Mirror</span><span class="ko">미러</span></div><div><span class="en">Camera</span><span class="ko">카메라</span></div>
-          <div><span class="en">Replacing system HUDs</span><span class="ko">시스템 HUD 대체</span></div><div><span class="en">Accessibility</span><span class="ko">손쉬운 사용</span></div>
-          <div><span class="en">Screen recording</span><span class="ko">화면 녹화</span></div><div><span class="en">Screen Recording</span><span class="ko">화면 기록</span></div>
-          <div><span class="en">Recording with sound</span><span class="ko">소리와 함께 녹화</span></div><div><span class="en">Microphone</span><span class="ko">마이크</span></div>
-          <div><span class="en">Launch at login</span><span class="ko">로그인 시 실행</span></div><div><span class="en">Login Items</span><span class="ko">로그인 항목</span></div>
+          <div><span class="en">Calendar</span><span class="ko">캘린더</span><span class="ja">カレンダー</span><span class="zh">日历</span><span class="es">Calendario</span><span class="de">Kalender</span><span class="fr">Calendrier</span></div><div><span class="en">Calendars</span><span class="ko">캘린더</span><span class="ja">カレンダー</span><span class="zh">日历</span><span class="es">Calendarios</span><span class="de">Kalender</span><span class="fr">Calendriers</span></div>
+          <div><span class="en">Reminders</span><span class="ko">미리 알림</span><span class="ja">リマインダー</span><span class="zh">提醒事项</span><span class="es">Recordatorios</span><span class="de">Erinnerungen</span><span class="fr">Rappels</span></div><div><span class="en">Reminders</span><span class="ko">미리 알림</span><span class="ja">リマインダー</span><span class="zh">提醒事项</span><span class="es">Recordatorios</span><span class="de">Erinnerungen</span><span class="fr">Rappels</span></div>
+          <div><span class="en">Mirror</span><span class="ko">미러</span><span class="ja">ミラー</span><span class="zh">镜子</span><span class="es">Espejo</span><span class="de">Spiegel</span><span class="fr">Miroir</span></div><div><span class="en">Camera</span><span class="ko">카메라</span><span class="ja">カメラ</span><span class="zh">相机</span><span class="es">Cámara</span><span class="de">Kamera</span><span class="fr">Caméra</span></div>
+          <div><span class="en">Replacing system HUDs</span><span class="ko">시스템 HUD 대체</span><span class="ja">システム HUD の置き換え</span><span class="zh">替换系统 HUD</span><span class="es">Sustituir los HUD del sistema</span><span class="de">Ersetzt System-HUDs</span><span class="fr">Remplacement des HUD système</span></div><div><span class="en">Accessibility</span><span class="ko">손쉬운 사용</span><span class="ja">アクセシビリティ</span><span class="zh">辅助功能</span><span class="es">Accesibilidad</span><span class="de">Bedienungshilfen</span><span class="fr">Accessibilité</span></div>
+          <div><span class="en">Screen recording</span><span class="ko">화면 녹화</span><span class="ja">画面収録</span><span class="zh">屏幕录制</span><span class="es">Grabación de pantalla</span><span class="de">Bildschirmaufnahme</span><span class="fr">Enregistrement de l’écran</span></div><div><span class="en">Screen Recording</span><span class="ko">화면 기록</span><span class="ja">画面収録</span><span class="zh">屏幕录制</span><span class="es">Grabación de pantalla</span><span class="de">Bildschirmaufnahme</span><span class="fr">Enregistrement de l’écran</span></div>
+          <div><span class="en">Recording with sound</span><span class="ko">소리와 함께 녹화</span><span class="ja">音声付きで録画</span><span class="zh">带声音录制</span><span class="es">Grabación con sonido</span><span class="de">Aufnahme mit Ton</span><span class="fr">Enregistrement avec le son</span></div><div><span class="en">Microphone</span><span class="ko">마이크</span><span class="ja">マイク</span><span class="zh">麦克风</span><span class="es">Micrófono</span><span class="de">Mikrofon</span><span class="fr">Microphone</span></div>
+          <div><span class="en">Launch at login</span><span class="ko">로그인 시 실행</span><span class="ja">ログイン時に起動</span><span class="zh">登录时启动</span><span class="es">Abrir al iniciar sesión</span><span class="de">Bei der Anmeldung starten</span><span class="fr">Lancer à l’ouverture de session</span></div><div><span class="en">Login Items</span><span class="ko">로그인 항목</span><span class="ja">ログイン項目</span><span class="zh">登录项</span><span class="es">Ítems de inicio</span><span class="de">Anmeldeobjekte</span><span class="fr">Éléments de connexion</span></div>
         </div>
       </div>
     </div>
@@ -475,33 +600,73 @@ open build/Nunsseop.app</pre></div>
   <section class="block" id="faq">
     <div class="section-head reveal">
       <div class="kicker">FAQ</div>
-      <h2 class="en">Good questions.</h2><h2 class="ko">자주 묻는 질문.</h2>
+      <h2 class="en">Good questions.</h2><h2 class="ko">자주 묻는 질문.</h2><h2 class="ja">よくある質問。</h2><h2 class="zh">常见问题。</h2><h2 class="es">Buenas preguntas.</h2><h2 class="de">Gute Fragen.</h2><h2 class="fr">Bonnes questions.</h2>
     </div>
     <div class="faq reveal">
-      <details><summary><span class="en">Is it really free?</span><span class="ko">정말 무료인가요?</span></summary>
+      <details><summary><span class="en">Is it really free?</span><span class="ko">정말 무료인가요?</span><span class="ja">本当に無料ですか？</span><span class="zh">真的免费吗？</span><span class="es">¿De verdad es gratis?</span><span class="de">Ist es wirklich kostenlos?</span><span class="fr">Est-ce vraiment gratuit ?</span></summary>
         <div class="a en">Yes. Free, open source under the MIT license, with no account, subscription or trial.</div>
-        <div class="a ko">네. MIT 라이선스의 오픈소스이고, 계정·구독·체험 기간이 없습니다.</div></details>
-      <details><summary><span class="en">My Mac doesn't have a notch. Does it work?</span><span class="ko">노치가 없는 Mac에서도 되나요?</span></summary>
+        <div class="a ko">네. MIT 라이선스의 오픈소스이고, 계정·구독·체험 기간이 없습니다.</div>
+        <div class="a ja">はい。MIT ライセンスのオープンソースで、アカウント・サブスクリプション・体験期間は一切ありません。</div>
+        <div class="a zh">是的。基于 MIT 许可证的免费开源软件，没有账户、订阅或试用期。</div>
+        <div class="a es">Sí. Es gratis, de código abierto bajo la licencia MIT, sin cuenta, suscripción ni prueba.</div>
+        <div class="a de">Ja. Kostenlos, Open Source unter der MIT-Lizenz, ohne Account, Abo oder Testphase.</div>
+        <div class="a fr">Oui. Gratuit, open source sous licence MIT, sans compte, abonnement ni période d’essai.</div></details>
+      <details><summary><span class="en">My Mac doesn't have a notch. Does it work?</span><span class="ko">노치가 없는 Mac에서도 되나요?</span><span class="ja">ノッチのない Mac でも使えますか？</span><span class="zh">我的 Mac 没有刘海，能用吗？</span><span class="es">Mi Mac no tiene notch. ¿Funciona igual?</span><span class="de">Mein Mac hat keine Notch. Funktioniert es trotzdem?</span><span class="fr">Mon Mac n’a pas d’encoche. Est-ce que ça fonctionne ?</span></summary>
         <div class="a en">Yes. On a screen without a notch, Nunsseop shows a small pill at the top centre that opens the same way. You can choose which display it appears on.</div>
-        <div class="a ko">네. 노치가 없는 화면에서는 위쪽 가운데에 작은 알약 모양으로 나타나고, 똑같이 열립니다. 어느 화면에 띄울지도 고를 수 있어요.</div></details>
-      <details><summary><span class="en">macOS says the app can't be opened.</span><span class="ko">"앱을 열 수 없습니다"라고 나와요.</span></summary>
+        <div class="a ko">네. 노치가 없는 화면에서는 위쪽 가운데에 작은 알약 모양으로 나타나고, 똑같이 열립니다. 어느 화면에 띄울지도 고를 수 있어요.</div>
+        <div class="a ja">はい。ノッチのない画面では、Nunsseop が上部中央に小さなピル型で表示され、同じように開きます。表示するディスプレイも選べます。</div>
+        <div class="a zh">可以。在没有刘海的屏幕上，Nunsseop 会在顶部中间显示一个小药丸，打开方式完全相同。你还可以选择它出现在哪个显示器上。</div>
+        <div class="a es">Sí. En una pantalla sin notch, Nunsseop muestra una pequeña píldora en la parte superior central que se abre igual. Puedes elegir en qué pantalla aparece.</div>
+        <div class="a de">Ja. Auf einem Bildschirm ohne Notch zeigt Nunsseop oben in der Mitte eine kleine Pille, die sich genauso öffnet. Du kannst wählen, auf welchem Bildschirm sie erscheint.</div>
+        <div class="a fr">Oui. Sur un écran sans encoche, Nunsseop affiche une petite pastille en haut au centre qui s’ouvre de la même façon. Vous pouvez choisir sur quel écran elle apparaît.</div></details>
+      <details><summary><span class="en">macOS says the app can't be opened.</span><span class="ko">"앱을 열 수 없습니다"라고 나와요.</span><span class="ja">macOS で「アプリを開けません」と表示されます。</span><span class="zh">macOS 提示“无法打开应用”。</span><span class="es">macOS dice que la app no se puede abrir.</span><span class="de">macOS sagt, die App kann nicht geöffnet werden.</span><span class="fr">macOS dit que l’app ne peut pas être ouverte.</span></summary>
         <div class="a en">The app isn't notarized yet. Install with Homebrew, which handles this for you, or run <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code> once after copying it from the dmg.</div>
-        <div class="a ko">아직 공증되지 않은 앱이라 그렇습니다. Homebrew로 설치하면 알아서 처리되고, dmg로 설치했다면 <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code>을 한 번 실행하세요.</div></details>
-      <details><summary><span class="en">Nothing shows up when I play music.</span><span class="ko">음악을 틀어도 아무것도 안 나와요.</span></summary>
+        <div class="a ko">아직 공증되지 않은 앱이라 그렇습니다. Homebrew로 설치하면 알아서 처리되고, dmg로 설치했다면 <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code>을 한 번 실행하세요.</div>
+        <div class="a ja">まだ公証されていないアプリのためです。Homebrew でインストールすると自動で解決されます。dmg からコピーした場合は、一度だけ <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code> を実行してください。</div>
+        <div class="a zh">应用尚未经过公证。用 Homebrew 安装会自动处理这个问题；如果是从 dmg 拷贝的，复制后运行一次 <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code> 即可。</div>
+        <div class="a es">La app todavía no está notarizada. Instálala con Homebrew, que se encarga de esto por ti, o ejecuta <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code> una vez después de copiarla desde el dmg.</div>
+        <div class="a de">Die App ist noch nicht notarisiert. Installiere sie mit Homebrew, das sich darum kümmert, oder führe <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code> einmal aus, nachdem du sie aus dem dmg kopiert hast.</div>
+        <div class="a fr">L’app n’est pas encore notariée. Installez-la avec Homebrew, qui s’en occupe pour vous, ou exécutez <code>xattr -dr com.apple.quarantine /Applications/Nunsseop.app</code> une fois après l’avoir copiée depuis le dmg.</div></details>
+      <details><summary><span class="en">Nothing shows up when I play music.</span><span class="ko">음악을 틀어도 아무것도 안 나와요.</span><span class="ja">音楽を再生しても何も表示されません。</span><span class="zh">播放音乐时什么都没显示。</span><span class="es">No aparece nada cuando reproduzco música.</span><span class="de">Beim Abspielen von Musik passiert nichts.</span><span class="fr">Rien ne s’affiche quand je lance de la musique.</span></summary>
         <div class="a en">Nunsseop reads whatever macOS lists as Now Playing, so the player has to report to Control Center. Most apps and browsers do. If a future macOS update blocks this, Nunsseop asks for Automation access and falls back to AppleScript for Music, Spotify and browsers.</div>
-        <div class="a ko">Nunsseop은 macOS가 '지금 재생 중'으로 아는 것을 읽습니다. 그래서 제어 센터에 재생 정보가 뜨는 앱이어야 하는데, 대부분의 앱과 브라우저가 그렇습니다. 이후 macOS 업데이트로 막히면 자동화 권한을 받아 Music, Spotify, 브라우저를 AppleScript로 읽습니다.</div></details>
-      <details><summary><span class="en">Can Search replace Spotlight or Raycast?</span><span class="ko">Spotlight나 Raycast 대신 쓸 수 있나요?</span></summary>
+        <div class="a ko">Nunsseop은 macOS가 '지금 재생 중'으로 아는 것을 읽습니다. 그래서 제어 센터에 재생 정보가 뜨는 앱이어야 하는데, 대부분의 앱과 브라우저가 그렇습니다. 이후 macOS 업데이트로 막히면 자동화 권한을 받아 Music, Spotify, 브라우저를 AppleScript로 읽습니다.</div>
+        <div class="a ja">Nunsseop は macOS が「再生中」として認識している情報を読み取るため、プレーヤーが Control Center に再生情報を報告している必要があります。ほとんどのアプリとブラウザは対応しています。将来の macOS アップデートでこれが使えなくなった場合、Nunsseop はオートメーションの権限を求め、Music・Spotify・ブラウザに AppleScript で対応します。</div>
+        <div class="a zh">Nunsseop 读取的是 macOS 记录的“正在播放”信息，所以播放器需要向控制中心报告，大多数应用和浏览器都会这样做。如果未来的 macOS 更新阻止了这种方式，Nunsseop 会请求自动化权限，改用 AppleScript 控制 Music、Spotify 和浏览器。</div>
+        <div class="a es">Nunsseop lee lo que macOS indique como reproducción en curso, así que el reproductor tiene que informar al Centro de control. La mayoría de apps y navegadores lo hacen. Si una futura actualización de macOS lo bloquea, Nunsseop pide acceso de Automatización y recurre a AppleScript para Music, Spotify y navegadores.</div>
+        <div class="a de">Nunsseop liest, was macOS als aktuelle Wiedergabe listet, der Player muss sich also beim Control Center melden. Das tun die meisten Apps und Browser. Falls ein zukünftiges macOS-Update dies blockiert, fragt Nunsseop nach Automation-Zugriff und weicht für Music, Spotify und Browser auf AppleScript aus.</div>
+        <div class="a fr">Nunsseop lit ce que macOS liste comme lecture en cours, le lecteur doit donc remonter l’information au Centre de contrôle. C’est le cas de la plupart des apps et navigateurs. Si une future mise à jour de macOS bloque cela, Nunsseop demande l’accès à l’automatisation et se replie sur AppleScript pour Music, Spotify et les navigateurs.</div></details>
+      <details><summary><span class="en">Can Search replace Spotlight or Raycast?</span><span class="ko">Spotlight나 Raycast 대신 쓸 수 있나요?</span><span class="ja">検索は Spotlight や Raycast の代わりになりますか？</span><span class="zh">“搜索”能代替 Spotlight 或 Raycast 吗？</span><span class="es">¿Puede Buscar sustituir a Spotlight o Raycast?</span><span class="de">Kann Suche Spotlight oder Raycast ersetzen?</span><span class="fr">Rechercher peut-il remplacer Spotlight ou Raycast ?</span></summary>
         <div class="a en">That's the idea. It finds apps, files, commands, settings, clipboard entries, emoji and sums, and learns what you open most. To put it on <code>⌘Space</code>, record that shortcut in Settings › Services and Nunsseop will take you to Keyboard Shortcuts to switch Spotlight's off.</div>
-        <div class="a ko">그걸 목표로 만들었습니다. 앱, 파일, 명령, 설정, 클립보드, 이모지, 계산을 찾고, 자주 여는 것을 먼저 보여 줍니다. <code>⌘Space</code>로 쓰려면 설정 › 서비스에서 그 단축키를 녹화하세요. Spotlight 단축키를 끌 수 있도록 키보드 단축키 화면으로 안내합니다.</div></details>
-      <details><summary><span class="en">There are too many tabs for me.</span><span class="ko">탭이 너무 많아요.</span></summary>
+        <div class="a ko">그걸 목표로 만들었습니다. 앱, 파일, 명령, 설정, 클립보드, 이모지, 계산을 찾고, 자주 여는 것을 먼저 보여 줍니다. <code>⌘Space</code>로 쓰려면 설정 › 서비스에서 그 단축키를 녹화하세요. Spotlight 단축키를 끌 수 있도록 키보드 단축키 화면으로 안내합니다.</div>
+        <div class="a ja">それが狙いです。アプリ、ファイル、コマンド、設定、クリップボード、絵文字、計算まで見つけ出し、よく開くものを学習します。<code>⌘Space</code> に設定するには、設定 › サービスでそのショートカットを記録してください。Nunsseop がキーボードショートカット画面へ案内し、Spotlight のショートカットをオフにできます。</div>
+        <div class="a zh">这正是设计目标。它能查找应用、文件、命令、设置、剪贴板内容、表情符号和计算结果，并记住你最常打开的内容。要把它绑定到 <code>⌘Space</code>，在设置 › 服务中录制该快捷键，Nunsseop 会引导你到键盘快捷键里关闭 Spotlight 的快捷键。</div>
+        <div class="a es">Esa es la idea. Encuentra apps, archivos, comandos, ajustes, entradas del portapapeles, emoji y sumas, y aprende qué abres más. Para ponerlo en <code>⌘Space</code>, graba ese atajo en Ajustes › Servicios y Nunsseop te llevará a Funciones rápidas de teclado para desactivar el atajo de Spotlight.</div>
+        <div class="a de">Genau das ist die Idee. Sie findet Apps, Dateien, Befehle, Einstellungen, Zwischenablage-Einträge, Emoji und Rechenergebnisse und merkt sich, was du am häufigsten öffnest. Um sie auf <code>⌘Space</code> zu legen, nimm diesen Kurzbefehl unter Einstellungen › Dienste auf – Nunsseop führt dich dann zu den Tastaturkurzbefehlen, um Spotlights Kurzbefehl auszuschalten.</div>
+        <div class="a fr">C’est l’idée. Il trouve des apps, des fichiers, des commandes, des réglages, des entrées du presse-papiers, des emoji et des calculs, et retient ce que vous ouvrez le plus. Pour l’associer à <code>⌘Space</code>, enregistrez ce raccourci dans Réglages › Services, et Nunsseop vous emmènera dans Raccourcis clavier pour désactiver celui de Spotlight.</div></details>
+      <details><summary><span class="en">There are too many tabs for me.</span><span class="ko">탭이 너무 많아요.</span><span class="ja">タブが多すぎます。</span><span class="zh">标签页对我来说太多了。</span><span class="es">Hay demasiadas pestañas para mi gusto.</span><span class="de">Mir sind zu viele Tabs.</span><span class="fr">Il y a trop d’onglets pour moi.</span></summary>
         <div class="a en">Right-click the notch, open Settings › Notch, and switch off what you don't need. Turned-off features stop running, so they cost nothing.</div>
-        <div class="a ko">노치를 우클릭해 설정 › 노치에서 필요 없는 탭을 끄세요. 꺼 둔 기능은 아예 동작하지 않아서 자원도 쓰지 않습니다.</div></details>
-      <details><summary><span class="en">Does AI usage need my login?</span><span class="ko">AI 사용량을 보려면 로그인이 필요한가요?</span></summary>
+        <div class="a ko">노치를 우클릭해 설정 › 노치에서 필요 없는 탭을 끄세요. 꺼 둔 기능은 아예 동작하지 않아서 자원도 쓰지 않습니다.</div>
+        <div class="a ja">ノッチを右クリックし、設定 › ノッチを開いて、不要なタブをオフにしてください。オフにした機能は動作しなくなるため、リソースも消費しません。</div>
+        <div class="a zh">右键点击刘海，打开设置 › 刘海，关闭你不需要的功能。关闭的功能完全不运行，不会占用任何资源。</div>
+        <div class="a es">Haz clic derecho en el notch, abre Ajustes › Notch y desactiva lo que no necesites. Las funciones desactivadas dejan de funcionar, así que no consumen nada.</div>
+        <div class="a de">Klicke mit der rechten Maustaste auf die Notch, öffne Einstellungen › Notch und schalte aus, was du nicht brauchst. Ausgeschaltete Funktionen laufen nicht mehr und kosten daher nichts.</div>
+        <div class="a fr">Clic droit sur l’encoche, ouvrez Réglages › Encoche, et désactivez ce dont vous n’avez pas besoin. Les fonctions désactivées s’arrêtent complètement, elles ne coûtent donc rien.</div></details>
+      <details><summary><span class="en">Does AI usage need my login?</span><span class="ko">AI 사용량을 보려면 로그인이 필요한가요?</span><span class="ja">AI 使用量を見るのにログインは必要ですか？</span><span class="zh">“AI 用量”需要登录吗？</span><span class="es">¿El uso de IA necesita que inicie sesión?</span><span class="de">Braucht KI-Nutzung meinen Login?</span><span class="fr">L’usage de l’IA nécessite-t-il ma connexion ?</span></summary>
         <div class="a en">No. It reads files Claude Code and Codex already keep on your Mac, and sends nothing anywhere. Claude's limits come from the oh-my-claudecode HUD cache when you have it; otherwise you see recent token use.</div>
-        <div class="a ko">아니요. Claude Code와 Codex가 이 Mac에 이미 남기는 파일만 읽고, 어디로도 보내지 않습니다. Claude 한도는 oh-my-claudecode HUD가 있으면 그 캐시에서 읽고, 없으면 최근 토큰 사용량을 보여 줍니다.</div></details>
-      <details><summary><span class="en">Will it slow my Mac down?</span><span class="ko">Mac이 느려지지 않나요?</span></summary>
+        <div class="a ko">아니요. Claude Code와 Codex가 이 Mac에 이미 남기는 파일만 읽고, 어디로도 보내지 않습니다. Claude 한도는 oh-my-claudecode HUD가 있으면 그 캐시에서 읽고, 없으면 최근 토큰 사용량을 보여 줍니다.</div>
+        <div class="a ja">いいえ。Claude Code と Codex がこの Mac に保存しているファイルを読み取るだけで、どこにも送信しません。Claude の使用上限は、oh-my-claudecode の HUD キャッシュがあればそこから、なければ最近のトークン使用量から表示します。</div>
+        <div class="a zh">不需要。它只读取 Claude Code 和 Codex 已经保存在你 Mac 上的文件，不会把任何内容发送出去。如果你安装了 oh-my-claudecode，Claude 的额度来自它的 HUD 缓存；否则会显示最近的令牌使用量。</div>
+        <div class="a es">No. Lee los archivos que Claude Code y Codex ya guardan en tu Mac y no envía nada a ningún sitio. Los límites de Claude vienen de la caché del HUD de oh-my-claudecode cuando lo tienes instalado; si no, verás el uso reciente de tokens.</div>
+        <div class="a de">Nein. Sie liest Dateien, die Claude Code und Codex bereits auf deinem Mac führen, und sendet nichts irgendwohin. Claudes Limits stammen aus dem oh-my-claudecode-HUD-Cache, falls vorhanden; sonst siehst du die zuletzt genutzten Tokens.</div>
+        <div class="a fr">Non. Il lit les fichiers que Claude Code et Codex conservent déjà sur votre Mac, et n’envoie rien nulle part. Les limites de Claude proviennent du cache HUD d’oh-my-claudecode quand vous l’avez ; sinon, vous voyez l’usage récent des tokens.</div></details>
+      <details><summary><span class="en">Will it slow my Mac down?</span><span class="ko">Mac이 느려지지 않나요?</span><span class="ja">Mac が遅くなりませんか？</span><span class="zh">会拖慢我的 Mac 吗？</span><span class="es">¿Ralentizará mi Mac?</span><span class="de">Wird mein Mac dadurch langsamer?</span><span class="fr">Est-ce que ça va ralentir mon Mac ?</span></summary>
         <div class="a en">It's a small native app that mostly sleeps. Stats, usage and similar tabs refresh only while they're open.</div>
-        <div class="a ko">대부분 쉬고 있는 작은 네이티브 앱입니다. 시스템 상태나 사용량 같은 탭은 열려 있을 때만 새로 읽어요.</div></details>
+        <div class="a ko">대부분 쉬고 있는 작은 네이티브 앱입니다. 시스템 상태나 사용량 같은 탭은 열려 있을 때만 새로 읽어요.</div>
+        <div class="a ja">ほとんどの時間は休んでいる小さなネイティブアプリです。システム状態や使用量などのタブは、開いているときだけ更新されます。</div>
+        <div class="a zh">这是一个大部分时间都在休眠的小型原生应用。系统状态、用量等标签只在打开时才会刷新。</div>
+        <div class="a es">Es una app nativa pequeña que casi siempre está en reposo. Las pestañas de estadísticas, uso y similares solo se actualizan mientras están abiertas.</div>
+        <div class="a de">Es ist eine kleine native App, die meist schläft. Tabs wie Systemstatus oder Nutzung aktualisieren sich nur, solange sie geöffnet sind.</div>
+        <div class="a fr">C’est une petite app native qui dort la plupart du temps. Les onglets comme les statistiques ou l’usage ne se rafraîchissent que lorsqu’ils sont ouverts.</div></details>
     </div>
   </section>
 
@@ -509,39 +674,54 @@ open build/Nunsseop.app</pre></div>
     <img src="images/icon.png" alt="">
     <h2 class="en">Give your notch something to do.</h2>
     <h2 class="ko">노치에게 할 일을 주세요.</h2>
+    <h2 class="ja">ノッチに、仕事を与えましょう。</h2>
+    <h2 class="zh">让你的刘海派上用场。</h2>
+    <h2 class="es">Dale a tu notch algo que hacer.</h2>
+    <h2 class="de">Gib deiner Notch etwas zu tun.</h2>
+    <h2 class="fr">Donnez une mission à votre encoche.</h2>
     <div class="cta">
-      <a class="btn primary" href="https://github.com/namekun/Nunsseop/releases/latest"><span class="en">Download for Mac</span><span class="ko">Mac용 다운로드</span></a>
-      <a class="btn ghost" href="https://github.com/namekun/Nunsseop"><span class="en">Star on GitHub</span><span class="ko">GitHub에서 보기</span></a>
+      <a class="btn primary" href="https://github.com/namekun/Nunsseop/releases/latest"><span class="en">Download for Mac</span><span class="ko">Mac용 다운로드</span><span class="ja">Mac版をダウンロード</span><span class="zh">下载 Mac 版</span><span class="es">Descargar para Mac</span><span class="de">Für Mac herunterladen</span><span class="fr">Télécharger pour Mac</span></a>
+      <a class="btn ghost" href="https://github.com/namekun/Nunsseop"><span class="en">Star on GitHub</span><span class="ko">GitHub에서 보기</span><span class="ja">GitHub でスターをつける</span><span class="zh">在 GitHub 上点星标</span><span class="es">Dale una estrella en GitHub</span><span class="de">Auf GitHub favorisieren</span><span class="fr">Star sur GitHub</span></a>
     </div>
   </div>
 
   <footer>
     <span class="en">Nunsseop · MIT License · Made for MacBooks with a notch (and the ones without).</span>
-    <span class="ko">Nunsseop · MIT 라이선스 · 노치가 있는(그리고 없는) 모든 MacBook을 위해.</span>
+    <span class="ko">Nunsseop · MIT 라이선스 · 노치가 있는(그리고 없는) 모든 MacBook을 위해.</span><span class="ja">Nunsseop · MIT ライセンス · ノッチのある（そしてない）すべての MacBook のために。</span><span class="zh">Nunsseop · MIT 许可证 · 为有刘海（也为没有刘海）的 MacBook 而做。</span><span class="es">Nunsseop · Licencia MIT · Hecho para los MacBook con notch (y para los que no lo tienen).</span><span class="de">Nunsseop · MIT-Lizenz · Gemacht für MacBooks mit Notch (und die ohne).</span><span class="fr">Nunsseop · Licence MIT · Conçu pour les MacBook avec encoche (et sans).</span>
     <span><a href="https://github.com/namekun/Nunsseop">GitHub</a> · <a href="https://github.com/namekun/Nunsseop/releases">Releases</a> · <a href="https://github.com/namekun/homebrew-tap">Homebrew</a></span>
   </footer>
 </main>
 
 <script>
 (function () {
-  var langButtons = document.querySelectorAll('.lang button');
+  var LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'de', 'fr'];
+  var COPIED = { en: 'Copied', ko: '복사됨', ja: 'コピーしました', zh: '已复制', es: 'Copiado', de: 'Kopiert', fr: 'Copié' };
+  var langSelect = document.getElementById('lang');
   function setLang(lang) {
     document.body.setAttribute('data-lang', lang);
-    document.documentElement.lang = lang;
-    langButtons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.set === lang)); });
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : lang;
+    langSelect.value = lang;
     try { localStorage.setItem('nunsseop-lang', lang); } catch (e) {}
+  }
+  function preferredLang() {
+    var prefs = navigator.languages || [navigator.language || ''];
+    for (var i = 0; i < prefs.length; i++) {
+      var code = String(prefs[i]).toLowerCase().split('-')[0];
+      if (LANGS.indexOf(code) >= 0) return code;
+    }
+    return 'en';
   }
   var saved = null;
   try { saved = localStorage.getItem('nunsseop-lang'); } catch (e) {}
-  setLang(saved || ((navigator.language || '').toLowerCase().indexOf('ko') === 0 ? 'ko' : 'en'));
-  langButtons.forEach(function (b) { b.addEventListener('click', function () { setLang(b.dataset.set); }); });
+  setLang(LANGS.indexOf(saved) >= 0 ? saved : preferredLang());
+  langSelect.addEventListener('change', function () { setLang(langSelect.value); });
 
   document.querySelectorAll('[data-copy]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var text = btn.getAttribute('data-copy');
       var original = btn.innerHTML;
       var done = function () {
-        btn.textContent = document.body.dataset.lang === 'ko' ? '복사됨' : 'Copied';
+        btn.textContent = COPIED[document.body.dataset.lang] || COPIED.en;
         setTimeout(function () { btn.innerHTML = original; }, 1400);
       };
       if (navigator.clipboard) { navigator.clipboard.writeText(text).then(done, done); } else { done(); }
@@ -576,14 +756,14 @@ open build/Nunsseop.app</pre></div>
 
 
   var tourData = [
-    { e: '🏠', img: 'home.png', en: ['Home', 'What’s playing from any app or browser, with artwork, controls and a seekable bar, next to your week and today’s events.'], ko: ['홈', '어떤 앱이나 브라우저에서 재생하든 앨범아트, 컨트롤, 진행바가 나오고, 옆에는 이번 주와 오늘 일정이 보입니다.'] },
-    { e: '🔍', img: 'tab-search.png', en: ['Search', 'A launcher that can stand in for Spotlight or Raycast: apps, files, commands, settings, clipboard, emoji and sums. <kbd>⇧⌘Space</kbd> by default, or record your own, even <kbd>⌘Space</kbd>.'], ko: ['검색', 'Spotlight나 Raycast 대신 쓸 수 있는 검색. 앱, 파일, 명령, 설정, 클립보드, 이모지, 계산까지. 기본 단축키는 <kbd>⇧⌘Space</kbd>이고, <kbd>⌘Space</kbd>를 포함해 원하는 키로 바꿀 수 있습니다.'] },
-    { e: '📥', img: 'shelf.png', en: ['Shelf', 'Drop files on the notch and drag them out later. Drop them on the AirDrop tile to send them straight away.'], ko: ['선반', '파일을 노치에 놓아 두고 나중에 끌어내세요. AirDrop 칸에 놓으면 바로 보내집니다.'] },
-    { e: '✨', img: 'tab-ai.png', en: ['AI usage', 'Claude Code and Codex limits with reset times, plus Claude Code’s recent token use. No login, nothing to set up.'], ko: ['AI 사용량', 'Claude Code와 Codex의 한도와 초기화 시각, Claude Code의 최근 토큰 사용량. 로그인도 설정도 필요 없습니다.'] },
-    { e: '⏱️', img: 'tab-timer.png', en: ['Timer', 'Countdown, Pomodoro and stopwatch around a ring that empties as time runs out. Scroll or type to set any length, and the time left stays on the collapsed notch.'], ko: ['타이머', '시간이 줄어들수록 비워지는 링으로 보는 카운트다운, 뽀모도로, 스톱워치. 스크롤하거나 직접 입력해 원하는 길이로 맞추고, 접힌 노치에도 남은 시간이 그대로 보입니다.'] },
-    { e: '🎛️', img: 'tab-tools.png', en: ['Tools', 'Switch speakers, mute the mic, keep the Mac awake, record the screen, eject drives, pick a color from the screen and copy text out of any part of it.'], ko: ['도구', '스피커 전환, 마이크 음소거, 잠자기 방지, 화면 녹화, 드라이브 꺼내기, 화면에서 색 찍기와 글자 복사.'] },
-    { e: '📊', img: 'tab-system.png', en: ['System', 'CPU, memory, disk and network at a glance, plus your mouse and keyboard batteries.'], ko: ['시스템', 'CPU, 메모리, 디스크, 네트워크를 한눈에. 마우스와 키보드 배터리도 함께.'] },
-    { e: '😀', img: 'tab-emoji.png', en: ['Emoji', 'Every emoji, searchable by name, with your recent picks first. Click to copy.'], ko: ['이모지', '모든 이모지를 이름으로 검색하고, 최근에 쓴 것부터. 클릭하면 복사됩니다.'] }
+    { e: '🏠', img: 'home.png', en: ['Home', 'What’s playing from any app or browser, with artwork, controls and a seekable bar, next to your week and today’s events.'], ko: ['홈', '어떤 앱이나 브라우저에서 재생하든 앨범아트, 컨트롤, 진행바가 나오고, 옆에는 이번 주와 오늘 일정이 보입니다.'], ja: ['ホーム', 'どのアプリやブラウザで再生していても、アートワーク・操作ボタン・シークバーを表示。すぐ横には今週と今日の予定も。'], zh: ['主页', '任何应用或浏览器正在播放的内容，附带封面、控制按钮和可拖动的进度条，旁边还有本周安排和今日日程。'], es: ['Inicio', 'Lo que suena en cualquier app o navegador, con carátula, controles y una barra de progreso, junto a tu semana y los eventos de hoy.'], de: ['Start', 'Was in jeder App oder jedem Browser läuft, mit Cover, Steuerung und einer Fortschrittsleiste, daneben deine Woche und die heutigen Termine.'], fr: ['Accueil', 'Ce qui joue depuis n’importe quelle app ou navigateur, avec pochette, commandes et une barre de progression, à côté de votre semaine et des évènements du jour.'] },
+    { e: '🔍', img: 'tab-search.png', en: ['Search', 'A launcher that can stand in for Spotlight or Raycast: apps, files, commands, settings, clipboard, emoji and sums. <kbd>⇧⌘Space</kbd> by default, or record your own, even <kbd>⌘Space</kbd>.'], ko: ['검색', 'Spotlight나 Raycast 대신 쓸 수 있는 검색. 앱, 파일, 명령, 설정, 클립보드, 이모지, 계산까지. 기본 단축키는 <kbd>⇧⌘Space</kbd>이고, <kbd>⌘Space</kbd>를 포함해 원하는 키로 바꿀 수 있습니다.'], ja: ['検索', 'Spotlight や Raycast の代わりになるランチャー。アプリ、ファイル、コマンド、設定、クリップボード、絵文字、計算まで。デフォルトは <kbd>⇧⌘Space</kbd>、<kbd>⌘Space</kbd> を含め好きなショートカットに変更できます。'], zh: ['搜索', '一款可以代替 Spotlight 或 Raycast 的启动器：应用、文件、命令、设置、剪贴板、表情符号和计算结果，默认快捷键是 <kbd>⇧⌘Space</kbd>，也可以自行录制，包括 <kbd>⌘Space</kbd>。'], es: ['Buscar', 'Un lanzador que puede sustituir a Spotlight o Raycast: apps, archivos, comandos, ajustes, portapapeles, emoji y sumas. <kbd>⇧⌘Space</kbd> por defecto, o graba el tuyo, incluso <kbd>⌘Space</kbd>.'], de: ['Suche', 'Ein Launcher, der Spotlight oder Raycast ersetzen kann: Apps, Dateien, Befehle, Einstellungen, Zwischenablage, Emoji und Rechenergebnisse. Standardmäßig <kbd>⇧⌘Space</kbd>, oder nimm deinen eigenen Kurzbefehl auf, auch <kbd>⌘Space</kbd>.'], fr: ['Rechercher', 'Un lanceur capable de remplacer Spotlight ou Raycast : apps, fichiers, commandes, réglages, presse-papiers, emoji et calculs. <kbd>⇧⌘Space</kbd> par défaut, ou enregistrez le vôtre, même <kbd>⌘Space</kbd>.'] },
+    { e: '📥', img: 'shelf.png', en: ['Shelf', 'Drop files on the notch and drag them out later. Drop them on the AirDrop tile to send them straight away.'], ko: ['선반', '파일을 노치에 놓아 두고 나중에 끌어내세요. AirDrop 칸에 놓으면 바로 보내집니다.'], ja: ['シェルフ', 'ファイルをノッチにドロップしておけば、あとで取り出せます。AirDrop のタイルにドロップすれば、そのまま送信されます。'], zh: ['架子', '把文件拖到刘海上先存着，以后再拖出来用。拖到 AirDrop 卡片上即可立即发送。'], es: ['Estante', 'Suelta archivos en el notch y arrástralos fuera más tarde. Suéltalos en la tarjeta de AirDrop para enviarlos al instante.'], de: ['Ablage', 'Lege Dateien auf der Notch ab und zieh sie später wieder heraus. Lege sie auf der AirDrop-Kachel ab, um sie sofort zu senden.'], fr: ['Étagère', 'Déposez des fichiers sur l’encoche et ressortez-les plus tard. Déposez-les sur la tuile AirDrop pour les envoyer immédiatement.'] },
+    { e: '✨', img: 'tab-ai.png', en: ['AI usage', 'Claude Code and Codex limits with reset times, plus Claude Code’s recent token use. No login, nothing to set up.'], ko: ['AI 사용량', 'Claude Code와 Codex의 한도와 초기화 시각, Claude Code의 최근 토큰 사용량. 로그인도 설정도 필요 없습니다.'], ja: ['AI 使用量', 'Claude Code と Codex の使用上限と初期化時刻、そして Claude Code の最近のトークン使用量。ログインも設定も不要です。'], zh: ['AI 用量', 'Claude Code 和 Codex 的额度与重置时间，以及 Claude Code 最近的令牌使用量。不需要登录，无需任何设置。'], es: ['Uso de IA', 'Los límites de Claude Code y Codex con sus horas de reinicio, más el uso reciente de tokens de Claude Code. Sin inicio de sesión, sin nada que configurar.'], de: ['KI-Nutzung', 'Claude Code- und Codex-Limits mit Zurücksetzungszeiten, plus Claude Codes zuletzt genutzte Tokens. Kein Login, nichts einzurichten.'], fr: ['Usage de l’IA', 'Les limites de Claude Code et Codex avec leurs horaires de réinitialisation, plus l’usage récent des tokens de Claude Code. Pas de connexion, rien à configurer.'] },
+    { e: '⏱️', img: 'tab-timer.png', en: ['Timer', 'Countdown, Pomodoro and stopwatch around a ring that empties as time runs out. Scroll or type to set any length, and the time left stays on the collapsed notch.'], ko: ['타이머', '시간이 줄어들수록 비워지는 링으로 보는 카운트다운, 뽀모도로, 스톱워치. 스크롤하거나 직접 입력해 원하는 길이로 맞추고, 접힌 노치에도 남은 시간이 그대로 보입니다.'], ja: ['タイマー', '時間が減るほど空いていくリングで表示するカウントダウン、ポモドーロ、ストップウォッチ。スクロールまたは入力で好きな長さに設定でき、残り時間は折りたたんだノッチにも表示されます。'], zh: ['计时器', '倒计时、番茄钟和秒表，用一个随时间流逝逐渐清空的圆环呈现。滚动或输入即可设置任意时长，剩余时间还会留在收起的刘海上。'], es: ['Temporizador', 'Cuenta atrás, Pomodoro y cronómetro alrededor de un anillo que se vacía a medida que pasa el tiempo. Desplázate o escribe para fijar cualquier duración, y el tiempo restante se queda en el notch plegado.'], de: ['Timer', 'Countdown, Pomodoro und Stoppuhr um einen Ring, der sich leert, während die Zeit abläuft. Scrollen oder eingeben, um jede Länge einzustellen, und die Restzeit bleibt auf der eingeklappten Notch sichtbar.'], fr: ['Minuteur', 'Compte à rebours, Pomodoro et chronomètre autour d’un anneau qui se vide à mesure que le temps s’écoule. Faites défiler ou saisissez une durée, et le temps restant reste visible sur l’encoche repliée.'] },
+    { e: '🎛️', img: 'tab-tools.png', en: ['Tools', 'Switch speakers, mute the mic, keep the Mac awake, record the screen, eject drives, pick a color from the screen and copy text out of any part of it.'], ko: ['도구', '스피커 전환, 마이크 음소거, 잠자기 방지, 화면 녹화, 드라이브 꺼내기, 화면에서 색 찍기와 글자 복사.'], ja: ['ツール', 'スピーカーの切り替え、マイクのミュート、スリープ防止、画面収録、ドライブの取り出し、画面から色を取得、画面上のテキストをコピー。'], zh: ['工具', '切换输出设备、静音麦克风、保持 Mac 唤醒、录制屏幕、推出磁盘、从屏幕上取色，以及从屏幕任意位置复制文字。'], es: ['Herramientas', 'Cambia de altavoces, silencia el micrófono, mantén el Mac despierto, graba la pantalla, expulsa discos, toma un color de la pantalla y copia texto de cualquier parte de ella.'], de: ['Werkzeuge', 'Lautsprecher wechseln, Mikrofon stummschalten, den Mac wach halten, den Bildschirm aufnehmen, Laufwerke auswerfen, eine Farbe vom Bildschirm aufnehmen und Text aus jedem Bereich davon kopieren.'], fr: ['Outils', 'Changez de haut-parleurs, coupez le micro, gardez le Mac éveillé, enregistrez l’écran, éjectez des disques, prélevez une couleur à l’écran et copiez du texte depuis n’importe quelle zone.'] },
+    { e: '📊', img: 'tab-system.png', en: ['System', 'CPU, memory, disk and network at a glance, plus your mouse and keyboard batteries.'], ko: ['시스템', 'CPU, 메모리, 디스크, 네트워크를 한눈에. 마우스와 키보드 배터리도 함께.'], ja: ['システム', 'CPU、メモリ、ディスク、ネットワークを一目で。マウスとキーボードのバッテリーも。'], zh: ['系统', '一目了然的 CPU、内存、磁盘和网络状态，还有鼠标和键盘的电量。'], es: ['Sistema', 'CPU, memoria, disco y red de un vistazo, además de la batería del ratón y el teclado.'], de: ['System', 'CPU, Speicher, Festplatte und Netzwerk auf einen Blick, plus Akkustand von Maus und Tastatur.'], fr: ['Système', 'CPU, mémoire, disque et réseau en un coup d’œil, plus les batteries de votre souris et clavier.'] },
+    { e: '😀', img: 'tab-emoji.png', en: ['Emoji', 'Every emoji, searchable by name, with your recent picks first. Click to copy.'], ko: ['이모지', '모든 이모지를 이름으로 검색하고, 최근에 쓴 것부터. 클릭하면 복사됩니다.'], ja: ['絵文字', 'すべての絵文字を名前で検索でき、最近使ったものが先頭に表示されます。クリックでコピー。'], zh: ['表情符号', '所有表情符号都能按名称搜索，最近用过的会优先显示，点击即可复制。'], es: ['Emoji', 'Todos los emoji, con búsqueda por nombre, con los que has usado últimamente primero. Haz clic para copiar.'], de: ['Emoji', 'Jedes Emoji, durchsuchbar nach Namen, zuletzt verwendete zuerst. Klicken, um zu kopieren.'], fr: ['Emoji', 'Tous les emoji, recherchables par nom, avec vos choix récents en premier. Cliquez pour copier.'] }
   ];
   var list = document.getElementById('tourList'), screen = document.getElementById('tourScreen');
   var tTitle = document.getElementById('tourTitle'), tText = document.getElementById('tourText');
@@ -591,7 +771,7 @@ open build/Nunsseop.app</pre></div>
   tourData.forEach(function (d, i) {
     var b = document.createElement('button');
     b.className = 'tour-btn'; b.type = 'button'; b.setAttribute('role', 'tab');
-    b.innerHTML = '<span class="e">' + d.e + '</span><span class="en">' + d.en[0] + '</span><span class="ko">' + d.ko[0] + '</span><span class="bar"></span>';
+    b.innerHTML = '<span class="e">' + d.e + '</span>' + LANGS.map(function (l) { return '<span class="' + l + '">' + d[l][0] + '</span>'; }).join('') + '<span class="bar"></span>';
     b.addEventListener('click', function () { tourTouched = true; show(i); });
     list.appendChild(b);
     var img = new Image(); img.src = 'images/' + d.img; img.alt = d.en[0]; img.loading = i ? 'lazy' : 'eager';
@@ -599,7 +779,7 @@ open build/Nunsseop.app</pre></div>
   });
   function show(i) {
     current = i;
-    var lang = document.body.dataset.lang === 'ko' ? 'ko' : 'en';
+    var lang = document.body.dataset.lang;
     list.querySelectorAll('.tour-btn').forEach(function (b, j) {
       b.setAttribute('aria-selected', String(j === i));
       var bar = b.querySelector('.bar'); bar.classList.remove('run'); void bar.offsetWidth;
@@ -613,7 +793,7 @@ open build/Nunsseop.app</pre></div>
     if (!tourTouched && !reduce) tourTimer = setTimeout(function () { show((current + 1) % tourData.length); }, DUR);
   }
   list.style.setProperty('--dur', DUR + 'ms');
-  langButtons.forEach(function (b) { b.addEventListener('click', function () { show(current); }); });
+  langSelect.addEventListener('change', function () { show(current); });
   show(0);
 
   var clock = document.getElementById('clock');
