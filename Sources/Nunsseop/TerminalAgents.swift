@@ -193,6 +193,18 @@ enum Herdr {
         FileManager.default.fileExists(atPath: socketURL.deletingLastPathComponent().path)
     }
 
+    /// The default session's socket, then one per named session (`herdr --session <name>`), which live at
+    /// `sessions/<name>/herdr.sock` beside it. The default is listed even before its server first runs.
+    static func sockets(in config: URL = socketURL.deletingLastPathComponent()) -> [(session: String?, url: URL)] {
+        let sessions = config.appendingPathComponent("sessions")
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: sessions.path)) ?? []
+        let named = names.sorted().compactMap { name -> (session: String?, url: URL)? in
+            let url = sessions.appendingPathComponent(name).appendingPathComponent("herdr.sock")
+            return FileManager.default.fileExists(atPath: url.path) ? (name, url) : nil
+        }
+        return [(nil, config.appendingPathComponent("herdr.sock"))] + named
+    }
+
     struct Pane: Equatable {
         let id: String
         let status: String
@@ -269,6 +281,49 @@ enum Herdr {
         mutating func update(pane: String, to status: String) -> Bool {
             defer { byPane[pane] = status }
             return (status == "done" || status == "blocked") && byPane[pane] != status
+        }
+    }
+}
+
+/// One HerdrWatcher per herdr session, following sessions as they're started and removed.
+@MainActor
+final class HerdrSessions {
+    /// The notice, and the session it came from (nil for the default one).
+    var onNotice: ((Herdr.Notice, String?) -> Void)?
+    private let config: URL
+    private var watchers: [URL: HerdrWatcher] = [:]
+    private var scan: Timer?
+
+    init(config: URL = Herdr.socketURL.deletingLastPathComponent()) { self.config = config }
+
+    func start() {
+        guard scan == nil else { return }
+        refresh()
+        scan = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
+        scan?.tolerance = 2
+    }
+
+    func stop() {
+        scan?.invalidate()
+        scan = nil
+        watchers.values.forEach { $0.stop() }
+        watchers = [:]
+    }
+
+    private func refresh() {
+        let sockets = Herdr.sockets(in: config)
+        let current = Set(sockets.map(\.url))
+        for (url, watcher) in watchers where !current.contains(url) {
+            watcher.stop()
+            watchers[url] = nil
+        }
+        for socket in sockets where watchers[socket.url] == nil {
+            let watcher = HerdrWatcher(socketURL: socket.url)
+            watcher.onNotice = { [weak self] notice in self?.onNotice?(notice, socket.session) }
+            watcher.start()
+            watchers[socket.url] = watcher
         }
     }
 }
