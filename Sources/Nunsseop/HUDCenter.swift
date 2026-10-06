@@ -26,7 +26,11 @@ final class HUDCenter: ObservableObject {
     private let interceptor = MediaKeyInterceptor()
     private var dismissWork: DispatchWorkItem?
     /// A notice to bring back if covered: built again each time it shows, so its wording stays current.
-    private struct Lasting { let make: () -> HUDEvent? }
+    private struct Lasting {
+        let make: () -> HUDEvent?
+        /// What clicking it does, kept when it comes back after another HUD.
+        let action: (() -> Void)?
+    }
     private var lasting = LastingNotices<Lasting>()
     private var lastHeadphones: HeadphoneBattery?
     private var headphoneCheckInFlight = false
@@ -252,10 +256,11 @@ final class HUDCenter: ObservableObject {
 
     /// A notice that must be seen once: if another HUD covers it before its time is up, it comes back
     /// when that HUD is gone, for the time it had left. `make` runs again then; returning nil drops it.
-    func showLasting(duration: Double, _ make: @escaping () -> HUDEvent?) {
+    func showLasting(duration: Double, action: (() -> Void)? = nil, _ make: @escaping () -> HUDEvent?) {
         guard let notice = make() else { return }
-        lasting.replace(with: Lasting(make: make), duration: duration, now: .now)
+        lasting.replace(with: Lasting(make: make, action: action), duration: duration, now: .now)
         present(notice, duration: duration)
+        self.action = action
     }
 
     private func present(_ newEvent: HUDEvent, duration: Double) {
@@ -273,6 +278,7 @@ final class HUDCenter: ObservableObject {
         while let next = lasting.finish(now: .now) {
             if let event = next.notice.make() {
                 present(event, duration: next.remaining)
+                action = next.notice.action
                 return
             }
         }

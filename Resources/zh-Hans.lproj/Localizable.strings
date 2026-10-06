@@ -325,3 +325,4 @@
 "Nunsseop can read the sign-in Claude Code keeps in the Keychain and ask Anthropic directly for your 5-hour and weekly limits, about once an hour, so they update without Claude Code running." = "Nunsseop 可以读取 Claude Code 存在钥匙串中的登录信息，大约每小时直接向 Anthropic 查询 5 小时和每周上限，无需运行 Claude Code 即可更新。";
 "Turn On" = "开启";
 "No Thanks" = "不用了";
+"Click to join" = "点按加入";

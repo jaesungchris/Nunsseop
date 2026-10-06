@@ -201,10 +201,12 @@ final class CalendarModel: ObservableObject {
         let now = Date.now
         let predicate = store.predicateForEvents(withStart: now.addingTimeInterval(-EventAlert.grace),
                                                  end: now.addingTimeInterval(36 * 3600), calendars: calendars)
-        let upcoming = store.events(matching: predicate).filter(Self.isAlertable).map { item($0, findingLink: false) }
+        let events = store.events(matching: predicate).filter(Self.isAlertable)
+        let upcoming = events.map { item($0, findingLink: false) }
         // Events starting together are shown one after another, once each notice has had its time.
         let (announce, next) = alertQueue.step(items: upcoming, now: now)
-        if let announce { onUpcoming?(announce) }
+        // Only the event being announced is searched for a meeting link, so a click on the notice can join.
+        if let announce, let index = upcoming.firstIndex(of: announce) { onUpcoming?(item(events[index])) }
         let timer = Timer(fire: next ?? now.addingTimeInterval(12 * 3600), interval: 0, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.scheduleAlert() }
         }

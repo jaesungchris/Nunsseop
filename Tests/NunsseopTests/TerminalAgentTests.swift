@@ -536,6 +536,31 @@ struct HookUpdateTests {
         #expect((removed["hooks"] as? [String: Any])?["Stop"] != nil)
     }
 
+    @Test func entriesThatArentObjectsDontHideNunsseopsHook() throws {
+        let current = NotifyServer.hookCommand(title: "Claude Code")
+        let old = "curl -s http://127.0.0.1:\(NotifyServer.port)/notify OLD"
+        let settings: [String: Any] = ["hooks": ["Notification": [
+            ["hooks": [["type": "command", "command": old], "junk"]],
+            "stray group",
+        ]]]
+        // The old hook is seen, so it's replaced rather than joined by a second one.
+        #expect(JSONHook.isInstalled(in: settings))
+        #expect(!JSONHook.isCurrent(current, in: settings))
+        let updated = try #require(try JSONHook.updating(current, in: settings))
+        let groups = ((updated["hooks"] as? [String: Any])?["Notification"] as? [Any]) ?? []
+        #expect(groups.count == 3)
+        #expect((groups[0] as? [String: Any])?["hooks"] as? [String] == ["junk"])
+        #expect(groups[1] as? String == "stray group")
+        #expect(JSONHook.isCurrent(current, in: updated))
+        #expect(try JSONHook.updating(current, in: updated) == nil)
+
+        // Disconnecting takes the hook out and leaves the rest as it was.
+        let removed = JSONHook.removing(from: updated)
+        let left = ((removed["hooks"] as? [String: Any])?["Notification"] as? [Any]) ?? []
+        #expect(left.count == 2)
+        #expect(!JSONHook.isInstalled(in: removed))
+    }
+
     @Test func duplicateHooksBecomeOne() throws {
         let current = NotifyServer.hookCommand(title: "Gemini CLI")
         let group: [String: Any] = ["hooks": [["type": "command", "command": current]]]

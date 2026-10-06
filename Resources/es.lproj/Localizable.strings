@@ -325,3 +325,4 @@
 "Nunsseop can read the sign-in Claude Code keeps in the Keychain and ask Anthropic directly for your 5-hour and weekly limits, about once an hour, so they update without Claude Code running." = "Nunsseop puede leer el inicio de sesión que Claude Code guarda en el llavero y pedir directamente a Anthropic tus límites de 5 horas y semanales, aproximadamente cada hora, para que se actualicen sin tener Claude Code abierto.";
 "Turn On" = "Activar";
 "No Thanks" = "No, gracias";
+"Click to join" = "Haz clic para unirte";

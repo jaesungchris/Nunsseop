@@ -200,12 +200,14 @@ final class NotchViewModel: ObservableObject {
             .sink { [weak self] in self?.calendar.hiddenCalendarIDs = Set($0) }
             .store(in: &cancellables)
         calendar.onUpcoming = { [weak self] item in
-            self?.hud.showLasting(duration: CalendarModel.alertSpacing) { [weak self] in
+            // With a video-call link, clicking the notice joins the meeting; otherwise it opens the notch as before.
+            let join = item.joinURL.map { url in { _ = NSWorkspace.shared.open(url) } }
+            self?.hud.showLasting(duration: CalendarModel.alertSpacing, action: join) { [weak self] in
                 // When it comes back after another HUD: only if alerts are still on, the event is still there
                 // and not well under way.
                 guard let self, self.calendar.stillAlerts(item) else { return nil }
-                return .notice(symbol: "calendar", title: item.title,
-                               detail: item.start.formatted(.relative(presentation: .named)))
+                return .notice(symbol: item.joinURL == nil ? "calendar" : "video.fill", title: item.title,
+                               detail: Self.upcomingDetail(item))
             }
         }
         settings.$eventAlerts.combineLatest(settings.$calendarEnabled)
@@ -215,6 +217,12 @@ final class NotchViewModel: ObservableObject {
         settings.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
+    }
+
+    /// "in 5 minutes", and "in 5 minutes · Click to join" when the event has a meeting link.
+    static func upcomingDetail(_ item: CalendarItem) -> String {
+        let when = item.start.formatted(.relative(presentation: .named))
+        return item.joinURL == nil ? when : "\(when) · \(String(localized: "Click to join"))"
     }
 
     var expandedSize: CGSize {

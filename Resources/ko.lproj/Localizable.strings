@@ -350,3 +350,4 @@
 "Nunsseop can read the sign-in Claude Code keeps in the Keychain and ask Anthropic directly for your 5-hour and weekly limits, about once an hour, so they update without Claude Code running." = "Claude Code가 키체인에 보관한 로그인 정보를 읽어, 약 1시간마다 Anthropic에 5시간·주간 한도를 직접 묻습니다. Claude Code를 켜지 않아도 한도가 갱신됩니다.";
 "Turn On" = "켜기";
 "No Thanks" = "괜찮아요";
+"Click to join" = "눌러서 참가";
