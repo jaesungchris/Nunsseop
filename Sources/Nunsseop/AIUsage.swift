@@ -3,9 +3,9 @@ import os
 import SQLite3
 import SwiftUI
 
-/// Usage of AI coding tools, read only from files those tools already keep on this Mac.
-/// Limits: Claude's from the oh-my-claudecode HUD cache, Codex's from Codex's session logs, or either from the usage
-/// cache gjc keeps, whichever was fetched last. Token totals add up the logs of every tool that used the provider's
+/// Usage of AI coding tools, read from files those tools already keep on this Mac.
+/// Limits: Claude's from Anthropic with Claude Code's own sign-in (ClaudeUsageAPI) or the oh-my-claudecode HUD cache,
+/// Codex's from Codex's session logs, or either from the usage cache gjc keeps, whichever was fetched last. Token totals add up the logs of every tool that used the provider's
 /// models: Claude Code, Codex, gjc, omo and OpenCode.
 @MainActor
 final class AIUsageModel: ObservableObject {
@@ -151,6 +151,7 @@ final class AIUsageModel: ObservableObject {
             result[family] = limits
         }
         offer(.claude, (try? Data(contentsOf: home.appendingPathComponent(".claude/plugins/oh-my-claudecode/.usage-cache-anthropic.json"))).flatMap(omcLimits))
+        offer(.claude, ClaudeUsageAPI.current())
         offer(.codex, codexLimits())
         let gjc = home.appendingPathComponent(".gjc/agent/agent.db").path
         // Only the usage cache is read; this database also holds gjc's credentials, which are never touched.

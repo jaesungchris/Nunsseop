@@ -319,3 +319,5 @@
 "Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is." = "代理在完成或等待你时会响铃(Claude Code 需将通知方式设为终端响铃)。仅向正在运行的 tmux 服务器添加钩子，tmux.conf 保持不变。";
 "Copy WezTerm config" = "复制 WezTerm 配置";
 "Paste it into ~/.wezterm.lua before `return config`. Bells from any WezTerm pane then show in the notch; WezTerm's config isn't changed for you." = "粘贴到 ~/.wezterm.lua 中 `return config` 之前，所有 WezTerm 窗格的响铃都会显示在刘海中。不会自动修改 WezTerm 配置。";
+"Ask Anthropic for Claude's limits" = "从 Anthropic 获取 Claude 用量上限";
+"Uses the sign-in Claude Code keeps in the Keychain, only to read your 5-hour and weekly limits from api.anthropic.com every few minutes, so they stay current when another app or claude.ai uses them. The sign-in is never changed or sent anywhere else." = "使用 Claude Code 存在钥匙串中的登录信息，每隔几分钟仅从 api.anthropic.com 读取 5 小时和每周上限，其他应用或 claude.ai 的用量也会及时反映。登录信息不会被修改，也不会发送到其他地方。";

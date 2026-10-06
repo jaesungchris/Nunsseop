@@ -356,6 +356,11 @@ private struct ServicesPane: View {
             Section("Lyrics") {
                 Toggle("Show synced lyrics (from LRCLIB)", isOn: $settings.lyricsEnabled)
             }
+            Section("AI usage") {
+                Toggle("Ask Anthropic for Claude's limits", isOn: $settings.claudeLimitsFromAnthropic)
+                Text("Uses the sign-in Claude Code keeps in the Keychain, only to read your 5-hour and weekly limits from api.anthropic.com every few minutes, so they stay current when another app or claude.ai uses them. The sign-in is never changed or sent anywhere else.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Weather") {
                 TextField("Weather city (e.g. Seoul)", text: $settings.weatherCity)
                 Text("Weather comes from Open-Meteo. Leave the city empty to hide it.")
