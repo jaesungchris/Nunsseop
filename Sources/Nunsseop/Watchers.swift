@@ -90,7 +90,17 @@ final class CapsLockWatcher {
 /// `{"title": "...", "message": "..."}`. The token lives in Application Support/Nunsseop/notify-token.
 final class NotifyServer: @unchecked Sendable {
     static let port: UInt16 = 47750
-    var onNotify: (@MainActor (String, String?) -> Void)?
+    /// A notification a local tool sent, with where it came from when the tool said so.
+    struct Notice {
+        let title: String
+        let message: String?
+        /// The bundle id of the app the tool ran in (its terminal), from macOS's `__CFBundleIdentifier`.
+        var app: String?
+        /// A pane in a terminal, as `tmux:%12` or `WezTerm:7`.
+        var target: String?
+    }
+
+    var onNotify: (@MainActor (Notice) -> Void)?
 
     private var listener: NWListener?
     private let queue = DispatchQueue(label: "nunsseop.notify")
@@ -108,7 +118,7 @@ final class NotifyServer: @unchecked Sendable {
     static func hookCommand(title: String) -> String {
         "plutil -extract message raw -o - - 2>/dev/null | curl -s -m 2 -X POST http://127.0.0.1:\(port)/notify "
             + "-H \"Authorization: Bearer $(cat \"$HOME/Library/Application Support/Nunsseop/notify-token\")\" "
-            + "-H 'X-Title: \(title)' --data-binary @- >/dev/null || true"
+            + "-H 'X-Title: \(title)' -H \"X-App: $__CFBundleIdentifier\" --data-binary @- >/dev/null || true"
     }
 
     /// A command for scripts: the text after `--data-binary` becomes the notification.
@@ -226,8 +236,15 @@ final class NotifyServer: @unchecked Sendable {
         let text = json == nil ? String(data: request.body, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) : nil
         let title = String((json?["title"] as? String ?? request.headers["x-title"] ?? "Notification").prefix(80))
         let message = (json?["message"] as? String ?? text).flatMap { $0.isEmpty ? nil : String($0.prefix(200)) }
+        let clean = { (value: String?, allowed: CharacterSet) -> String? in
+            guard let value, !value.isEmpty, value.unicodeScalars.allSatisfy(allowed.contains) else { return nil }
+            return String(value.prefix(80))
+        }
+        let notice = Notice(title: title, message: message,
+                            app: clean(json?["app"] as? String ?? request.headers["x-app"], .bundleIDCharacters),
+                            target: clean(json?["target"] as? String ?? request.headers["x-target"], .targetCharacters))
         let handler = onNotify
-        DispatchQueue.main.async { MainActor.assumeIsolated { handler?(title, message) } }
+        DispatchQueue.main.async { MainActor.assumeIsolated { handler?(notice) } }
         reply(connection, status: "204 No Content")
     }
 
@@ -244,4 +261,9 @@ final class NotifyServer: @unchecked Sendable {
         let response = "HTTP/1.1 \(status)\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
         connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in connection.cancel() })
     }
+}
+
+private extension CharacterSet {
+    static let bundleIDCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-")
+    static let targetCharacters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_:%")
 }

@@ -52,6 +52,16 @@ enum Cmux {
     struct Notice: Equatable {
         let title: String
         let body: String
+        var id: String? = nil
+    }
+
+    /// Opens the notification in cmux (its workspace and surface, marked read) and brings cmux forward.
+    static func focus(_ notice: Notice, cli: URL? = Cmux.cli) {
+        guard let cli, let id = notice.id, id.allSatisfy({ $0.isHexDigit || $0 == "-" }) else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            _ = TerminalFocus.run(cli, ["open-notification", "--id", id])
+            DispatchQueue.main.async { TerminalFocus.activate(bundleID: bundleID) }
+        }
     }
 
     /// The notification id of a `notification.created` event frame.
@@ -70,7 +80,8 @@ enum Cmux {
         let title = row["title"] as? String ?? "cmux"
         let subtitle = row["subtitle"] as? String ?? ""
         let body = row["body"] as? String ?? ""
-        return Notice(title: title, body: [subtitle, body].filter { !$0.isEmpty }.joined(separator: " · "))
+        return Notice(title: title, body: [subtitle, body].filter { !$0.isEmpty }.joined(separator: " · "),
+                      id: row["id"] as? String)
     }
 }
 
@@ -217,6 +228,23 @@ enum Herdr {
         let agent: String
         let status: String
         let title: String?
+        /// Where it came from, to go back there.
+        var pane: String? = nil
+        var socket: URL? = nil
+    }
+
+    /// Focuses the pane in herdr and brings forward the terminal app herdr's client runs in.
+    static func focus(_ notice: Notice) {
+        guard let pane = notice.pane, let socket = notice.socket else { return }
+        let request = String(decoding: Herdr.request("focus", "pane.focus", ["pane_id": pane]).dropLast(), as: UTF8.self)
+        DispatchQueue.global(qos: .userInitiated).async {
+            TerminalFocus.send([request], toSocket: socket.path)
+            let clients = TerminalFocus.run(URL(fileURLWithPath: "/usr/bin/pgrep"), ["-x", "herdr"]) ?? ""
+            let pids = clients.split(separator: "\n").compactMap { pid_t($0) }
+            DispatchQueue.main.async {
+                pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first?.activate()
+            }
+        }
     }
 
     static func request(_ id: String, _ method: String, _ params: [String: Any] = [:]) -> Data {
@@ -256,7 +284,7 @@ enum Herdr {
         case "pane.agent_status_changed":
             guard let pane = data["pane_id"] as? String, let status = data["agent_status"] as? String else { return nil }
             let agent = data["display_agent"] as? String ?? data["agent"] as? String ?? "herdr"
-            return .status(pane: pane, Notice(agent: agent, status: status, title: data["title"] as? String))
+            return .status(pane: pane, Notice(agent: agent, status: status, title: data["title"] as? String, pane: pane))
         default:
             return nil
         }
@@ -373,7 +401,7 @@ final class HerdrWatcher {
             self.drop()
             guard let panes = Herdr.panes(in: frame) else { return }
             for pane in self.states.reconcile(panes) {
-                self.announce(Herdr.Notice(agent: pane.agent ?? "herdr", status: pane.status, title: pane.title))
+                self.announce(Herdr.Notice(agent: pane.agent ?? "herdr", status: pane.status, title: pane.title, pane: pane.id))
             }
             self.open(sending: Herdr.subscription("sub", panes: panes)) { [weak self] frame in self?.handle(frame) }
         }
@@ -433,6 +461,8 @@ final class HerdrWatcher {
 
     private func announce(_ notice: Herdr.Notice) {
         guard NotifyIntegration.forAgent(notice.agent)?.isInstalled != true else { return }
+        var notice = notice
+        notice.socket = socketURL
         onNotice?(notice)
     }
 }
@@ -440,8 +470,9 @@ final class HerdrWatcher {
 // MARK: - Terminal bells
 
 /// The script terminals run when a pane rings the bell (tmux through a hook, WezTerm from its config).
-/// Arguments: the terminal's name, where the pane is (session or workspace), its window or title, and the running
-/// command, which doubles as the agent so a tool whose own hook is connected is skipped.
+/// Arguments: the terminal's name, where the pane is (session or workspace), its window or title, the running
+/// command, which doubles as the agent so a tool whose own hook is connected is skipped, and the pane's id, so a
+/// click on the notice can go back to it.
 enum TerminalBell {
     static var scriptURL: URL {
         NotifyServer.tokenURL.deletingLastPathComponent().appendingPathComponent("terminal-notify.sh")
@@ -454,10 +485,12 @@ enum TerminalBell {
         token=$(cat "$HOME/Library/Application Support/Nunsseop/notify-token" 2>/dev/null)
         app=$(printf '%s' "$1" | tr -cd '[:alnum:]._-' | cut -c1-40)
         agent=$(printf '%s' "$4" | tr -cd '[:alnum:]._-' | cut -c1-40)
+        target=$(printf '%s' "$5" | tr -cd '[:alnum:]%._-' | cut -c1-40)
+        bundle=$(printf '%s' "$__CFBundleIdentifier" | tr -cd '[:alnum:].-' | cut -c1-80)
         if [ -n "$2" ] && [ -n "$3" ]; then where="$2 · $3"; else where="$2$3"; fi
         printf '%s' "$where" | curl -s -m 2 -X POST http://127.0.0.1:\(NotifyServer.port)/notify \\
             -H "Authorization: Bearer $token" -H "X-Title: ${agent:-$app}" -H "X-Agent: $agent" \\
-            --data-binary @- >/dev/null 2>&1
+            -H "X-App: $bundle" -H "X-Target: ${target:+$app:$target}" --data-binary @- >/dev/null 2>&1
         exit 0
 
         """
@@ -481,12 +514,28 @@ enum WezTerm {
             || ["/opt/homebrew/bin/wezterm", "/usr/local/bin/wezterm"].contains { FileManager.default.isExecutableFile(atPath: $0) }
     }
 
+    static var cli: URL? {
+        let bundled = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)?
+            .appendingPathComponent("Contents/MacOS/wezterm")
+        return ([bundled?.path] + ["/opt/homebrew/bin/wezterm", "/usr/local/bin/wezterm"]).compactMap { $0 }
+            .map(URL.init(fileURLWithPath:)).first { FileManager.default.isExecutableFile(atPath: $0.path) }
+    }
+
+    /// Activates the pane and brings WezTerm forward.
+    static func focus(pane: String) {
+        guard pane.allSatisfy(\.isNumber), !pane.isEmpty else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            if let cli { _ = TerminalFocus.run(cli, ["cli", "activate-pane", "--pane-id", pane]) }
+            DispatchQueue.main.async { TerminalFocus.activate(bundleID: bundleID) }
+        }
+    }
+
     static func snippet(script: URL = TerminalBell.scriptURL) -> String {
         """
         -- Nunsseop: show bells from WezTerm panes in the notch.
         wezterm.on('bell', function(window, pane)
           local process = (pane:get_foreground_process_name() or ''):match('[^/]*$')
-          wezterm.background_child_process({ [==[\(script.path)]==], 'WezTerm', window:active_workspace(), pane:get_title(), process })
+          wezterm.background_child_process({ [==[\(script.path)]==], 'WezTerm', window:active_workspace(), pane:get_title(), process, tostring(pane:pane_id()) })
         end)
         """
     }
@@ -511,11 +560,35 @@ enum Tmux {
 
     /// The hook's tmux command. `#{q:…}` escapes each name for the shell, since programs can rename windows.
     static func hookCommand(script: URL) -> String {
-        "run-shell -b \"'\(script.path)' tmux #{q:session_name} #{q:window_name} #{q:pane_current_command}\""
+        "run-shell -b \"'\(script.path)' tmux #{q:session_name} #{q:window_name} #{q:pane_current_command} #{q:pane_id}\""
     }
 
+    /// Selects the pane and its window, and brings forward the terminal app showing that session.
+    static func focus(pane: String, binary: URL? = Tmux.binary, socketName: String? = nil) {
+        guard let binary, pane.hasPrefix("%"), pane.dropFirst().allSatisfy(\.isNumber) else { return }
+        let socket = socketName.map { ["-L", $0] } ?? []
+        DispatchQueue.global(qos: .userInitiated).async {
+            let tmux = { (arguments: [String]) in TerminalFocus.run(binary, socket + arguments) }
+            _ = tmux(["select-window", "-t", pane])
+            _ = tmux(["select-pane", "-t", pane])
+            // A client showing the pane's session, else any client, switched to it.
+            let session = tmux(["display-message", "-p", "-t", pane, "#{session_name}"])?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            var clients = (tmux(["list-clients", "-t", session, "-F", "#{client_pid} #{client_tty}"]) ?? "")
+                .split(separator: "\n")
+            if clients.isEmpty, let any = (tmux(["list-clients", "-F", "#{client_pid} #{client_tty}"]) ?? "").split(separator: "\n").first {
+                let tty = any.split(separator: " ").dropFirst().joined(separator: " ")
+                _ = tmux(["switch-client", "-c", tty, "-t", pane])
+                clients = [any]
+            }
+            let pids = clients.compactMap { $0.split(separator: " ").first.flatMap { pid_t($0) } }
+            DispatchQueue.main.async { pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first?.activate() }
+        }
+    }
+
+    /// Whether the server has this version's hook; an older one (different arguments) is replaced.
     static func isHooked(_ showHooks: String, script: URL) -> Bool {
-        showHooks.split(separator: "\n").contains { $0.hasPrefix(hook + " ") && $0.contains(script.path) }
+        showHooks.split(separator: "\n").contains { $0 == "\(hook) \(hookCommand(script: script))" }
     }
 }
 
@@ -590,5 +663,112 @@ final class TmuxWatcher {
             guard let hooks = run(["show-hooks", "-g"]), !Tmux.isHooked(hooks, script: script) else { return }
             _ = run(["set-hook", "-g", Tmux.hook, Tmux.hookCommand(script: script)])
         }
+    }
+}
+
+// MARK: - Going to the terminal a notice came from
+
+enum TerminalFocus {
+    /// Brings an app that's already running to the front. Apps that aren't running aren't launched for a notice.
+    static func activate(bundleID: String) {
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.activate()
+    }
+
+    /// The app a process runs in, found by walking up its parents: a shell in Terminal, tmux's client in Ghostty...
+    static func hostingApp(of pid: pid_t) -> NSRunningApplication? {
+        var current = pid
+        for _ in 0..<32 {
+            if let app = NSRunningApplication(processIdentifier: current), app.activationPolicy == .regular { return app }
+            guard let parent = parentPID(of: current), parent > 1, parent != current else { return nil }
+            current = parent
+        }
+        return nil
+    }
+
+    static func parentPID(of pid: pid_t) -> pid_t? {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+        guard sysctl(&mib, 4, &info, &size, nil, 0) == 0, size > 0 else { return nil }
+        return info.kp_eproc.e_ppid
+    }
+
+    /// What clicking a local tool's notice does: the pane it named (tmux, WezTerm), else the app it ran in.
+    /// nil when it said neither, so the notice opens the notch as before.
+    static func action(app: String?, target: String?) -> (() -> Void)? {
+        if let target {
+            let parts = target.split(separator: ":", maxSplits: 1).map(String.init)
+            if parts.count == 2 {
+                switch parts[0].lowercased() {
+                case "tmux": return { Tmux.focus(pane: parts[1]) }
+                case "wezterm": return { WezTerm.focus(pane: parts[1]) }
+                default: break
+                }
+            }
+        }
+        guard let app, !NSRunningApplication.runningApplications(withBundleIdentifier: app).isEmpty else { return nil }
+        return { activate(bundleID: app) }
+    }
+
+    /// Runs a command and returns its output, or nil when it fails; for the terminals' own command-line tools.
+    static func run(_ executable: URL, _ arguments: [String]) -> String? {
+        let process = Process()
+        process.executableURL = executable
+        process.arguments = arguments
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return nil }
+        DispatchQueue.global().asyncAfter(deadline: .now() + 5) { if process.isRunning { process.terminate() } }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return process.terminationStatus == 0 ? String(decoding: data, as: UTF8.self) : nil
+    }
+
+    /// Sends each line to a Unix socket and waits for one reply line to each, in order.
+    @discardableResult
+    static func send(_ lines: [String], toSocket path: String, timeout: TimeInterval = 2) -> [String] {
+        let fd = socket(AF_UNIX, SOCK_STREAM, 0)
+        guard fd >= 0 else { return [] }
+        defer { close(fd) }
+        var time = timeval(tv_sec: Int(timeout), tv_usec: Int32((timeout.truncatingRemainder(dividingBy: 1)) * 1_000_000))
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &time, socklen_t(MemoryLayout<timeval>.size))
+        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &time, socklen_t(MemoryLayout<timeval>.size))
+        // Writing after the other side closed (Muxy does after one reply) fails instead of killing Nunsseop with SIGPIPE.
+        var noSignal: Int32 = 1
+        setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &noSignal, socklen_t(MemoryLayout<Int32>.size))
+        var address = sockaddr_un()
+        address.sun_family = sa_family_t(AF_UNIX)
+        let bytes = Array(path.utf8)
+        guard bytes.count < MemoryLayout.size(ofValue: address.sun_path) else { return [] }
+        withUnsafeMutableBytes(of: &address.sun_path) { buffer in
+            buffer.copyBytes(from: bytes)
+            buffer[bytes.count] = 0
+        }
+        let connected = withUnsafePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { connect(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
+        }
+        guard connected == 0 else { return [] }
+        var replies: [String] = []
+        var pending = Data()
+        for line in lines {
+            let out = Array((line + "\n").utf8)
+            guard out.withUnsafeBytes({ write(fd, $0.baseAddress, out.count) }) == out.count else { break }
+            var reply: String?
+            while reply == nil {
+                if let newline = pending.firstIndex(of: 0x0A) {
+                    reply = String(decoding: pending[pending.startIndex..<newline], as: UTF8.self)
+                    pending.removeSubrange(pending.startIndex...newline)
+                    break
+                }
+                var chunk = [UInt8](repeating: 0, count: 4096)
+                let count = read(fd, &chunk, chunk.count)
+                guard count > 0 else { break }
+                pending.append(contentsOf: chunk[0..<count])
+            }
+            guard let reply else { break }
+            replies.append(reply)
+        }
+        return replies
     }
 }

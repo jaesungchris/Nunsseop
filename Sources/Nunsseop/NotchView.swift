@@ -123,7 +123,8 @@ struct NotchView: View {
             .frame(width: size.width, height: size.height)
             .clipShape(shape)
             .contentShape(shape)
-            .onTapGesture { model.expand() }
+            // A notice that leads somewhere (a terminal) goes there; otherwise a click opens the notch.
+            .onTapGesture { if !model.hud.performAction() { model.expand() } }
             .contextMenu {
                 Button("Settings…") { SettingsWindowController.shared.show() }
                 Button("Quit Nunsseop") { NSApp.terminate(nil) }

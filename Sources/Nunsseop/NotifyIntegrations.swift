@@ -135,7 +135,7 @@ enum NotifyIntegration: String, CaseIterable, Identifiable {
               await fetch("http://127.0.0.1:\(NotifyServer.port)/notify", {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ title: "OpenCode", message: "Finished" }),
+                body: JSON.stringify({ title: "OpenCode", message: "Finished", app: process.env.__CFBundleIdentifier }),
                 signal: AbortSignal.timeout(2000),
               })
             } catch {}
@@ -197,7 +197,7 @@ enum CodexNotify {
         token=$(cat "$HOME/Library/Application Support/Nunsseop/notify-token" 2>/dev/null)
         printf '%s' "$payload" | plutil -extract last-assistant-message raw -o - - 2>/dev/null \\
             | curl -s -m 2 -X POST http://127.0.0.1:\(NotifyServer.port)/notify -H "Authorization: Bearer $token" \\
-                -H 'X-Title: Codex' --data-binary @- >/dev/null 2>&1
+                -H 'X-Title: Codex' -H "X-App: $__CFBundleIdentifier" --data-binary @- >/dev/null 2>&1
         [ $# -gt 1 ] && exec "$@"
         exit 0
 
