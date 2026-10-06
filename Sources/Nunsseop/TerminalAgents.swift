@@ -437,6 +437,61 @@ final class HerdrWatcher {
     }
 }
 
+// MARK: - Terminal bells
+
+/// The script terminals run when a pane rings the bell (tmux through a hook, WezTerm from its config).
+/// Arguments: the terminal's name, where the pane is (session or workspace), its window or title, and the running
+/// command, which doubles as the agent so a tool whose own hook is connected is skipped.
+enum TerminalBell {
+    static var scriptURL: URL {
+        NotifyServer.tokenURL.deletingLastPathComponent().appendingPathComponent("terminal-notify.sh")
+    }
+
+    /// Only letters, digits and `._-` of the names that go into headers; the rest goes in the body.
+    static let script = """
+        #!/bin/sh
+        # Added by Nunsseop: shows bells from terminal panes in the notch.
+        token=$(cat "$HOME/Library/Application Support/Nunsseop/notify-token" 2>/dev/null)
+        app=$(printf '%s' "$1" | tr -cd '[:alnum:]._-' | cut -c1-40)
+        agent=$(printf '%s' "$4" | tr -cd '[:alnum:]._-' | cut -c1-40)
+        if [ -n "$2" ] && [ -n "$3" ]; then where="$2 · $3"; else where="$2$3"; fi
+        printf '%s' "$where" | curl -s -m 2 -X POST http://127.0.0.1:\(NotifyServer.port)/notify \\
+            -H "Authorization: Bearer $token" -H "X-Title: ${agent:-$app}" -H "X-Agent: $agent" \\
+            --data-binary @- >/dev/null 2>&1
+        exit 0
+
+        """
+
+    /// Writes the current script, so one from an older version doesn't linger.
+    static func install(at url: URL = scriptURL, script: String = script) {
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        FileManager.default.createFile(atPath: url.path, contents: Data(script.utf8), attributes: [.posixPermissions: 0o755])
+    }
+}
+
+// MARK: - WezTerm
+
+/// WezTerm's config is Lua the user writes, so Nunsseop doesn't change it; it offers lines to paste instead.
+/// They run the bell script without a shell, so pane titles can't turn into commands.
+enum WezTerm {
+    static let bundleID = "com.github.wez.wezterm"
+
+    static var isInstalled: Bool {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) != nil
+            || ["/opt/homebrew/bin/wezterm", "/usr/local/bin/wezterm"].contains { FileManager.default.isExecutableFile(atPath: $0) }
+    }
+
+    static func snippet(script: URL = TerminalBell.scriptURL) -> String {
+        """
+        -- Nunsseop: show bells from WezTerm panes in the notch.
+        wezterm.on('bell', function(window, pane)
+          local process = (pane:get_foreground_process_name() or ''):match('[^/]*$')
+          wezterm.background_child_process({ [==[\(script.path)]==], 'WezTerm', window:active_workspace(), pane:get_title(), process })
+        end)
+        """
+    }
+}
+
 // MARK: - tmux
 
 /// tmux has no notification feed, but it runs a hook whenever a window rings the bell, which is how agents such as
@@ -454,27 +509,9 @@ enum Tmux {
 
     static var isInstalled: Bool { binary != nil }
 
-    static var scriptURL: URL {
-        NotifyServer.tokenURL.deletingLastPathComponent().appendingPathComponent("tmux-notify.sh")
-    }
-
-    /// Receives the session name, window name and running command. The command doubles as the agent, so a tool
-    /// whose own hook is connected is skipped; only letters, digits and `._-` of it go into the header.
-    static let script = """
-        #!/bin/sh
-        # Added by Nunsseop: shows bells from tmux windows in the notch.
-        token=$(cat "$HOME/Library/Application Support/Nunsseop/notify-token" 2>/dev/null)
-        agent=$(printf '%s' "$3" | tr -cd '[:alnum:]._-' | cut -c1-40)
-        printf '%s · %s' "$1" "$2" | curl -s -m 2 -X POST http://127.0.0.1:\(NotifyServer.port)/notify \\
-            -H "Authorization: Bearer $token" -H "X-Title: ${agent:-tmux}" -H "X-Agent: $agent" \\
-            --data-binary @- >/dev/null 2>&1
-        exit 0
-
-        """
-
     /// The hook's tmux command. `#{q:…}` escapes each name for the shell, since programs can rename windows.
     static func hookCommand(script: URL) -> String {
-        "run-shell -b \"'\(script.path)' #{q:session_name} #{q:window_name} #{q:pane_current_command}\""
+        "run-shell -b \"'\(script.path)' tmux #{q:session_name} #{q:window_name} #{q:pane_current_command}\""
     }
 
     static func isHooked(_ showHooks: String, script: URL) -> Bool {
@@ -493,7 +530,8 @@ final class TmuxWatcher {
     private let queue = DispatchQueue(label: "nunsseop.tmux")
 
     /// `socketName` picks a server started with `tmux -L`; nil is the default one.
-    init(binary: URL? = Tmux.binary, socketName: String? = nil, scriptURL: URL = Tmux.scriptURL, script: String = Tmux.script) {
+    init(binary: URL? = Tmux.binary, socketName: String? = nil, scriptURL: URL = TerminalBell.scriptURL,
+         script: String = TerminalBell.script) {
         self.binary = binary
         self.socketName = socketName
         self.scriptURL = scriptURL
@@ -502,8 +540,7 @@ final class TmuxWatcher {
 
     func start() {
         guard timer == nil, binary != nil else { return }
-        try? FileManager.default.createDirectory(at: scriptURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        FileManager.default.createFile(atPath: scriptURL.path, contents: Data(script.utf8), attributes: [.posixPermissions: 0o755])
+        TerminalBell.install(at: scriptURL, script: script)
         // On quit the hook comes off before Nunsseop exits.
         quitObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                               object: nil, queue: .main) { [weak self] _ in

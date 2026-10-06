@@ -204,7 +204,7 @@ struct TerminalAgentWatcherTests {
 struct TmuxHookTests {
     @Test func hookCommandQuotesNamesForTheShell() {
         let command = Tmux.hookCommand(script: URL(fileURLWithPath: "/Users/a/Library/Application Support/Nunsseop/tmux-notify.sh"))
-        #expect(command == #"run-shell -b "'/Users/a/Library/Application Support/Nunsseop/tmux-notify.sh' #{q:session_name} #{q:window_name} #{q:pane_current_command}""#)
+        #expect(command == #"run-shell -b "'/Users/a/Library/Application Support/Nunsseop/tmux-notify.sh' tmux #{q:session_name} #{q:window_name} #{q:pane_current_command}""#)
     }
 
     @Test func recognisesItsOwnHookOnly() {
@@ -255,7 +255,7 @@ struct TmuxWatcherTests {
         #expect(tmux(socket, "rename-window", "-t", "work:api", "api\"; touch \(pwned.path); echo '$(touch \(pwned.path))") != nil)
 
         let watcher = TmuxWatcher(socketName: socket, scriptURL: script,
-                                  script: "#!/bin/sh\nprintf '%s|%s|%s\\n' \"$1\" \"$2\" \"$3\" >> \(log.path)\n")
+                                  script: "#!/bin/sh\nprintf '%s|%s|%s|%s\\n' \"$1\" \"$2\" \"$3\" \"$4\" >> \(log.path)\n")
         watcher.start()
         await waitUntil { Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", script: script) }
         #expect(Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", script: script))
@@ -263,10 +263,70 @@ struct TmuxWatcherTests {
         _ = tmux(socket, "respawn-pane", "-k", "-t", "work:0", "printf '\\a'; sleep 60")
         await waitUntil { FileManager.default.fileExists(atPath: log.path) }
         let line = (try? String(contentsOf: log, encoding: .utf8)) ?? ""
-        #expect(line.hasPrefix("work|api\"; touch \(pwned.path); echo '$(touch \(pwned.path))|"))
+        #expect(line.hasPrefix("tmux|work|api\"; touch \(pwned.path); echo '$(touch \(pwned.path))|"))
         #expect(!FileManager.default.fileExists(atPath: pwned.path))
 
         watcher.stop(waiting: true)
         #expect(!Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", script: script))
+    }
+}
+
+/// The bell script as shipped, with `curl` replaced by a stand-in that records what it was given.
+struct TerminalBellScriptTests {
+    private func run(_ arguments: [String]) throws -> (args: [String], body: String) {
+        let dir = URL(fileURLWithPath: "/tmp/nunsseop-test-\(UUID().uuidString.prefix(8))")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let support = dir.appendingPathComponent("Library/Application Support/Nunsseop")
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        try "secret-token".write(to: support.appendingPathComponent("notify-token"), atomically: true, encoding: .utf8)
+        let bin = dir.appendingPathComponent("bin")
+        try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+        let curl = bin.appendingPathComponent("curl")
+        try """
+        #!/bin/sh
+        for arg; do printf '%s\\n' "$arg"; done > "\(dir.path)/args"
+        cat > "\(dir.path)/body"
+        """.write(to: curl, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: curl.path)
+        let script = dir.appendingPathComponent("terminal-notify.sh")
+        TerminalBell.install(at: script)
+
+        let process = Process()
+        process.executableURL = script
+        process.arguments = arguments
+        process.environment = ["HOME": dir.path, "PATH": "\(bin.path):/usr/bin:/bin"]
+        try process.run()
+        process.waitUntilExit()
+        let args = try String(contentsOf: dir.appendingPathComponent("args"), encoding: .utf8).split(separator: "\n").map(String.init)
+        let body = try String(contentsOf: dir.appendingPathComponent("body"), encoding: .utf8)
+        return (args, body)
+    }
+
+    @Test func postsTheAgentAndWhereTheBellRang() throws {
+        let sent = try run(["tmux", "work", "api", "claude"])
+        #expect(sent.args.contains("http://127.0.0.1:\(NotifyServer.port)/notify"))
+        #expect(sent.args.contains("Authorization: Bearer secret-token"))
+        #expect(sent.args.contains("X-Title: claude"))
+        #expect(sent.args.contains("X-Agent: claude"))
+        #expect(sent.body == "work · api")
+    }
+
+    @Test func fallsBackToTheTerminalAndKeepsHeadersClean() throws {
+        let sent = try run(["WezTerm", "", "build\r\nX-Evil: 1", "bad name\r\nX-Agent: claude"])
+        #expect(sent.args.contains("X-Title: badnameX-Agentclaude"))
+        #expect(!sent.args.contains { $0.contains("\r") || $0 == "X-Evil: 1" })
+        #expect(sent.body == "build\r\nX-Evil: 1")
+        let empty = try run(["WezTerm", "default", "", ""])
+        #expect(empty.args.contains("X-Title: WezTerm"))
+        #expect(empty.body == "default")
+    }
+}
+
+struct WezTermSnippetTests {
+    @Test func callsTheScriptWithoutAShell() {
+        let snippet = WezTerm.snippet(script: URL(fileURLWithPath: "/Users/a/Library/Application Support/Nunsseop/terminal-notify.sh"))
+        #expect(snippet.contains("wezterm.on('bell', function(window, pane)"))
+        #expect(snippet.contains("wezterm.background_child_process({ [==[/Users/a/Library/Application Support/Nunsseop/terminal-notify.sh]==], 'WezTerm', window:active_workspace(), pane:get_title(), process })"))
+        #expect(!snippet.contains("os.execute") && !snippet.contains("run_child_process"))
     }
 }

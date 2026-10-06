@@ -317,3 +317,5 @@
 "Waiting for you" = "等待你的输入";
 "Show bells from tmux windows" = "显示 tmux 窗口的响铃";
 "Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is." = "代理在完成或等待你时会响铃(Claude Code 需将通知方式设为终端响铃)。仅向正在运行的 tmux 服务器添加钩子，tmux.conf 保持不变。";
+"Copy WezTerm config" = "复制 WezTerm 配置";
+"Paste it into ~/.wezterm.lua before `return config`. Bells from any WezTerm pane then show in the notch; WezTerm's config isn't changed for you." = "粘贴到 ~/.wezterm.lua 中 `return config` 之前，所有 WezTerm 窗格的响铃都会显示在刘海中。不会自动修改 WezTerm 配置。";
