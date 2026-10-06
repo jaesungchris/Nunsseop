@@ -110,10 +110,11 @@
 "Let tools on this Mac show notifications in the notch" = "Werkzeugen auf diesem Mac Mitteilungen in der Notch erlauben";
 "Used by Claude Code hooks and scripts. Only requests from this Mac with the secret token are accepted." = "Wird von Claude-Code-Hooks und Skripten genutzt. Nur Anfragen von diesem Mac mit dem geheimen Token werden angenommen.";
 "Copy Claude Code hook command" = "Claude-Code-Hook-Befehl kopieren";
-"Connected to Claude Code" = "Mit Claude Code verbunden";
-"Connect to Claude Code" = "Mit Claude Code verbinden";
-"Adds a Notification hook to `~/.claude/settings.json` and keeps the old file as `settings.json.nunsseop-backup`. Claude Code sessions started afterwards send their notifications here." = "Fügt `~/.claude/settings.json` einen Notification-Hook hinzu und behält die alte Datei als `settings.json.nunsseop-backup`. Danach gestartete Claude-Code-Sitzungen senden ihre Mitteilungen hierher.";
-"Couldn't read `~/.claude/settings.json`. Copy the hook command and add it by hand." = "`~/.claude/settings.json` konnte nicht gelesen werden. Kopiere den Hook-Befehl und füge ihn selbst hinzu.";
+"Connect" = "Verbinden";
+"Disconnect" = "Trennen";
+"Connecting changes the tool's own settings file and keeps the old one with a `.nunsseop-backup` extension. Sessions started afterwards send their notifications here." = "Beim Verbinden wird die Einstellungsdatei des Tools geändert; die alte bleibt mit der Endung `.nunsseop-backup` erhalten. Danach gestartete Sitzungen senden ihre Mitteilungen hierher.";
+"Couldn't change %@. Copy the hook command and add it by hand." = "%@ konnte nicht geändert werden. Kopiere den Hook-Befehl und füge ihn selbst hinzu.";
+"Copy command for scripts" = "Befehl für Skripte kopieren";
 "Timer" = "Timer";
 "Pomodoro" = "Pomodoro";
 "Stopwatch" = "Stoppuhr";

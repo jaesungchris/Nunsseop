@@ -92,7 +92,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 
 **🤖 For developers**
 - **AI usage.** Claude and Codex limits with reset times, and token use over the last 5 hours and 7 days, counted across Claude Code, Codex, gjc, omo and OpenCode. Read from files those tools already keep on your Mac, so there's nothing to sign in to.
-- **Claude Code notifications.** The notch tells you when Claude Code is waiting for you ([setup below](#claude-code-notifications)).
+- **Claude Code notifications.** The notch tells you when Claude Code is waiting for you or when Codex, Gemini CLI or OpenCode finish ([setup below](#claude-code-notifications)).
 
 **🧩 Make it yours**
 - Pick your tabs and their order, what the header and collapsed notch show, and which pop-ups you get. **Anything you turn off stops running.**
@@ -149,9 +149,9 @@ Versions before 0.8.3 were signed in a way that made macOS forget the Accessibil
 
 Nunsseop listens on `127.0.0.1:47750` for notifications from tools on your Mac. Requests must carry the secret token stored in `~/Library/Application Support/Nunsseop/notify-token`.
 
-Open Settings → Alerts and press **Connect to Claude Code**. Nunsseop adds its Notification hook to `~/.claude/settings.json`, keeps the old file as `settings.json.nunsseop-backup`, and Claude Code sessions started after that show their notifications in the notch.
+Open Settings → Alerts and press **Connect** next to Claude Code, Codex, Gemini CLI or OpenCode. Only tools you have used on this Mac are listed. Nunsseop changes that tool's settings file (`~/.claude/settings.json`, `~/.codex/config.toml`, `~/.gemini/settings.json`) or adds a plugin to `~/.config/opencode/plugins`, and keeps the old file with a `.nunsseop-backup` extension. Codex allows only one `notify` command, so an existing one keeps running after Nunsseop's. **Disconnect** undoes it. Sessions started afterwards send their notifications to the notch.
 
-To do it by hand, press **Copy Claude Code hook command** and add it to `~/.claude/settings.json`:
+To set up Claude Code by hand, press **Copy Claude Code hook command** and add it to `~/.claude/settings.json`:
 
 ```json
 {

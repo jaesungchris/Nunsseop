@@ -92,7 +92,7 @@ Dock 아이콘은 없습니다. Nunsseop은 노치에 삽니다.
 
 **🤖 개발자를 위해**
 - **AI 사용량.** Claude와 Codex의 한도와 초기화 시각, 최근 5시간·7일 토큰 사용량. Claude Code, Codex, gjc, omo, OpenCode 사용량을 모두 합칩니다. 두 도구가 이 Mac에 이미 남기는 파일을 읽으므로 로그인할 게 없습니다.
-- **Claude Code 알림.** Claude Code가 기다리고 있으면 노치가 알려 줍니다([설정 방법](#claude-code-알림)).
+- **Claude Code 알림.** Claude Code가 기다리고 있거나 Codex, Gemini CLI, OpenCode가 작업을 마치면 노치가 알려 줍니다([설정 방법](#claude-code-알림)).
 
 **🧩 내게 맞게**
 - 탭과 순서, 헤더와 접힌 노치에 보일 것, 받을 알림을 고르세요. **꺼 둔 기능은 아예 동작하지 않습니다.**
@@ -149,9 +149,9 @@ Claude의 5시간·주간 %는 터미널에서 Claude Code를 쓸 때 [oh-my-cla
 
 Nunsseop은 이 Mac 안(`127.0.0.1:47750`)에서만 다른 도구의 알림을 받습니다. 요청에는 `~/Library/Application Support/Nunsseop/notify-token`에 저장된 비밀 토큰이 있어야 합니다.
 
-설정 → 알림에서 **Claude Code에 연결**을 누르세요. Nunsseop이 `~/.claude/settings.json`에 Notification 훅을 추가하고, 기존 파일은 `settings.json.nunsseop-backup`으로 남겨 둡니다. 그 뒤에 시작한 Claude Code 세션의 알림이 노치에 뜹니다.
+설정 → 알림에서 Claude Code, Codex, Gemini CLI, OpenCode 옆의 **연결**을 누르세요. 이 Mac에서 써 본 도구만 보입니다. Nunsseop이 그 도구의 설정 파일(`~/.claude/settings.json`, `~/.codex/config.toml`, `~/.gemini/settings.json`)을 바꾸거나 `~/.config/opencode/plugins`에 플러그인을 추가하고, 기존 파일은 `.nunsseop-backup` 확장자로 남겨 둡니다. Codex는 `notify` 명령을 하나만 둘 수 있어서, 이미 있던 명령은 Nunsseop 다음에 그대로 실행됩니다. **연결 해제**를 누르면 원래대로 돌아갑니다. 그 뒤에 시작한 세션의 알림이 노치에 뜹니다.
 
-직접 넣으려면 **Claude Code 훅 명령 복사**를 누르고 `~/.claude/settings.json`에 넣으세요.
+Claude Code를 직접 설정하려면 **Claude Code 훅 명령 복사**를 누르고 `~/.claude/settings.json`에 넣으세요.
 
 ```json
 {
