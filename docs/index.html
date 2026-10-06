@@ -58,8 +58,18 @@
   .brand small { color: var(--faint); font-weight: 500; }
   .nav-links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; color: var(--muted); }
   .nav-links a:hover { color: var(--text); }
-  .lang { -webkit-appearance: none; appearance: none; border: 1px solid var(--card-border); border-radius: 999px; background: transparent; color: var(--text); font: inherit; font-size: 12px; padding: 5px 12px; cursor: pointer; }
-  .lang option { background: var(--bg-2); color: var(--text); }
+  .lang { position: relative; }
+  .lang-btn { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 11px; border-radius: 999px; border: 1px solid var(--card-border); background: var(--card); color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: color .15s, background .15s, border-color .15s; }
+  .lang-btn:hover, .lang.open .lang-btn { color: var(--text); background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.14); }
+  .lang-btn svg { width: 15px; height: 15px; flex: none; }
+  .lang-btn .chev { width: 11px; height: 11px; opacity: .7; transition: transform .2s; }
+  .lang.open .lang-btn .chev { transform: rotate(180deg); }
+  .lang-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 172px; margin: 0; padding: 6px; list-style: none; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(20,18,28,0.88); backdrop-filter: saturate(160%) blur(20px); -webkit-backdrop-filter: saturate(160%) blur(20px); box-shadow: 0 24px 60px -12px rgba(0,0,0,0.7); opacity: 0; visibility: hidden; transform: translateY(-4px) scale(.98); transform-origin: top right; transition: opacity .16s, transform .16s, visibility 0s .16s; }
+  .lang.open .lang-menu { opacity: 1; visibility: visible; transform: none; transition: opacity .16s, transform .16s; }
+  .lang-menu button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; text-align: left; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+  .lang-menu button:hover, .lang-menu button:focus-visible { background: rgba(255,255,255,0.07); color: var(--text); outline: none; }
+  .lang-menu button[aria-selected="true"] { color: var(--text); font-weight: 600; }
+  .lang-menu button[aria-selected="true"]::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: linear-gradient(135deg, var(--violet), var(--pink)); }
   @media (max-width: 720px) { .nav-links { display: none; } .lang { margin-left: auto; } }
 
   .hero { position: relative; padding: 72px 0 40px; text-align: center; isolation: isolate; }
@@ -235,15 +245,22 @@
       <a href="#faq">FAQ</a>
       <a href="https://github.com/namekun/Nunsseop">GitHub</a>
     </div>
-    <select class="lang" id="lang" aria-label="Language">
-      <option value="en">English</option>
-      <option value="ko">한국어</option>
-      <option value="ja">日本語</option>
-      <option value="zh">简体中文</option>
-      <option value="es">Español</option>
-      <option value="de">Deutsch</option>
-      <option value="fr">Français</option>
-    </select>
+    <div class="lang" id="lang">
+      <button class="lang-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>
+        <span id="langLabel">English</span>
+        <svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+      </button>
+      <ul class="lang-menu" role="listbox" aria-label="Language">
+        <li><button type="button" role="option" data-set="en" lang="en">English</button></li>
+        <li><button type="button" role="option" data-set="ko" lang="ko">한국어</button></li>
+        <li><button type="button" role="option" data-set="ja" lang="ja">日本語</button></li>
+        <li><button type="button" role="option" data-set="zh" lang="zh-Hans">简体中文</button></li>
+        <li><button type="button" role="option" data-set="es" lang="es">Español</button></li>
+        <li><button type="button" role="option" data-set="de" lang="de">Deutsch</button></li>
+        <li><button type="button" role="option" data-set="fr" lang="fr">Français</button></li>
+      </ul>
+    </div>
   </div>
 </nav>
 
@@ -696,11 +713,23 @@ open build/Nunsseop.app</pre></div>
 (function () {
   var LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'de', 'fr'];
   var COPIED = { en: 'Copied', ko: '복사됨', ja: 'コピーしました', zh: '已复制', es: 'Copiado', de: 'Kopiert', fr: 'Copié' };
-  var langSelect = document.getElementById('lang');
+  var langBox = document.getElementById('lang');
+  var langBtn = langBox.querySelector('.lang-btn');
+  var langOptions = langBox.querySelectorAll('[role="option"]');
+  var langListeners = [];
+  function openMenu(v) {
+    langBox.classList.toggle('open', v);
+    langBtn.setAttribute('aria-expanded', String(v));
+  }
   function setLang(lang) {
     document.body.setAttribute('data-lang', lang);
     document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : lang;
-    langSelect.value = lang;
+    langOptions.forEach(function (o) {
+      var on = o.dataset.set === lang;
+      o.setAttribute('aria-selected', String(on));
+      if (on) document.getElementById('langLabel').textContent = o.textContent;
+    });
+    langListeners.forEach(function (fn) { fn(); });
     try { localStorage.setItem('nunsseop-lang', lang); } catch (e) {}
   }
   function preferredLang() {
@@ -714,7 +743,24 @@ open build/Nunsseop.app</pre></div>
   var saved = null;
   try { saved = localStorage.getItem('nunsseop-lang'); } catch (e) {}
   setLang(LANGS.indexOf(saved) >= 0 ? saved : preferredLang());
-  langSelect.addEventListener('change', function () { setLang(langSelect.value); });
+  langBtn.addEventListener('click', function () {
+    var v = !langBox.classList.contains('open');
+    openMenu(v);
+    if (v) langBox.querySelector('[aria-selected="true"]').focus();
+  });
+  langOptions.forEach(function (o, i) {
+    o.addEventListener('click', function () { setLang(o.dataset.set); openMenu(false); langBtn.focus(); });
+    o.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        langOptions[(i + (e.key === 'ArrowDown' ? 1 : langOptions.length - 1)) % langOptions.length].focus();
+      }
+    });
+  });
+  document.addEventListener('click', function (e) { if (!langBox.contains(e.target)) openMenu(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && langBox.classList.contains('open')) { openMenu(false); langBtn.focus(); }
+  });
 
   document.querySelectorAll('[data-copy]').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -793,7 +839,7 @@ open build/Nunsseop.app</pre></div>
     if (!tourTouched && !reduce) tourTimer = setTimeout(function () { show((current + 1) % tourData.length); }, DUR);
   }
   list.style.setProperty('--dur', DUR + 'ms');
-  langSelect.addEventListener('change', function () { show(current); });
+  langListeners.push(function () { show(current); });
   show(0);
 
   var clock = document.getElementById('clock');
