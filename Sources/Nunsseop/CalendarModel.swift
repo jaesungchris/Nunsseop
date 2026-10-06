@@ -11,6 +11,8 @@ struct CalendarItem: Identifiable, Equatable {
     let color: Color
     /// A video-call link found in the event's URL, location or notes.
     var joinURL: URL? = nil
+
+    func canJoin(at date: Date) -> Bool { joinURL != nil && end > date }
 }
 
 struct ReminderItem: Identifiable, Equatable {
@@ -45,8 +47,7 @@ final class CalendarModel: ObservableObject {
     private var alertTimer: Timer?
     /// How long an event notice stays, and the gap before the next one when several are due.
     static let alertSpacing: TimeInterval = 8
-    /// Occurrences already announced, as EventAlert keys.
-    private var announced: Set<String> = []
+    private var alertQueue = EventAlertQueue(spacing: CalendarModel.alertSpacing)
 
     private let store = EKEventStore()
     private var observer: NSObjectProtocol?
@@ -182,9 +183,11 @@ final class CalendarModel: ObservableObject {
                      joinURL: findingLink ? MeetingLink.find(in: [event.url?.absoluteString, event.location, event.notes]) : nil)
     }
 
-    /// Cancelled events and invitations the user declined.
-    private static func isSkipped(_ event: EKEvent) -> Bool {
-        event.status == .canceled || event.attendees?.first(where: \.isCurrentUser)?.participantStatus == .declined
+    /// Leaves out cancelled events, invitations the user declined, and events without an identifier,
+    /// which would get a new random one, and so a new alert, on every check.
+    nonisolated static func isAlertable(_ event: EKEvent) -> Bool {
+        guard let id = event.eventIdentifier, !id.isEmpty else { return false }
+        return event.status != .canceled && event.attendees?.first(where: \.isCurrentUser)?.participantStatus != .declined
     }
 
     /// Announces the next event whose alert is due and sets a timer for the one after.
@@ -198,15 +201,10 @@ final class CalendarModel: ObservableObject {
         let now = Date.now
         let predicate = store.predicateForEvents(withStart: now.addingTimeInterval(-EventAlert.grace),
                                                  end: now.addingTimeInterval(36 * 3600), calendars: calendars)
-        let upcoming = store.events(matching: predicate).filter { !Self.isSkipped($0) }.map { item($0, findingLink: false) }
-        announced.formIntersection(upcoming.map(EventAlert.key))
-        var (due, next) = EventAlert.due(in: upcoming, now: now, announced: announced)
-        if let first = due.first {
-            announced.insert(EventAlert.key(first))
-            onUpcoming?(first)
-            // Events starting together are shown one after another, once each notice has had its time.
-            if due.count > 1 { next = now.addingTimeInterval(Self.alertSpacing) }
-        }
+        let upcoming = store.events(matching: predicate).filter(Self.isAlertable).map { item($0, findingLink: false) }
+        // Events starting together are shown one after another, once each notice has had its time.
+        let (announce, next) = alertQueue.step(items: upcoming, now: now)
+        if let announce { onUpcoming?(announce) }
         let timer = Timer(fire: next ?? now.addingTimeInterval(12 * 3600), interval: 0, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.scheduleAlert() }
         }
