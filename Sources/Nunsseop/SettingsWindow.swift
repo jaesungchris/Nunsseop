@@ -358,7 +358,8 @@ private struct ServicesPane: View {
             }
             Section("AI usage") {
                 Toggle("Ask Anthropic for Claude's limits", isOn: $settings.claudeLimitsFromAnthropic)
-                Text("Uses the sign-in Claude Code keeps in the Keychain, only to read your 5-hour and weekly limits from api.anthropic.com every few minutes, so they stay current when another app or claude.ai uses them. The sign-in is never changed or sent anywhere else.")
+                    .onChange(of: settings.claudeLimitsFromAnthropic) { _, _ in settings.claudeLimitsAsked = true }
+                Text("Reads the sign-in Claude Code keeps in the Keychain and asks api.anthropic.com for your 5-hour and weekly limits about once an hour, so they also move when another app or claude.ai uses them. While that sign-in has expired they stop updating, until Claude Code signs in again. The sign-in is never changed or sent anywhere else.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Weather") {

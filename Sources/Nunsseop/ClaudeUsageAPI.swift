@@ -3,12 +3,13 @@ import os
 
 /// Claude's limits straight from Anthropic, asked with the sign-in Claude Code keeps in the Keychain, so they're
 /// current whatever spends them (Claude Code, apps built on the Agent SDK, claude.ai), not only while the
-/// oh-my-claudecode HUD runs. The token is only read: an expired one is skipped, never refreshed, since Claude Code
-/// rotates it and a second writer could log it out. It goes nowhere but api.anthropic.com.
+/// oh-my-claudecode HUD runs. Off until the user agrees. The token is only read: an expired one is skipped, never
+/// refreshed, since Claude Code rotates it and a second writer could log it out; the limits then stop updating until
+/// Claude Code signs in again. It goes nowhere but api.anthropic.com, and Nunsseop names itself, not Claude Code.
 enum ClaudeUsageAPI {
     static let url = URL(string: "https://api.anthropic.com/api/oauth/usage")!
-    /// How often the limits are asked for; the endpoint is rate limited, and the HUD asks too.
-    static let interval: TimeInterval = 180
+    /// How often the limits are asked for: a client that isn't Claude Code gets about one request an hour.
+    static let interval: TimeInterval = 3600
     /// After a refusal (429) at least this long passes before asking again, longer if the server says so.
     static let backoff: TimeInterval = 600
 
@@ -20,7 +21,6 @@ enum ClaudeUsageAPI {
     private struct State {
         var limits: AIUsageModel.Limits?
         var nextAttempt = Date.distantPast
-        var version: (value: String?, checked: Date)?
     }
 
     private static let state = OSAllocatedUnfairLock(initialState: State())
@@ -88,60 +88,62 @@ enum ClaudeUsageAPI {
         return fractional.date(from: text) ?? whole.date(from: text)
     }
 
-    /// The endpoint counts requests per User-Agent, and only a versioned `claude-code/x.y.z` gets the bucket Claude
-    /// Code uses (others get about one request an hour), so the installed version is sent, or no header at all.
-    static func userAgent(version: String?) -> String? {
-        guard let version = version?.trimmingCharacters(in: .whitespacesAndNewlines), version.count <= 64,
-              version.range(of: #"^\d+\.\d+\.\d+[A-Za-z0-9.+-]*$"#, options: .regularExpression) != nil else { return nil }
-        return "claude-code/\(version)"
+    /// Nunsseop and its version, rather than borrowing Claude Code's name.
+    static var userAgent: String {
+        "Nunsseop/\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev")"
     }
 
-    static func request(token: String, userAgent: String?) -> URLRequest {
+    static func request(token: String) -> URLRequest {
         var request = URLRequest(url: url, timeoutInterval: 10)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let userAgent { request.setValue(userAgent, forHTTPHeaderField: "User-Agent") }
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         return request
+    }
+
+    /// Windows whose reset time has passed have started over, however long ago the limits were fetched
+    /// (an expired sign-in or a run of refusals can keep them from being fetched again).
+    static func fresh(_ limits: AIUsageModel.Limits, now: Date) -> AIUsageModel.Limits {
+        func reset(_ window: AIUsageModel.Window?) -> AIUsageModel.Window? {
+            guard let window, let resets = window.resetsAt, resets < now else { return window }
+            return AIUsageModel.Window(percent: 0, resetsAt: nil)
+        }
+        var limits = limits
+        limits.session = reset(limits.session)
+        limits.weekly = reset(limits.weekly)
+        return limits
     }
 
     // MARK: Asking
 
-    /// The last limits, asking Anthropic again when they're due. Blocks for the request, so it's called in the background.
-    static func current(now: Date = .now) -> AIUsageModel.Limits? {
+    /// The last limits, asking Anthropic again when they're due.
+    static func current(now: Date = .now) async -> AIUsageModel.Limits? {
         guard isEnabled else { return nil }
         let due = state.withLock { state -> Bool in
             guard now >= state.nextAttempt else { return false }
             state.nextAttempt = now.addingTimeInterval(interval)
             return true
         }
-        if due { fetch(now: now) }
-        return state.withLock { $0.limits }
+        if due { await fetch(now: now) }
+        return state.withLock { $0.limits }.map { fresh($0, now: now) }
     }
 
-    private static func fetch(now: Date) {
+    private static func fetch(now: Date) async {
         guard let credentials = keychainCredentials(now: now) else {
-            // Not signed in (or the Keychain said no): asked again later, not on every refresh.
+            // Not signed in, or the sign-in expired: asked again later, not on every refresh.
             state.withLock { $0.nextAttempt = now.addingTimeInterval(backoff) }
             return
         }
-        let version = claudeVersion(now: now)
-        let semaphore = DispatchSemaphore(value: 0)
-        let result = OSAllocatedUnfairLock<(Data, HTTPURLResponse)?>(initialState: nil)
-        let task = session.dataTask(with: request(token: credentials.token, userAgent: userAgent(version: version))) { data, response, _ in
-            if let data, let response = response as? HTTPURLResponse { result.withLock { $0 = (data, response) } }
-            semaphore.signal()
-        }
-        task.resume()
-        if semaphore.wait(timeout: .now() + 12) == .timedOut { task.cancel() }
-        guard let (data, response) = result.withLock({ $0 }) else { return }
+        guard let (data, response) = try? await session.data(for: request(token: credentials.token)),
+              let response = response as? HTTPURLResponse else { return }
         switch response.statusCode {
         case 200:
             if let limits = limits(from: data, fetchedAt: .now) { state.withLock { $0.limits = limits } }
         case 429:
             // Capped, so an odd retry-after can't switch this off until relaunch.
             let asked = response.value(forHTTPHeaderField: "retry-after").flatMap(Double.init) ?? 0
-            let wait = min(max(backoff, asked.isFinite ? asked : 0), 3600)
+            let wait = min(max(backoff, asked.isFinite ? asked : 0), interval * 4)
             state.withLock { $0.nextAttempt = now.addingTimeInterval(wait) }
         default:
             // 401/403: a token that stopped working; Claude Code will sign in again, and it's asked later.
@@ -162,20 +164,6 @@ enum ClaudeUsageAPI {
         return nil
     }
 
-    /// The installed Claude Code's version, looked up once an hour.
-    private static func claudeVersion(now: Date) -> String? {
-        if let cached = state.withLock({ $0.version }), now.timeIntervalSince(cached.checked) < 3600 { return cached.value }
-        let home = NSHomeDirectory()
-        let candidates = ["\(home)/.local/bin/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude", "\(home)/.claude/local/claude"]
-        let version = candidates.lazy
-            .filter { FileManager.default.isExecutableFile(atPath: $0) }
-            .compactMap { run($0, ["--version"]) }
-            .compactMap { $0.split(separator: " ").first.map(String.init) }
-            .first
-        state.withLock { $0.version = (version, now) }
-        return version
-    }
-
     private static func run(_ path: String, _ arguments: [String]) -> String? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: path)
@@ -184,7 +172,7 @@ enum ClaudeUsageAPI {
         process.standardOutput = output
         process.standardError = FileHandle.nullDevice
         guard (try? process.run()) != nil else { return nil }
-        // A child that ignores SIGTERM gets SIGKILL, so a hung `security` or `claude` can't stall every refresh.
+        // A child that ignores SIGTERM gets SIGKILL, so a hung `security` can't stall every refresh.
         DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
             guard process.isRunning else { return }
             process.terminate()

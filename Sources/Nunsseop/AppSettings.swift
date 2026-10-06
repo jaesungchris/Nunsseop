@@ -52,10 +52,12 @@ final class AppSettings: ObservableObject {
     @Published var herdrNotifications: Bool = AppSettings.load("herdrNotifications", default: true) { didSet { save(herdrNotifications, "herdrNotifications") } }
     /// Shows bells from tmux windows, through a hook on the running tmux server.
     @Published var tmuxBells: Bool = AppSettings.load("tmuxBells", default: true) { didSet { save(tmuxBells, "tmuxBells") } }
-    /// Asks Anthropic for Claude's limits with Claude Code's sign-in, so they're current without Claude Code running.
-    @Published var claudeLimitsFromAnthropic: Bool = AppSettings.load("claudeLimitsFromAnthropic", default: true) {
+    /// Asks Anthropic for Claude's limits with Claude Code's sign-in. Off until the user agrees, in the AI tab or Settings.
+    @Published var claudeLimitsFromAnthropic: Bool = AppSettings.load("claudeLimitsFromAnthropic", default: false) {
         didSet { save(claudeLimitsFromAnthropic, "claudeLimitsFromAnthropic"); ClaudeUsageAPI.isEnabled = claudeLimitsFromAnthropic }
     }
+    /// The AI tab asked once whether to turn that on; asked or answered, it doesn't ask again.
+    @Published var claudeLimitsAsked: Bool = AppSettings.load("claudeLimitsAsked", default: false) { didSet { save(claudeLimitsAsked, "claudeLimitsAsked") } }
     @Published var localNotifications: Bool = AppSettings.load("localNotifications", default: true) { didSet { save(localNotifications, "localNotifications") } }
     @Published var timerTab: Bool = AppSettings.load("timerTab", default: true) { didSet { save(timerTab, "timerTab") } }
     @Published var shelfTab: Bool = AppSettings.load("shelfTab", default: true) { didSet { save(shelfTab, "shelfTab") } }

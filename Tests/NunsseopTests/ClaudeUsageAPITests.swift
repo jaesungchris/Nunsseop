@@ -40,22 +40,34 @@ struct ClaudeUsageAPITests {
         #expect(ClaudeUsageAPI.date("yesterday") == nil)
     }
 
-    @Test func userAgentNamesARealClaudeCodeVersion() {
-        #expect(ClaudeUsageAPI.userAgent(version: "2.1.291") == "claude-code/2.1.291")
-        #expect(ClaudeUsageAPI.userAgent(version: " 2.0.0-beta.1\n") == "claude-code/2.0.0-beta.1")
-        #expect(ClaudeUsageAPI.userAgent(version: "2.1") == nil)
-        #expect(ClaudeUsageAPI.userAgent(version: "2.1.0\r\nX-Evil: 1") == nil)
-        #expect(ClaudeUsageAPI.userAgent(version: nil) == nil)
+    @Test func namesNunsseopNotClaudeCode() {
+        #expect(ClaudeUsageAPI.userAgent.hasPrefix("Nunsseop/"))
+        #expect(!ClaudeUsageAPI.userAgent.lowercased().contains("claude"))
+        // Without Claude Code's bucket the endpoint allows about one request an hour.
+        #expect(ClaudeUsageAPI.interval == 3600)
+    }
+
+    @Test func passedResetsShowAsStartedOverWhenReturned() throws {
+        let fetched = try #require(ClaudeUsageAPI.date("2026-10-06T18:00:00Z"))
+        let resets = try #require(ClaudeUsageAPI.date("2026-10-06T20:00:00Z"))
+        let limits = AIUsageModel.Limits(session: AIUsageModel.Window(percent: 80, resetsAt: resets),
+                                         weekly: AIUsageModel.Window(percent: 40, resetsAt: resets.addingTimeInterval(86400)),
+                                         updatedAt: fetched)
+        // Still before the reset: as fetched.
+        #expect(ClaudeUsageAPI.fresh(limits, now: resets.addingTimeInterval(-60)) == limits)
+        // Long after, with nothing fetched since (an expired sign-in, say): the 5-hour window has started over.
+        let later = ClaudeUsageAPI.fresh(limits, now: resets.addingTimeInterval(3600))
+        #expect(later.session?.percent == 0 && later.session?.resetsAt == nil)
+        #expect(later.weekly?.percent == 40)
     }
 
     @Test func requestCarriesTheSignInOnlyToAnthropic() {
-        let request = ClaudeUsageAPI.request(token: "tok", userAgent: "claude-code/2.1.291")
+        let request = ClaudeUsageAPI.request(token: "tok")
         #expect(request.url?.absoluteString == "https://api.anthropic.com/api/oauth/usage")
         #expect(request.httpMethod == "GET")
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer tok")
         #expect(request.value(forHTTPHeaderField: "anthropic-beta") == "oauth-2025-04-20")
-        #expect(request.value(forHTTPHeaderField: "User-Agent") == "claude-code/2.1.291")
-        #expect(ClaudeUsageAPI.request(token: "tok", userAgent: nil).value(forHTTPHeaderField: "User-Agent") == nil)
+        #expect(request.value(forHTTPHeaderField: "User-Agent") == ClaudeUsageAPI.userAgent)
     }
 
     @Test func sessionKeepsNothingOnDisk() {
@@ -97,7 +109,7 @@ struct ClaudeUsageAPITests {
         let line = String(decoding: output.fileHandleForReading.availableData, as: UTF8.self)
         let port = try #require(Int(line.trimmingCharacters(in: .whitespacesAndNewlines)))
 
-        var request = ClaudeUsageAPI.request(token: "secret-token", userAgent: nil)
+        var request = ClaudeUsageAPI.request(token: "secret-token")
         request.url = URL(string: "http://127.0.0.1:\(port)/api/oauth/usage")
         let (_, response) = try await ClaudeUsageAPI.session.data(for: request)
         #expect((response as? HTTPURLResponse)?.statusCode == 302)
@@ -106,8 +118,9 @@ struct ClaudeUsageAPITests {
 
     /// Against the real endpoint with this Mac's sign-in; opt in with NUNSSEOP_LIVE_USAGE=1.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["NUNSSEOP_LIVE_USAGE"] == "1"))
-    func liveLimits() throws {
-        let limits = try #require(ClaudeUsageAPI.current())
+    func liveLimits() async throws {
+        ClaudeUsageAPI.isEnabled = true
+        let limits = try #require(await ClaudeUsageAPI.current())
         print("LIVE five-hour \(limits.session?.percent ?? -1)% weekly \(limits.weekly?.percent ?? -1)% resets \(String(describing: limits.session?.resetsAt))")
         #expect(limits.session != nil || limits.weekly != nil)
     }
