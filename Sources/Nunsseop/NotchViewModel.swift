@@ -100,6 +100,7 @@ final class NotchViewModel: ObservableObject {
     let screenshots = ScreenshotWatcher()
     let capsLock = CapsLockWatcher()
     let notifyServer = NotifyServer()
+    let muxy = MuxyWatcher()
     let stats = SystemStats()
     let launcher = AppLauncher()
     let lyrics = LyricsModel()

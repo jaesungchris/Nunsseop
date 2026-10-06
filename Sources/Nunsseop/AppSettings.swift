@@ -46,6 +46,8 @@ final class AppSettings: ObservableObject {
     @Published var batteryAlerts: Bool = AppSettings.load("batteryAlerts", default: true) { didSet { save(batteryAlerts, "batteryAlerts") } }
     @Published var capsLockHUD: Bool = AppSettings.load("capsLockHUD", default: true) { didSet { save(capsLockHUD, "capsLockHUD") } }
     @Published var screenshotsToShelf: Bool = AppSettings.load("screenshotsToShelf", default: true) { didSet { save(screenshotsToShelf, "screenshotsToShelf") } }
+    /// Shows the notifications agents running in Muxy send.
+    @Published var muxyNotifications: Bool = AppSettings.load("muxyNotifications", default: true) { didSet { save(muxyNotifications, "muxyNotifications") } }
     @Published var localNotifications: Bool = AppSettings.load("localNotifications", default: true) { didSet { save(localNotifications, "localNotifications") } }
     @Published var timerTab: Bool = AppSettings.load("timerTab", default: true) { didSet { save(timerTab, "timerTab") } }
     @Published var shelfTab: Bool = AppSettings.load("shelfTab", default: true) { didSet { save(shelfTab, "shelfTab") } }

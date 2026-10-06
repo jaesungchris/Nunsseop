@@ -307,3 +307,5 @@
 "Nunsseop needs permission to record system audio to change an app’s volume." = "アプリの音量を変えるには、Nunsseop にシステムオーディオの録音を許可する必要があります。";
 "No apps are playing sound" = "音を鳴らしているアプリはありません";
 "No sound has come through yet. If the app is playing, Nunsseop may need permission to record system audio." = "まだ音が届いていません。アプリが再生中なら、Nunsseop にシステムオーディオの録音を許可する必要があるかもしれません。";
+"Show notifications from agents running in Muxy" = "Muxy で動くエージェントの通知を表示";
+"Read from Muxy's own notification list, so every agent and terminal in Muxy works without setup. Hidden while Muxy is in front, and skipped for tools connected above." = "Muxy 自身の通知一覧を読むので、Muxy 内のすべてのエージェントとターミナルの通知が設定なしで届きます。Muxy が前面にあるときと、上で接続したツールの通知は表示しません。";
