@@ -103,6 +103,7 @@ final class NotchViewModel: ObservableObject {
     let muxy = MuxyWatcher()
     let cmux = CmuxWatcher()
     let herdr = HerdrSessions()
+    let tmux = TmuxWatcher()
     let stats = SystemStats()
     let launcher = AppLauncher()
     let lyrics = LyricsModel()

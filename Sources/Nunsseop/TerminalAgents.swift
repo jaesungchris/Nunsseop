@@ -436,3 +436,122 @@ final class HerdrWatcher {
         onNotice?(notice)
     }
 }
+
+// MARK: - tmux
+
+/// tmux has no notification feed, but it runs a hook whenever a window rings the bell, which is how agents such as
+/// Claude Code (with its terminal bell setting) say they're done or waiting. Nunsseop adds that hook to the running
+/// server only, at an index of its own, so neither tmux.conf nor the user's own alert-bell hooks change.
+enum Tmux {
+    static let hookIndex = 4775
+    static var hook: String { "alert-bell[\(hookIndex)]" }
+
+    static var binary: URL? {
+        ["/opt/homebrew/bin/tmux", "/usr/local/bin/tmux", "/usr/bin/tmux"]
+            .map(URL.init(fileURLWithPath:))
+            .first { FileManager.default.isExecutableFile(atPath: $0.path) }
+    }
+
+    static var isInstalled: Bool { binary != nil }
+
+    static var scriptURL: URL {
+        NotifyServer.tokenURL.deletingLastPathComponent().appendingPathComponent("tmux-notify.sh")
+    }
+
+    /// Receives the session name, window name and running command. The command doubles as the agent, so a tool
+    /// whose own hook is connected is skipped; only letters, digits and `._-` of it go into the header.
+    static let script = """
+        #!/bin/sh
+        # Added by Nunsseop: shows bells from tmux windows in the notch.
+        token=$(cat "$HOME/Library/Application Support/Nunsseop/notify-token" 2>/dev/null)
+        agent=$(printf '%s' "$3" | tr -cd '[:alnum:]._-' | cut -c1-40)
+        printf '%s · %s' "$1" "$2" | curl -s -m 2 -X POST http://127.0.0.1:\(NotifyServer.port)/notify \\
+            -H "Authorization: Bearer $token" -H "X-Title: ${agent:-tmux}" -H "X-Agent: $agent" \\
+            --data-binary @- >/dev/null 2>&1
+        exit 0
+
+        """
+
+    /// The hook's tmux command. `#{q:…}` escapes each name for the shell, since programs can rename windows.
+    static func hookCommand(script: URL) -> String {
+        "run-shell -b \"'\(script.path)' #{q:session_name} #{q:window_name} #{q:pane_current_command}\""
+    }
+
+    static func isHooked(_ showHooks: String, script: URL) -> Bool {
+        showHooks.split(separator: "\n").contains { $0.hasPrefix(hook + " ") && $0.contains(script.path) }
+    }
+}
+
+@MainActor
+final class TmuxWatcher {
+    private let binary: URL?
+    private let socketName: String?
+    private let scriptURL: URL
+    private let script: String
+    private var timer: Timer?
+    private var quitObserver: NSObjectProtocol?
+    private let queue = DispatchQueue(label: "nunsseop.tmux")
+
+    /// `socketName` picks a server started with `tmux -L`; nil is the default one.
+    init(binary: URL? = Tmux.binary, socketName: String? = nil, scriptURL: URL = Tmux.scriptURL, script: String = Tmux.script) {
+        self.binary = binary
+        self.socketName = socketName
+        self.scriptURL = scriptURL
+        self.script = script
+    }
+
+    func start() {
+        guard timer == nil, binary != nil else { return }
+        try? FileManager.default.createDirectory(at: scriptURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        FileManager.default.createFile(atPath: scriptURL.path, contents: Data(script.utf8), attributes: [.posixPermissions: 0o755])
+        // On quit the hook comes off before Nunsseop exits.
+        quitObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
+                                                              object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.stop(waiting: true) }
+        }
+        check()
+        // A tmux server started later, or again, gets the hook within this time.
+        timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.check() }
+        }
+        timer?.tolerance = 2
+    }
+
+    /// Takes the hook off the running server too.
+    func stop(waiting: Bool = false) {
+        guard timer != nil else { return }
+        timer?.invalidate()
+        timer = nil
+        if let quitObserver { NotificationCenter.default.removeObserver(quitObserver) }
+        quitObserver = nil
+        let run = runner
+        let unhook: @Sendable () -> Void = { _ = run(["set-hook", "-gu", Tmux.hook]) }
+        if waiting { queue.sync(execute: unhook) } else { queue.async(execute: unhook) }
+    }
+
+    /// Runs tmux with the given arguments; nil when it fails, as when no server is running.
+    private var runner: @Sendable ([String]) -> String? {
+        let binary = binary, socket = socketName.map { ["-L", $0] } ?? []
+        return { arguments in
+            guard let binary else { return nil }
+            let process = Process()
+            process.executableURL = binary
+            process.arguments = socket + arguments
+            let output = Pipe()
+            process.standardOutput = output
+            process.standardError = FileHandle.nullDevice
+            guard (try? process.run()) != nil else { return nil }
+            let data = output.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            return process.terminationStatus == 0 ? String(decoding: data, as: UTF8.self) : nil
+        }
+    }
+
+    private func check() {
+        let run = runner, script = scriptURL
+        queue.async {
+            guard let hooks = run(["show-hooks", "-g"]), !Tmux.isHooked(hooks, script: script) else { return }
+            _ = run(["set-hook", "-g", Tmux.hook, Tmux.hookCommand(script: script)])
+        }
+    }
+}

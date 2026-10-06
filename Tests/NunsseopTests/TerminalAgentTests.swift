@@ -101,7 +101,11 @@ struct TerminalAgentWatcherTests {
     }
 
     private func waitUntil(_ condition: () -> Bool) async {
-        for _ in 0..<100 where !condition() { try? await Task.sleep(for: .milliseconds(50)) }
+        // Up to five seconds, stopping as soon as it holds.
+        for _ in 0..<100 {
+            if condition() { return }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
     }
 
     /// Serves a herdr socket at `socket` that lists one working pane and then reports it done.
@@ -194,5 +198,75 @@ struct TerminalAgentWatcherTests {
         defer { watcher.stop() }
         await waitUntil { !received.isEmpty }
         #expect(received == [Cmux.Notice(title: "Pi", body: "Turn complete")])
+    }
+}
+
+struct TmuxHookTests {
+    @Test func hookCommandQuotesNamesForTheShell() {
+        let command = Tmux.hookCommand(script: URL(fileURLWithPath: "/Users/a/Library/Application Support/Nunsseop/tmux-notify.sh"))
+        #expect(command == #"run-shell -b "'/Users/a/Library/Application Support/Nunsseop/tmux-notify.sh' #{q:session_name} #{q:window_name} #{q:pane_current_command}""#)
+    }
+
+    @Test func recognisesItsOwnHookOnly() {
+        let script = URL(fileURLWithPath: "/x/tmux-notify.sh")
+        #expect(Tmux.isHooked("alert-activity\nalert-bell[4775] run-shell -b \"'/x/tmux-notify.sh' #{q:session_name}\"\n", script: script))
+        #expect(!Tmux.isHooked("alert-bell[0] run-shell 'say bell'\n", script: script))
+        #expect(!Tmux.isHooked("alert-bell[12] run-shell -b \"'/x/tmux-notify.sh'\"\n", script: script))
+    }
+}
+
+/// Against a real tmux server on a socket of its own, so the user's tmux is never touched.
+@MainActor
+struct TmuxWatcherTests {
+    private func tmux(_ socket: String, _ arguments: String...) -> String? {
+        let process = Process()
+        process.executableURL = Tmux.binary
+        process.arguments = ["-L", socket] + arguments
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return nil }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return process.terminationStatus == 0 ? String(decoding: data, as: UTF8.self) : nil
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async {
+        // Up to five seconds, stopping as soon as it holds.
+        for _ in 0..<100 {
+            if condition() { return }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+    }
+
+    @Test(.enabled(if: Tmux.isInstalled)) func bellReachesTheScriptWithEscapedNamesAndHookComesOff() async throws {
+        let id = UUID().uuidString.prefix(8)
+        let socket = "nunsseop-test-\(id)"
+        let log = URL(fileURLWithPath: "/tmp/nunsseop-test-\(id).log")
+        let pwned = URL(fileURLWithPath: "/tmp/nunsseop-test-\(id).pwned")
+        let script = URL(fileURLWithPath: "/tmp/nunsseop-test-\(id) script.sh")
+        defer {
+            _ = tmux(socket, "kill-server")
+            let socketFile = URL(fileURLWithPath: "/private/tmp/tmux-\(getuid())/\(socket)")
+            for url in [log, pwned, script, socketFile] { try? FileManager.default.removeItem(at: url) }
+        }
+        #expect(tmux(socket, "-f", "/dev/null", "new-session", "-d", "-s", "work", "-n", "api", "sleep 60") != nil)
+        // A program can rename its window to anything; none of it may run.
+        #expect(tmux(socket, "rename-window", "-t", "work:api", "api\"; touch \(pwned.path); echo '$(touch \(pwned.path))") != nil)
+
+        let watcher = TmuxWatcher(socketName: socket, scriptURL: script,
+                                  script: "#!/bin/sh\nprintf '%s|%s|%s\\n' \"$1\" \"$2\" \"$3\" >> \(log.path)\n")
+        watcher.start()
+        await waitUntil { Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", script: script) }
+        #expect(Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", script: script))
+
+        _ = tmux(socket, "respawn-pane", "-k", "-t", "work:0", "printf '\\a'; sleep 60")
+        await waitUntil { FileManager.default.fileExists(atPath: log.path) }
+        let line = (try? String(contentsOf: log, encoding: .utf8)) ?? ""
+        #expect(line.hasPrefix("work|api\"; touch \(pwned.path); echo '$(touch \(pwned.path))|"))
+        #expect(!FileManager.default.fileExists(atPath: pwned.path))
+
+        watcher.stop(waiting: true)
+        #expect(!Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", script: script))
     }
 }

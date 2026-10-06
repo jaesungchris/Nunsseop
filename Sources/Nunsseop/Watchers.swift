@@ -218,6 +218,11 @@ final class NotifyServer: @unchecked Sendable {
         }
         // The body is either JSON {"title", "message"} or plain text with the title in X-Title.
         let json = (try? JSONSerialization.jsonObject(with: request.body)) as? [String: Any]
+        // Sent by tools that relay several agents (tmux): one whose own hook is connected already notifies.
+        if let agent = json?["agent"] as? String ?? request.headers["x-agent"],
+           NotifyIntegration.forAgent(agent)?.isInstalled == true {
+            return reply(connection, status: "204 No Content")
+        }
         let text = json == nil ? String(data: request.body, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) : nil
         let title = String((json?["title"] as? String ?? request.headers["x-title"] ?? "Notification").prefix(80))
         let message = (json?["message"] as? String ?? text).flatMap { $0.isEmpty ? nil : String($0.prefix(200)) }

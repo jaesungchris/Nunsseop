@@ -315,3 +315,5 @@
 "Read from herdr's socket while its server runs, so nothing needs setting up." = "在 herdr 服务器运行期间从其套接字读取，无需设置。";
 "Finished" = "已完成";
 "Waiting for you" = "等待你的输入";
+"Show bells from tmux windows" = "显示 tmux 窗口的响铃";
+"Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is." = "代理在完成或等待你时会响铃(Claude Code 需将通知方式设为终端响铃)。仅向正在运行的 tmux 服务器添加钩子，tmux.conf 保持不变。";
