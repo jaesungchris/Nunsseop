@@ -315,3 +315,5 @@
 "Read from herdr's socket while its server runs, so nothing needs setting up." = "Lues sur le socket de herdr pendant que son serveur tourne, sans rien à régler.";
 "Finished" = "Terminé";
 "Waiting for you" = "Vous attend";
+"Show bells from tmux windows" = "Afficher les sonneries des fenêtres tmux";
+"Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is." = "Les agents font sonner la cloche quand ils terminent ou vous attendent (pour Claude Code, choisissez la cloche du terminal comme notification). Nunsseop ajoute seulement un hook au serveur tmux en cours ; tmux.conf reste inchangé.";

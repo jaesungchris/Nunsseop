@@ -50,6 +50,8 @@ final class AppSettings: ObservableObject {
     @Published var muxyNotifications: Bool = AppSettings.load("muxyNotifications", default: true) { didSet { save(muxyNotifications, "muxyNotifications") } }
     @Published var cmuxNotifications: Bool = AppSettings.load("cmuxNotifications", default: true) { didSet { save(cmuxNotifications, "cmuxNotifications") } }
     @Published var herdrNotifications: Bool = AppSettings.load("herdrNotifications", default: true) { didSet { save(herdrNotifications, "herdrNotifications") } }
+    /// Shows bells from tmux windows, through a hook on the running tmux server.
+    @Published var tmuxBells: Bool = AppSettings.load("tmuxBells", default: true) { didSet { save(tmuxBells, "tmuxBells") } }
     @Published var localNotifications: Bool = AppSettings.load("localNotifications", default: true) { didSet { save(localNotifications, "localNotifications") } }
     @Published var timerTab: Bool = AppSettings.load("timerTab", default: true) { didSet { save(timerTab, "timerTab") } }
     @Published var shelfTab: Bool = AppSettings.load("shelfTab", default: true) { didSet { save(shelfTab, "shelfTab") } }

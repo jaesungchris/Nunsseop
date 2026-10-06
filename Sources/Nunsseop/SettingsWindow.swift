@@ -301,6 +301,12 @@ private struct AlertsPane: View {
                     Text("Read through the cmux command inside the app, so cmux's settings stay as they are. Hidden while cmux is in front.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                if Tmux.isInstalled {
+                    Toggle("Show bells from tmux windows", isOn: $settings.tmuxBells)
+                        .disabled(!settings.localNotifications)
+                    Text("Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 if Herdr.isInstalled {
                     Toggle("Show when agents in herdr finish or wait for you", isOn: $settings.herdrNotifications)
                     Text("Read from herdr's socket while its server runs, so nothing needs setting up.")

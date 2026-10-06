@@ -315,3 +315,5 @@
 "Read from herdr's socket while its server runs, so nothing needs setting up." = "herdr のサーバーが動いている間はソケットから読むので、設定は不要です。";
 "Finished" = "完了";
 "Waiting for you" = "入力待ち";
+"Show bells from tmux windows" = "tmux ウィンドウのベルを表示";
+"Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is." = "エージェントは終了時や入力待ちのときにベルを鳴らします(Claude Code は通知をターミナルベルに設定してください)。フックは実行中の tmux サーバーにだけ追加し、tmux.conf はそのままです。";

@@ -75,13 +75,23 @@ final class NotchWindowController {
             Feature(setting: \.capsLockHUD, changes: \.$capsLockHUD,
                     start: { model.capsLock.start() }, stop: { _ in model.capsLock.stop() }),
             Feature(setting: \.localNotifications, changes: \.$localNotifications,
-                    start: { model.notifyServer.start() }, stop: { _ in model.notifyServer.stop() }),
+                    start: {
+                        model.notifyServer.start()
+                        if model.settings.tmuxBells { model.tmux.start() }
+                    },
+                    stop: { _ in
+                        model.notifyServer.stop()
+                        model.tmux.stop()
+                    }),
             Feature(setting: \.muxyNotifications, changes: \.$muxyNotifications,
                     start: { model.muxy.start() }, stop: { _ in model.muxy.stop() }),
             Feature(setting: \.cmuxNotifications, changes: \.$cmuxNotifications,
                     start: { if Cmux.isInstalled { model.cmux.start() } }, stop: { _ in model.cmux.stop() }),
             Feature(setting: \.herdrNotifications, changes: \.$herdrNotifications,
                     start: { if Herdr.isInstalled { model.herdr.start() } }, stop: { _ in model.herdr.stop() }),
+            // The hook sends to the notification server, so it's only added while that runs.
+            Feature(setting: \.tmuxBells, changes: \.$tmuxBells,
+                    start: { if model.settings.localNotifications { model.tmux.start() } }, stop: { _ in model.tmux.stop() }),
             Feature(setting: \.callIsland, changes: \.$callIsland,
                     start: { model.calls.start() }, stop: { _ in model.calls.stop() }),
             // Hiding keeps the last camera/mic state, so showing again during a call already announced stays quiet.
