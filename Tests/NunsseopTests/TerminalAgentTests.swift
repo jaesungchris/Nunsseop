@@ -198,6 +198,38 @@ struct TerminalAgentWatcherTests {
         #expect(received.map(\.1) == ["work"])
     }
 
+    @Test func cmuxRetriesOnceAfterBeingTurnedOffAndOnWhileMissing() async throws {
+        // Against one started once, under the same load: turning it off and on must not add a second retry chain.
+        let toggled = CmuxWatcher(findCLI: { nil }, retryDelay: 0.1)
+        let control = CmuxWatcher(findCLI: { nil }, retryDelay: 0.1)
+        toggled.start()
+        toggled.stop()
+        toggled.start()
+        control.start()
+        defer { toggled.stop(); control.stop() }
+        try await Task.sleep(for: .milliseconds(1500))
+        // Other tests can keep the main actor busy, so only that a retry happened is assumed.
+        #expect(control.launches >= 2)
+        // The toggled one has its extra first start; a second chain would roughly double it.
+        #expect(toggled.launches <= control.launches + 2, "toggled \(toggled.launches), control \(control.launches)")
+    }
+
+    @Test func cmuxFoundLaterIsUsed() async throws {
+        var installed: URL?
+        let watcher = CmuxWatcher(findCLI: { installed }, retryDelay: 0.2)
+        watcher.start()
+        defer { watcher.stop() }
+        let cli = temporary("cmux")
+        try "#!/bin/sh\nsleep 30\n".write(to: cli, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: cli.path)
+        defer { try? FileManager.default.removeItem(at: cli) }
+        installed = cli
+        let before = watcher.launches
+        try await Task.sleep(for: .milliseconds(700))
+        // Found on the next retry, then running: no more attempts.
+        #expect(watcher.launches == before + 1)
+    }
+
     @Test func cmuxWatcherLooksUpCreatedNotifications() async throws {
         let cli = temporary("cmux")
         try """
@@ -429,7 +461,7 @@ struct WezTermSnippetTests {
         #expect(snippet.contains("wezterm.background_child_process({ [==[/Users/a/Library/Application Support/Nunsseop/terminal-notify.sh]==], 'WezTerm', window:active_workspace(), pane:get_title(), process, tostring(pane:pane_id()) })"))
         #expect(!snippet.contains("os.execute") && !snippet.contains("run_child_process"))
         // A pane ringing over and over (cat of a file full of BELs) starts one script per 2 seconds, not one per bell.
-        #expect(snippet.contains("if nunsseop_last_bell[id] and now - nunsseop_last_bell[id] < 2 then return end"))
+        #expect(snippet.contains("if nunsseop_last_bell[id] and now - nunsseop_last_bell[id] < 3 then return end"))
     }
 
     @Test func focusDoesNotStartAMuxServer() throws {

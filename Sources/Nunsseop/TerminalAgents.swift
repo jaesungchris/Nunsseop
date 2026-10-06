@@ -88,20 +88,32 @@ enum Cmux {
 @MainActor
 final class CmuxWatcher {
     var onNotice: ((Cmux.Notice) -> Void)?
-    /// A fixed command for tests; otherwise cmux is looked for on every launch, so one installed later is found.
-    private let fixedCLI: URL?
+    /// Looked up on every launch, so a cmux installed later is found.
+    private let findCLI: () -> URL?
+    private let retryDelay: TimeInterval
     private var cli: URL?
+    /// Launch attempts, for tests.
+    private(set) var launches = 0
     private var stream: Process?
     private var lines = JSONLines()
     private var running = false
+    /// Bumped on every start and stop, so a retry scheduled before them doesn't run as well as a new one.
+    private var generation = 0
     private var quitObserver: NSObjectProtocol?
     private let queue = DispatchQueue(label: "nunsseop.cmux")
 
-    init(cli: URL? = nil) { fixedCLI = cli }
+    init(findCLI: @escaping () -> URL? = { Cmux.cli }, retryDelay: TimeInterval = 30) {
+        self.findCLI = findCLI
+        self.retryDelay = retryDelay
+    }
+
+    /// A fixed command, for tests.
+    convenience init(cli: URL) { self.init(findCLI: { cli }) }
 
     func start() {
         guard !running else { return }
         running = true
+        generation += 1
         // The event stream is a child process, which would outlive Nunsseop otherwise.
         quitObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                               object: nil, queue: .main) { [weak self] _ in
@@ -112,6 +124,7 @@ final class CmuxWatcher {
 
     func stop() {
         running = false
+        generation += 1
         if let quitObserver { NotificationCenter.default.removeObserver(quitObserver) }
         quitObserver = nil
         if stream?.isRunning == true { stream?.terminate() }
@@ -121,9 +134,10 @@ final class CmuxWatcher {
 
     /// Tries again after a pause, when the command couldn't start or stopped on its own.
     private func relaunch(after process: Process?) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+        let generation = generation
+        DispatchQueue.main.asyncAfter(deadline: .now() + retryDelay) { [weak self] in
             MainActor.assumeIsolated {
-                guard let self, self.running, self.stream === process else { return }
+                guard let self, self.running, self.generation == generation, self.stream === process else { return }
                 self.stream = nil
                 self.lines = JSONLines()
                 self.launch()
@@ -133,7 +147,8 @@ final class CmuxWatcher {
 
     private func launch() {
         guard running, stream == nil else { return }
-        cli = fixedCLI ?? Cmux.cli
+        launches += 1
+        cli = findCLI()
         // Not installed (yet): looked for again after the pause.
         guard let cli else { return relaunch(after: nil) }
         let process = Process()
@@ -574,11 +589,12 @@ enum WezTerm {
 
     static func snippet(script: URL = TerminalBell.scriptURL) -> String {
         """
-        -- Nunsseop: show bells from WezTerm panes in the notch, at most one per pane every 2 seconds.
+        -- Nunsseop: show bells from WezTerm panes in the notch, at most one per pane every 2 seconds or so.
         local nunsseop_last_bell = {}
         wezterm.on('bell', function(window, pane)
           local id, now = pane:pane_id(), os.time()
-          if nunsseop_last_bell[id] and now - nunsseop_last_bell[id] < 2 then return end
+          -- os.time() counts whole seconds, so < 3 waits at least 2 seconds.
+          if nunsseop_last_bell[id] and now - nunsseop_last_bell[id] < 3 then return end
           nunsseop_last_bell[id] = now
           local process = (pane:get_foreground_process_name() or ''):match('[^/]*$')
           wezterm.background_child_process({ [==[\(script.path)]==], 'WezTerm', window:active_workspace(), pane:get_title(), process, tostring(pane:pane_id()) })
@@ -759,13 +775,12 @@ enum TerminalFocus {
         NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first.map(activate)
     }
 
-    /// Through NSWorkspace rather than `NSRunningApplication.activate()`, whose request macOS 14 and later may
-    /// decline under cooperative activation when the caller isn't active, as Nunsseop (a non-activating panel) isn't.
+    /// That exact process, which matters when an app runs more than once (`open -n`, `wezterm start`). Under
+    /// macOS 14's cooperative activation Nunsseop yields to it and asks for it, rather than going through
+    /// NSWorkspace, which picks an instance itself and sends a reopen event that opens a window in apps showing none.
     static func activate(_ app: NSRunningApplication) {
-        guard let url = app.bundleURL else { app.activate(); return }
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.activates = true
-        NSWorkspace.shared.openApplication(at: url, configuration: configuration)
+        NSApp.yieldActivation(to: app)
+        if !app.activate(from: .current, options: []) { app.activate() }
     }
 
     /// The app a process runs in, found by walking up its parents: a shell in Terminal, tmux's client in Ghostty...
