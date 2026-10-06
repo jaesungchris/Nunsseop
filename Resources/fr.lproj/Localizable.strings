@@ -69,6 +69,7 @@
 "Google, iCloud, Exchange and other accounts added to macOS appear here." = "Les comptes Google, iCloud, Exchange et autres ajoutés à macOS apparaissent ici.";
 "No reminders" = "Aucun rappel";
 "Mark as completed" = "Marquer comme terminé";
+"Join" = "Rejoindre";
 "Allow Reminders" = "Autoriser les rappels";
 "Events" = "Évènements";
 "Camera access is off" = "L’accès à la caméra est désactivé";
@@ -223,6 +224,7 @@
 "Search the web for “%@”" = "Rechercher « %@ » sur le web";
 "Show mouse and keyboard batteries and warn when low" = "Afficher la batterie de la souris et du clavier et prévenir quand elle est faible";
 "Privacy" = "Confidentialité";
+"Show events 5 minutes before they start" = "Afficher les événements 5 minutes avant leur début";
 "Show when an app uses the camera or microphone" = "Afficher quand une app utilise la caméra ou le micro";
 "Quick search" = "Recherche rapide";
 "Screen recording" = "Enregistrement de l’écran";

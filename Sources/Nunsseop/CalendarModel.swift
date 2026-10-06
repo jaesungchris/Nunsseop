@@ -9,6 +9,8 @@ struct CalendarItem: Identifiable, Equatable {
     let end: Date
     let isAllDay: Bool
     let color: Color
+    /// A video-call link found in the event's URL, location or notes.
+    var joinURL: URL? = nil
 }
 
 struct ReminderItem: Identifiable, Equatable {
@@ -24,7 +26,7 @@ final class CalendarModel: ObservableObject {
 
     @Published private(set) var access: Access
     @Published var selectedDay = Calendar.current.startOfDay(for: .now) {
-        didSet { reload() }
+        didSet { reload(alerts: false) }
     }
     @Published private(set) var items: [CalendarItem] = []
     /// Calendars whose events are left out.
@@ -35,9 +37,20 @@ final class CalendarModel: ObservableObject {
     @Published private(set) var busyDays: Set<Date> = []
     @Published private(set) var reminderAccess: Access
     @Published private(set) var reminders: [ReminderItem] = []
+    /// Called shortly before a timed event starts, while `alertsEnabled` is on.
+    var onUpcoming: ((CalendarItem) -> Void)?
+    var alertsEnabled = false {
+        didSet { if alertsEnabled != oldValue { scheduleAlert() } }
+    }
+    private var alertTimer: Timer?
+    /// How long an event notice stays, and the gap before the next one when several are due.
+    static let alertSpacing: TimeInterval = 8
+    /// Occurrences already announced, as EventAlert keys.
+    private var announced: Set<String> = []
 
     private let store = EKEventStore()
     private var observer: NSObjectProtocol?
+    private var wakeObservers: [NSObjectProtocol] = []
     #if DEBUG
     private let isDemo = CommandLine.arguments.contains("--demo-track")
     #else
@@ -59,6 +72,15 @@ final class CalendarModel: ObservableObject {
                                                           queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.reload() }
         }
+        // Timers don't count time asleep, so a pending alert is worked out again on wake and clock changes.
+        wakeObservers = [
+            NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.scheduleAlert() }
+            },
+            NotificationCenter.default.addObserver(forName: .NSSystemClockDidChange, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.scheduleAlert() }
+            },
+        ]
         reload()
     }
 
@@ -126,7 +148,8 @@ final class CalendarModel: ObservableObject {
         let day = selectedDay
         func at(_ h: Int, _ m: Int) -> Date { Calendar.current.date(bySettingHour: h, minute: m, second: 0, of: day)! }
         items = [
-            CalendarItem(id: "a", title: "Team standup", start: at(10, 0), end: at(10, 15), isAllDay: false, color: .blue),
+            CalendarItem(id: "a", title: "Team standup", start: at(10, 0), end: at(10, 15), isAllDay: false, color: .blue,
+                         joinURL: URL(string: "https://meet.google.com/abc-defg-hij")),
             CalendarItem(id: "b", title: "Lunch", start: at(12, 30), end: at(13, 30), isAllDay: false, color: .orange),
             CalendarItem(id: "c", title: "5 km run", start: at(19, 0), end: at(19, 40), isAllDay: false, color: .green),
         ]
@@ -143,16 +166,63 @@ final class CalendarModel: ObservableObject {
         (0..<7).compactMap { Calendar.current.date(byAdding: .day, value: $0, to: Calendar.current.startOfDay(for: .now)) }
     }
 
-    func reload() {
+    /// The calendars to show: nil means every calendar, and an empty list none at all
+    /// (to EventKit an empty list would also mean every calendar).
+    private var shownCalendars: [EKCalendar]? {
+        guard !hiddenCalendarIDs.isEmpty else { return nil }
+        return store.calendars(for: .event).filter { !hiddenCalendarIDs.contains($0.calendarIdentifier) }
+    }
+
+    private func item(_ event: EKEvent, findingLink: Bool = true) -> CalendarItem {
+        CalendarItem(id: event.eventIdentifier ?? UUID().uuidString,
+                     title: event.title ?? "",
+                     start: event.startDate, end: event.endDate,
+                     isAllDay: event.isAllDay,
+                     color: Color(nsColor: event.calendar.color ?? .systemBlue),
+                     joinURL: findingLink ? MeetingLink.find(in: [event.url?.absoluteString, event.location, event.notes]) : nil)
+    }
+
+    /// Cancelled events and invitations the user declined.
+    private static func isSkipped(_ event: EKEvent) -> Bool {
+        event.status == .canceled || event.attendees?.first(where: \.isCurrentUser)?.participantStatus == .declined
+    }
+
+    /// Announces the next event whose alert is due and sets a timer for the one after.
+    /// Looks a day and a half ahead, and checks again within 12 hours when nothing is coming.
+    private func scheduleAlert() {
+        alertTimer?.invalidate()
+        alertTimer = nil
+        guard alertsEnabled, access == .granted, !isDemo else { return }
+        let calendars = shownCalendars
+        guard calendars?.isEmpty != true else { return }
+        let now = Date.now
+        let predicate = store.predicateForEvents(withStart: now.addingTimeInterval(-EventAlert.grace),
+                                                 end: now.addingTimeInterval(36 * 3600), calendars: calendars)
+        let upcoming = store.events(matching: predicate).filter { !Self.isSkipped($0) }.map { item($0, findingLink: false) }
+        announced.formIntersection(upcoming.map(EventAlert.key))
+        var (due, next) = EventAlert.due(in: upcoming, now: now, announced: announced)
+        if let first = due.first {
+            announced.insert(EventAlert.key(first))
+            onUpcoming?(first)
+            // Events starting together are shown one after another, once each notice has had its time.
+            if due.count > 1 { next = now.addingTimeInterval(Self.alertSpacing) }
+        }
+        let timer = Timer(fire: next ?? now.addingTimeInterval(12 * 3600), interval: 0, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.scheduleAlert() }
+        }
+        timer.tolerance = 5
+        RunLoop.main.add(timer, forMode: .common)
+        alertTimer = timer
+    }
+
+    /// Picking another day leaves the alerts alone; they don't depend on it.
+    func reload(alerts: Bool = true) {
         if isDemo { showDemoItems(); return }
         reloadReminders()
+        if alerts { scheduleAlert() }
         guard access == .granted else { items = []; busyDays = []; return }
-        // nil means every calendar; an empty list would also mean every calendar to EventKit, so stop early instead.
-        var calendars: [EKCalendar]?
-        if !hiddenCalendarIDs.isEmpty {
-            calendars = store.calendars(for: .event).filter { !hiddenCalendarIDs.contains($0.calendarIdentifier) }
-            if calendars?.isEmpty == true { items = []; busyDays = []; return }
-        }
+        let calendars = shownCalendars
+        if calendars?.isEmpty == true { items = []; busyDays = []; return }
         if let first = week.first, let last = week.last, let weekEnd = Calendar.current.date(byAdding: .day, value: 1, to: last) {
             let weekEvents = store.events(matching: store.predicateForEvents(withStart: first, end: weekEnd, calendars: calendars))
             busyDays = Set(weekEvents.map { Calendar.current.startOfDay(for: max($0.startDate, first)) })
@@ -162,12 +232,6 @@ final class CalendarModel: ObservableObject {
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: calendars)
         items = store.events(matching: predicate)
             .sorted { ($0.isAllDay ? 0 : 1, $0.startDate) < ($1.isAllDay ? 0 : 1, $1.startDate) }
-            .map { event in
-                CalendarItem(id: event.eventIdentifier ?? UUID().uuidString,
-                             title: event.title ?? "",
-                             start: event.startDate, end: event.endDate,
-                             isAllDay: event.isAllDay,
-                             color: Color(nsColor: event.calendar.color ?? .systemBlue))
-            }
+            .map { item($0) }
     }
 }

@@ -69,6 +69,7 @@
 "Google, iCloud, Exchange and other accounts added to macOS appear here." = "添加到 macOS 的 Google、iCloud、Exchange 等账户会显示在这里。";
 "No reminders" = "无提醒事项";
 "Mark as completed" = "标记为完成";
+"Join" = "加入";
 "Allow Reminders" = "允许提醒事项";
 "Events" = "日程";
 "Camera access is off" = "相机访问已关闭";
@@ -223,6 +224,7 @@
 "Search the web for “%@”" = "在网页中搜索“%@”";
 "Show mouse and keyboard batteries and warn when low" = "显示鼠标和键盘电量，电量低时提醒";
 "Privacy" = "隐私";
+"Show events 5 minutes before they start" = "日程开始前 5 分钟显示";
 "Show when an app uses the camera or microphone" = "应用使用相机或麦克风时显示";
 "Quick search" = "快速搜索";
 "Screen recording" = "屏幕录制";

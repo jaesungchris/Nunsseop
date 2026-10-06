@@ -188,6 +188,18 @@ private struct EventList: View {
                                 .font(.system(size: 9).monospacedDigit())
                                 .foregroundStyle(.white.opacity(0.5))
                         }
+                        if let url = item.joinURL, item.end > .now {
+                            Spacer(minLength: 4)
+                            Button { NSWorkspace.shared.open(url) } label: {
+                                Image(systemName: "video.fill")
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .frame(width: 22, height: 22)
+                                    .background(Circle().fill(Color.green.opacity(0.85)))
+                                    .contentShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .help(Text("Join"))
+                        }
                     }
                 }
             }
