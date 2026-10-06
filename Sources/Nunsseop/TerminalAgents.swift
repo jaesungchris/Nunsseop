@@ -88,14 +88,16 @@ enum Cmux {
 @MainActor
 final class CmuxWatcher {
     var onNotice: ((Cmux.Notice) -> Void)?
-    private let cli: URL?
+    /// A fixed command for tests; otherwise cmux is looked for on every launch, so one installed later is found.
+    private let fixedCLI: URL?
+    private var cli: URL?
     private var stream: Process?
     private var lines = JSONLines()
     private var running = false
     private var quitObserver: NSObjectProtocol?
     private let queue = DispatchQueue(label: "nunsseop.cmux")
 
-    init(cli: URL? = Cmux.cli) { self.cli = cli }
+    init(cli: URL? = nil) { fixedCLI = cli }
 
     func start() {
         guard !running else { return }
@@ -130,7 +132,10 @@ final class CmuxWatcher {
     }
 
     private func launch() {
-        guard running, stream == nil, let cli else { return }
+        guard running, stream == nil else { return }
+        cli = fixedCLI ?? Cmux.cli
+        // Not installed (yet): looked for again after the pause.
+        guard let cli else { return relaunch(after: nil) }
         let process = Process()
         process.executableURL = cli
         // --reconnect keeps waiting while cmux isn't running and resumes after it restarts.
@@ -144,7 +149,7 @@ final class CmuxWatcher {
             guard !data.isEmpty else { handle.readabilityHandler = nil; return }
             DispatchQueue.main.async { MainActor.assumeIsolated { self?.received(data) } }
         }
-        process.terminationHandler = { [weak self] _ in
+        process.terminationHandler = { [weak self, weak process] _ in
             output.fileHandleForReading.readabilityHandler = nil
             DispatchQueue.main.async { MainActor.assumeIsolated { self?.relaunch(after: process) } }
         }
@@ -242,7 +247,7 @@ enum Herdr {
             let clients = TerminalFocus.run(URL(fileURLWithPath: "/usr/bin/pgrep"), ["-x", "herdr"]) ?? ""
             let pids = clients.split(separator: "\n").compactMap { pid_t($0) }
             DispatchQueue.main.async {
-                pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first?.activate()
+                pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first.map(TerminalFocus.activate)
             }
         }
     }
@@ -446,6 +451,8 @@ final class HerdrWatcher {
     }
 
     private func handle(_ frame: [String: Any]) {
+        // Subscribed: states that changed between the pane list and now are caught up from a second list.
+        if frame["id"] as? String == "sub", frame["result"] != nil { return relist() }
         switch Herdr.event(in: frame) {
         case .panesChanged:
             // Subscribe again with the new pane list.
@@ -456,6 +463,24 @@ final class HerdrWatcher {
         case nil:
             // A rejected subscription (a pane closed meanwhile): the timer subscribes again with a fresh list.
             if frame["error"] != nil { drop() }
+        }
+    }
+
+    private func relist() {
+        let socket = socketURL.path
+        let request = String(decoding: Herdr.request("relist", "pane.list").dropLast(), as: UTF8.self)
+        queue.async { [weak self] in
+            guard let reply = TerminalFocus.send([request], toSocket: socket).first,
+                  let frame = (try? JSONSerialization.jsonObject(with: Data(reply.utf8))) as? [String: Any],
+                  let panes = Herdr.panes(in: frame) else { return }
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self, self.running else { return }
+                    for pane in self.states.reconcile(panes) {
+                        self.announce(Herdr.Notice(agent: pane.agent ?? "herdr", status: pane.status, title: pane.title, pane: pane.id))
+                    }
+                }
+            }
         }
     }
 
@@ -536,18 +561,23 @@ enum WezTerm {
     }
 
     /// Activates the pane and brings WezTerm forward.
-    static func focus(pane: String) {
-        guard pane.allSatisfy(\.isNumber), !pane.isEmpty else { return }
+    static func focus(pane: String, cli: URL? = WezTerm.cli) {
+        guard !pane.isEmpty, pane.allSatisfy({ $0.isASCII && $0.isNumber }) else { return }
         DispatchQueue.global(qos: .userInitiated).async {
-            if let cli { _ = TerminalFocus.run(cli, ["cli", "activate-pane", "--pane-id", pane]) }
+            // --no-auto-start: otherwise, with no GUI running, a mux server starts and holds the output open.
+            if let cli { _ = TerminalFocus.run(cli, ["cli", "--no-auto-start", "activate-pane", "--pane-id", pane]) }
             DispatchQueue.main.async { TerminalFocus.activate(bundleID: bundleID) }
         }
     }
 
     static func snippet(script: URL = TerminalBell.scriptURL) -> String {
         """
-        -- Nunsseop: show bells from WezTerm panes in the notch.
+        -- Nunsseop: show bells from WezTerm panes in the notch, at most one per pane every 2 seconds.
+        local nunsseop_last_bell = {}
         wezterm.on('bell', function(window, pane)
+          local id, now = pane:pane_id(), os.time()
+          if nunsseop_last_bell[id] and now - nunsseop_last_bell[id] < 2 then return end
+          nunsseop_last_bell[id] = now
           local process = (pane:get_foreground_process_name() or ''):match('[^/]*$')
           wezterm.background_child_process({ [==[\(script.path)]==], 'WezTerm', window:active_workspace(), pane:get_title(), process, tostring(pane:pane_id()) })
         end)
@@ -608,13 +638,24 @@ enum Tmux {
                 clients = [any]
             }
             let pids = clients.compactMap { $0.split(separator: " ").first.flatMap { pid_t($0) } }
-            DispatchQueue.main.async { pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first?.activate() }
+            DispatchQueue.main.async { pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first.map(TerminalFocus.activate) }
         }
     }
 
     /// Whether the server has this version's hook; an older one (different arguments) is replaced.
     static func isHooked(_ showHooks: String, command: String) -> Bool {
         showHooks.split(separator: "\n").contains { $0 == "\(hook) \(command)" }
+    }
+
+    /// What's in Nunsseop's slot, `alert-bell[4775]`, if anything.
+    static func slot(in showHooks: String) -> String? {
+        showHooks.split(separator: "\n").first { $0.hasPrefix(hook + " ") }.map(String.init)
+    }
+
+    /// Whether a hook in the slot is Nunsseop's, this version's or an older one: it runs Nunsseop's bell script.
+    /// Anything else there belongs to the user and is neither replaced nor removed.
+    static func isOurs(_ line: String, script: URL = TerminalBell.scriptURL) -> Bool {
+        line.contains(script.path) || line.contains("/Nunsseop/terminal-notify.sh") || line.contains("/Nunsseop/tmux-notify.sh")
     }
 }
 
@@ -660,9 +701,22 @@ final class TmuxWatcher {
         timer = nil
         if let quitObserver { NotificationCenter.default.removeObserver(quitObserver) }
         quitObserver = nil
-        let run = runner
-        let unhook: @Sendable () -> Void = { _ = run(["set-hook", "-gu", Tmux.hook]) }
+        let unhook = unhookIfOurs
         if waiting { queue.sync(execute: unhook) } else { queue.async(execute: unhook) }
+    }
+
+    /// Takes off a hook left by a Nunsseop that crashed while the feature is now off. Only Nunsseop's own.
+    func clearLeftover() {
+        guard timer == nil, binary != nil else { return }
+        queue.async(execute: unhookIfOurs)
+    }
+
+    private var unhookIfOurs: @Sendable () -> Void {
+        let run = runner, script = scriptURL
+        return {
+            guard let hooks = run(["show-hooks", "-g"]), let line = Tmux.slot(in: hooks), Tmux.isOurs(line, script: script) else { return }
+            _ = run(["set-hook", "-gu", Tmux.hook])
+        }
     }
 
     /// Runs tmux with the given arguments; nil when it fails, as when no server is running.
@@ -685,9 +739,11 @@ final class TmuxWatcher {
 
     private func check() {
         guard let binary, let command = Tmux.hookCommand(script: scriptURL, binary: binary, socketName: socketName) else { return }
-        let run = runner
+        let run = runner, script = scriptURL
         queue.async {
             guard let hooks = run(["show-hooks", "-g"]), !Tmux.isHooked(hooks, command: command) else { return }
+            // The slot holds someone else's hook: left alone.
+            if let line = Tmux.slot(in: hooks), !Tmux.isOurs(line, script: script) { return }
             _ = run(["set-hook", "-g", Tmux.hook, command])
         }
     }
@@ -698,7 +754,16 @@ final class TmuxWatcher {
 enum TerminalFocus {
     /// Brings an app that's already running to the front. Apps that aren't running aren't launched for a notice.
     static func activate(bundleID: String) {
-        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.activate()
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first.map(activate)
+    }
+
+    /// Through NSWorkspace rather than `NSRunningApplication.activate()`, whose request macOS 14 and later may
+    /// decline under cooperative activation when the caller isn't active, as Nunsseop (a non-activating panel) isn't.
+    static func activate(_ app: NSRunningApplication) {
+        guard let url = app.bundleURL else { app.activate(); return }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.openApplication(at: url, configuration: configuration)
     }
 
     /// The app a process runs in, found by walking up its parents: a shell in Terminal, tmux's client in Ghostty...

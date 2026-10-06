@@ -108,12 +108,15 @@ struct TerminalAgentWatcherTests {
         }
     }
 
-    /// Serves a herdr socket at `socket` that lists one working pane and then reports it done.
-    private func fakeHerdr(at socket: URL) async throws -> () -> Void {
+    /// Serves a herdr socket at `socket` that lists one working pane and then reports it done. With `quietSubscription`,
+    /// the pane is done by the time of the second list and the subscription never reports it.
+    private func fakeHerdr(at socket: URL, quietSubscription: Bool = false) async throws -> () -> Void {
         let script = temporary("herdr.py")
         try """
         import json, os, socket, sys, threading, time
         path = sys.argv[1]
+        quiet = len(sys.argv) > 2
+        lists = []
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server.bind(path); server.listen(4)
         def serve(conn):
@@ -122,11 +125,15 @@ struct TerminalAgentWatcherTests {
                 request = json.loads(line)
                 def send(obj): conn.sendall((json.dumps(obj) + "\\n").encode())
                 if request["method"] == "pane.list":
+                    lists.append(1)
+                    status = "done" if quiet and len(lists) > 1 else "working"
                     send({"id": request["id"], "result": {"type": "pane_list", "panes": [
-                        {"pane_id": "w1:p1", "agent_status": "working"}]}})
+                        {"pane_id": "w1:p1", "agent_status": status, "display_agent": "Pi", "title": "refactor"}]}})
                 elif request["method"] == "events.subscribe":
                     send({"id": request["id"], "result": {"type": "subscription_started"}})
                     time.sleep(0.2)
+                    if quiet:
+                        time.sleep(5); continue
                     send({"event": "pane.agent_status_changed", "data": {"pane_id": "w1:p1", "workspace_id": "w1",
                           "agent_status": "done", "agent": "pi", "display_agent": "Pi", "title": "refactor"}})
                     time.sleep(5)
@@ -136,7 +143,7 @@ struct TerminalAgentWatcherTests {
         """.write(to: script, atomically: true, encoding: .utf8)
         let server = Process()
         server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        server.arguments = [script.path, socket.path]
+        server.arguments = [script.path, socket.path] + (quietSubscription ? ["quiet"] : [])
         try server.run()
         await waitUntil { FileManager.default.fileExists(atPath: socket.path) }
         return {
@@ -151,6 +158,19 @@ struct TerminalAgentWatcherTests {
         let shutDown = try await fakeHerdr(at: socket)
         defer { shutDown() }
 
+        let watcher = HerdrWatcher(socketURL: socket)
+        var received: [Herdr.Notice] = []
+        watcher.onNotice = { received.append($0) }
+        watcher.start()
+        defer { watcher.stop() }
+        await waitUntil { !received.isEmpty }
+        #expect(received == [Herdr.Notice(agent: "Pi", status: "done", title: "refactor", pane: "w1:p1", socket: socket)])
+    }
+
+    @Test func herdrCatchesUpWhatChangedBeforeTheSubscriptionStarted() async throws {
+        let socket = temporary("herdr.sock")
+        let shutDown = try await fakeHerdr(at: socket, quietSubscription: true)
+        defer { shutDown() }
         let watcher = HerdrWatcher(socketURL: socket)
         var received: [Herdr.Notice] = []
         watcher.onNotice = { received.append($0) }
@@ -386,6 +406,22 @@ struct WezTermSnippetTests {
         #expect(snippet.contains("wezterm.on('bell', function(window, pane)"))
         #expect(snippet.contains("wezterm.background_child_process({ [==[/Users/a/Library/Application Support/Nunsseop/terminal-notify.sh]==], 'WezTerm', window:active_workspace(), pane:get_title(), process, tostring(pane:pane_id()) })"))
         #expect(!snippet.contains("os.execute") && !snippet.contains("run_child_process"))
+        // A pane ringing over and over (cat of a file full of BELs) starts one script per 2 seconds, not one per bell.
+        #expect(snippet.contains("if nunsseop_last_bell[id] and now - nunsseop_last_bell[id] < 2 then return end"))
+    }
+
+    @Test func focusDoesNotStartAMuxServer() throws {
+        let dir = URL(fileURLWithPath: "/tmp/nunsseop-test-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let cli = dir.appendingPathComponent("wezterm")
+        try "#!/bin/sh\nprintf '%s ' \"$@\" >> \(dir.path)/args\n".write(to: cli, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: cli.path)
+        WezTerm.focus(pane: "١٢", cli: cli)   // not ASCII digits: ignored
+        WezTerm.focus(pane: "7", cli: cli)
+        let args = dir.appendingPathComponent("args")
+        for _ in 0..<100 where !FileManager.default.fileExists(atPath: args.path) { usleep(20_000) }
+        #expect((try? String(contentsOf: args, encoding: .utf8)) == "cli --no-auto-start activate-pane --pane-id 7 ")
     }
 }
 
@@ -546,5 +582,73 @@ struct TmuxFocusTests {
         Tmux.focus(pane: "%1; kill-server", socketName: socket)
         try? await Task.sleep(for: .milliseconds(200))
         #expect(tmux(socket, "display-message", "-p", "#{window_name}") != nil)
+    }
+}
+
+
+/// Nunsseop's tmux slot against a real server: someone else's hook stays, a leftover one of ours goes,
+/// and the hook as tmux prints it back matches, so it isn't set again every 10 s.
+@MainActor
+struct TmuxSlotTests {
+    private func tmux(_ socket: String, _ arguments: String...) -> String? {
+        TerminalFocus.run(Tmux.binary!, ["-L", socket] + arguments)
+    }
+
+    private func withServer(_ body: (String) async throws -> Void) async throws {
+        let socket = "nunsseop-test-\(UUID().uuidString.prefix(8))"
+        defer {
+            _ = tmux(socket, "kill-server")
+            try? FileManager.default.removeItem(atPath: "/private/tmp/tmux-\(getuid())/\(socket)")
+        }
+        _ = tmux(socket, "-f", "/dev/null", "new-session", "-d", "-s", "w", "sleep 60")
+        try await body(socket)
+    }
+
+    private func slot(_ socket: String) -> String? { Tmux.slot(in: tmux(socket, "show-hooks", "-g") ?? "") }
+
+    @Test(.enabled(if: Tmux.isInstalled)) func someoneElsesHookInTheSlotStays() async throws {
+        try await withServer { socket in
+            _ = tmux(socket, "set-hook", "-g", Tmux.hook, "run-shell 'say mine'")
+            let script = URL(fileURLWithPath: "/tmp/nunsseop-test slot/terminal-notify.sh")
+            let watcher = TmuxWatcher(socketName: socket, scriptURL: script)
+            watcher.start()
+            try await Task.sleep(for: .milliseconds(400))
+            #expect(slot(socket) == "alert-bell[4775] run-shell \"say mine\"")
+            watcher.stop(waiting: true)
+            #expect(slot(socket) == "alert-bell[4775] run-shell \"say mine\"")
+            try? FileManager.default.removeItem(at: script.deletingLastPathComponent())
+        }
+    }
+
+    @Test(.enabled(if: Tmux.isInstalled)) func leftoverHookComesOffWhileTheFeatureIsOff() async throws {
+        try await withServer { socket in
+            _ = tmux(socket, "set-hook", "-g", Tmux.hook,
+                     "run-shell -b \"'/Users/a/Library/Application Support/Nunsseop/tmux-notify.sh' tmux #{q:session_name}\"")
+            let watcher = TmuxWatcher(socketName: socket)
+            watcher.clearLeftover()
+            for _ in 0..<50 { if slot(socket) == nil { break }; try await Task.sleep(for: .milliseconds(20)) }
+            #expect(slot(socket) == nil)
+            // Someone else's is kept.
+            _ = tmux(socket, "set-hook", "-g", Tmux.hook, "run-shell 'say mine'")
+            watcher.clearLeftover()
+            try await Task.sleep(for: .milliseconds(300))
+            #expect(slot(socket) != nil)
+        }
+    }
+
+    @Test(.enabled(if: Tmux.isInstalled)) func hookAsTmuxPrintsItMatches() async throws {
+        try await withServer { socket in
+            // Spaces, as in "Application Support", and a socket name.
+            let dir = URL(fileURLWithPath: "/tmp/nunsseop-test \(UUID().uuidString.prefix(4))/Application Support")
+            defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }
+            let script = dir.appendingPathComponent("terminal-notify.sh")
+            let watcher = TmuxWatcher(socketName: socket, scriptURL: script)
+            watcher.start()
+            defer { watcher.stop(waiting: true) }
+            let command = try #require(Tmux.hookCommand(script: script, binary: Tmux.binary!, socketName: socket))
+            for _ in 0..<50 { if slot(socket) != nil { break }; try await Task.sleep(for: .milliseconds(20)) }
+            let printed = try #require(tmux(socket, "show-hooks", "-g"))
+            #expect(Tmux.isHooked(printed, command: command), "\(printed)")
+        }
     }
 }
