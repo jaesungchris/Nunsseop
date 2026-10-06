@@ -778,7 +778,10 @@ enum TerminalFocus {
     /// That exact process, which matters when an app runs more than once (`open -n`, `wezterm start`). Under
     /// macOS 14's cooperative activation Nunsseop yields to it and asks for it, rather than going through
     /// NSWorkspace, which picks an instance itself and sends a reopen event that opens a window in apps showing none.
+    /// Only the active app can hand activation over, and a click on the notch panel doesn't make Nunsseop active,
+    /// so it becomes active for a moment first.
     static func activate(_ app: NSRunningApplication) {
+        if !NSApp.isActive { NSApp.activate() }
         NSApp.yieldActivation(to: app)
         if !app.activate(from: .current, options: []) { app.activate() }
     }
