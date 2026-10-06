@@ -291,6 +291,11 @@ private struct AlertsPane: View {
                     NSPasteboard.general.setString(NotifyServer.scriptCommand, forType: .string)
                 }
                 .disabled(!settings.localNotifications)
+                if MuxyNotice.isInstalled {
+                    Toggle("Show notifications from agents running in Muxy", isOn: $settings.muxyNotifications)
+                    Text("Read from Muxy's own notification list, so every agent and terminal in Muxy works without setup. Hidden while Muxy is in front, and skipped for tools connected above.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
             .onAppear(perform: refreshConnections)
         }

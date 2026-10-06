@@ -307,3 +307,5 @@
 "Nunsseop needs permission to record system audio to change an app’s volume." = "Nunsseop braucht die Erlaubnis, Systemaudio aufzunehmen, um die Lautstärke einer App zu ändern.";
 "No apps are playing sound" = "Keine App spielt gerade Ton ab";
 "No sound has come through yet. If the app is playing, Nunsseop may need permission to record system audio." = "Bisher kommt kein Ton an. Wenn die App etwas abspielt, braucht Nunsseop vielleicht die Erlaubnis, Systemaudio aufzunehmen.";
+"Show notifications from agents running in Muxy" = "Mitteilungen von Agenten in Muxy anzeigen";
+"Read from Muxy's own notification list, so every agent and terminal in Muxy works without setup. Hidden while Muxy is in front, and skipped for tools connected above." = "Gelesen aus Muxys eigener Mitteilungsliste, daher funktionieren alle Agenten und Terminals in Muxy ohne Einrichtung. Ausgeblendet, solange Muxy im Vordergrund ist, und übersprungen für oben verbundene Tools.";

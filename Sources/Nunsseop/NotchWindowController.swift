@@ -76,6 +76,8 @@ final class NotchWindowController {
                     start: { model.capsLock.start() }, stop: { _ in model.capsLock.stop() }),
             Feature(setting: \.localNotifications, changes: \.$localNotifications,
                     start: { model.notifyServer.start() }, stop: { _ in model.notifyServer.stop() }),
+            Feature(setting: \.muxyNotifications, changes: \.$muxyNotifications,
+                    start: { model.muxy.start() }, stop: { _ in model.muxy.stop() }),
             Feature(setting: \.callIsland, changes: \.$callIsland,
                     start: { model.calls.start() }, stop: { _ in model.calls.stop() }),
             // Hiding keeps the last camera/mic state, so showing again during a call already announced stays quiet.
@@ -285,6 +287,10 @@ final class NotchWindowController {
         })
         model.notifyServer.onNotify = { [weak self] title, message in
             self?.model.hud.show(.notice(symbol: "sparkles", title: title, detail: message), duration: 6)
+        }
+        model.muxy.onNotice = { [weak self] notice in
+            self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.title.prefix(80)),
+                                         detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200))), duration: 6)
         }
         // App volume taps run whenever the setting is on; the list of apps refreshes only while the Tools tab shows.
         settingsObservers.append(model.settings.$perAppVolume.combineLatest(model.$isExpanded, model.$tab)
