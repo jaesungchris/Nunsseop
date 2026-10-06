@@ -309,3 +309,9 @@
 "No sound has come through yet. If the app is playing, Nunsseop may need permission to record system audio." = "Todavía no llega ningún sonido. Si la app está reproduciendo, puede que Nunsseop necesite permiso para grabar el audio del sistema.";
 "Show notifications from agents running in Muxy" = "Mostrar notificaciones de los agentes que se ejecutan en Muxy";
 "Read from Muxy's own notification list, so every agent and terminal in Muxy works without setup. Hidden while Muxy is in front, and skipped for tools connected above." = "Se leen de la propia lista de notificaciones de Muxy, así que todos los agentes y terminales de Muxy funcionan sin configurar nada. No se muestran mientras Muxy está al frente ni para las herramientas conectadas arriba.";
+"Show notifications from agents running in cmux" = "Mostrar notificaciones de los agentes que se ejecutan en cmux";
+"Read through the cmux command inside the app, so cmux's settings stay as they are. Hidden while cmux is in front." = "Se leen con el comando cmux incluido en la app, así que los ajustes de cmux no cambian. No se muestran mientras cmux está al frente.";
+"Show when agents in herdr finish or wait for you" = "Mostrar cuando los agentes de herdr terminan o te esperan";
+"Read from herdr's socket while its server runs, so nothing needs setting up." = "Se leen del socket de herdr mientras su servidor está activo, sin nada que configurar.";
+"Finished" = "Terminado";
+"Waiting for you" = "Esperándote";

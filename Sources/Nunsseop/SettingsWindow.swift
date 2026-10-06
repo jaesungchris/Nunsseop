@@ -296,6 +296,16 @@ private struct AlertsPane: View {
                     Text("Read from Muxy's own notification list, so every agent and terminal in Muxy works without setup. Hidden while Muxy is in front, and skipped for tools connected above.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                if Cmux.isInstalled {
+                    Toggle("Show notifications from agents running in cmux", isOn: $settings.cmuxNotifications)
+                    Text("Read through the cmux command inside the app, so cmux's settings stay as they are. Hidden while cmux is in front.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                if Herdr.isInstalled {
+                    Toggle("Show when agents in herdr finish or wait for you", isOn: $settings.herdrNotifications)
+                    Text("Read from herdr's socket while its server runs, so nothing needs setting up.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
             .onAppear(perform: refreshConnections)
         }

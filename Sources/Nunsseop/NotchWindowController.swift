@@ -78,6 +78,10 @@ final class NotchWindowController {
                     start: { model.notifyServer.start() }, stop: { _ in model.notifyServer.stop() }),
             Feature(setting: \.muxyNotifications, changes: \.$muxyNotifications,
                     start: { model.muxy.start() }, stop: { _ in model.muxy.stop() }),
+            Feature(setting: \.cmuxNotifications, changes: \.$cmuxNotifications,
+                    start: { if Cmux.isInstalled { model.cmux.start() } }, stop: { _ in model.cmux.stop() }),
+            Feature(setting: \.herdrNotifications, changes: \.$herdrNotifications,
+                    start: { if Herdr.isInstalled { model.herdr.start() } }, stop: { _ in model.herdr.stop() }),
             Feature(setting: \.callIsland, changes: \.$callIsland,
                     start: { model.calls.start() }, stop: { _ in model.calls.stop() }),
             // Hiding keeps the last camera/mic state, so showing again during a call already announced stays quiet.
@@ -287,6 +291,16 @@ final class NotchWindowController {
         })
         model.notifyServer.onNotify = { [weak self] title, message in
             self?.model.hud.show(.notice(symbol: "sparkles", title: title, detail: message), duration: 6)
+        }
+        model.cmux.onNotice = { [weak self] notice in
+            self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.title.prefix(80)),
+                                         detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200))), duration: 6)
+        }
+        model.herdr.onNotice = { [weak self] notice in
+            let state = notice.status == "blocked" ? String(localized: "Waiting for you") : String(localized: "Finished")
+            let detail = [state, notice.title].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+            self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.agent.prefix(80)),
+                                         detail: String(detail.prefix(200))), duration: 6)
         }
         model.muxy.onNotice = { [weak self] notice in
             self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.title.prefix(80)),

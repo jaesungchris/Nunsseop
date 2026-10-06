@@ -309,3 +309,9 @@
 "No sound has come through yet. If the app is playing, Nunsseop may need permission to record system audio." = "尚未收到任何声音。如果该应用正在播放，Nunsseop 可能需要录制系统音频的权限。";
 "Show notifications from agents running in Muxy" = "显示在 Muxy 中运行的代理的通知";
 "Read from Muxy's own notification list, so every agent and terminal in Muxy works without setup. Hidden while Muxy is in front, and skipped for tools connected above." = "读取 Muxy 自己的通知列表，因此 Muxy 中的所有代理和终端无需设置即可通知。Muxy 在前台时以及上方已连接的工具不会显示。";
+"Show notifications from agents running in cmux" = "显示在 cmux 中运行的代理的通知";
+"Read through the cmux command inside the app, so cmux's settings stay as they are. Hidden while cmux is in front." = "通过应用内的 cmux 命令读取，cmux 的设置保持不变。cmux 在前台时不显示。";
+"Show when agents in herdr finish or wait for you" = "herdr 中的代理完成或等待你时显示";
+"Read from herdr's socket while its server runs, so nothing needs setting up." = "在 herdr 服务器运行期间从其套接字读取，无需设置。";
+"Finished" = "已完成";
+"Waiting for you" = "等待你的输入";

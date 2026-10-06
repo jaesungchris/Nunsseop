@@ -334,3 +334,9 @@
 "No sound has come through yet. If the app is playing, Nunsseop may need permission to record system audio." = "아직 소리가 들어오지 않았습니다. 앱에서 소리가 나고 있다면 Nunsseop에 시스템 오디오 녹음 권한이 필요할 수 있습니다.";
 "Show notifications from agents running in Muxy" = "Muxy에서 실행한 에이전트의 알림 표시";
 "Read from Muxy's own notification list, so every agent and terminal in Muxy works without setup. Hidden while Muxy is in front, and skipped for tools connected above." = "Muxy가 직접 모아 두는 알림 목록을 읽으므로, Muxy 안의 모든 에이전트와 터미널 알림이 별도 설정 없이 들어옵니다. Muxy가 맨 앞에 있을 때와 위에서 연결한 도구의 알림은 띄우지 않습니다.";
+"Show notifications from agents running in cmux" = "cmux에서 실행한 에이전트의 알림 표시";
+"Read through the cmux command inside the app, so cmux's settings stay as they are. Hidden while cmux is in front." = "앱에 들어 있는 cmux 명령으로 읽으므로 cmux 설정은 그대로 둡니다. cmux가 맨 앞에 있을 때는 띄우지 않습니다.";
+"Show when agents in herdr finish or wait for you" = "herdr의 에이전트가 끝나거나 입력을 기다리면 표시";
+"Read from herdr's socket while its server runs, so nothing needs setting up." = "herdr 서버가 켜져 있는 동안 소켓에서 읽으므로 따로 설정할 것이 없습니다.";
+"Finished" = "완료";
+"Waiting for you" = "입력 대기 중";
