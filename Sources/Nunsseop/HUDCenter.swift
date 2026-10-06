@@ -23,6 +23,9 @@ final class HUDCenter: ObservableObject {
     private let powerMonitor = PowerMonitor()
     private let interceptor = MediaKeyInterceptor()
     private var dismissWork: DispatchWorkItem?
+    /// A notice to bring back if covered: built again each time it shows, so its wording stays current.
+    private struct Lasting { let make: () -> HUDEvent?; let duration: Double }
+    private var lasting = LastingNotices<Lasting>()
     private var lastHeadphones: HeadphoneBattery?
     private var headphoneCheckInFlight = false
     private let ddcQueue = DispatchQueue(label: "nunsseop.ddc")
@@ -231,12 +234,34 @@ final class HUDCenter: ObservableObject {
     }
 
     func show(_ newEvent: HUDEvent, duration: Double = 1.6) {
+        present(newEvent, duration: duration, lasting: nil)
+    }
+
+    /// A notice that must be seen once: if another HUD covers it before its time is up, it comes back
+    /// when that HUD is gone. `make` runs again then; returning nil drops it.
+    func showLasting(duration: Double, _ make: @escaping () -> HUDEvent?) {
+        guard let notice = make() else { return }
+        present(notice, duration: duration, lasting: Lasting(make: make, duration: duration))
+    }
+
+    private func present(_ newEvent: HUDEvent, duration: Double, lasting notice: Lasting?) {
         dismissWork?.cancel()
+        lasting.replace(with: notice)
         event = newEvent
         let work = DispatchWorkItem { [weak self] in
-            MainActor.assumeIsolated { self?.event = nil }
+            MainActor.assumeIsolated { self?.dismiss() }
         }
         dismissWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: work)
+    }
+
+    private func dismiss() {
+        while let notice = lasting.finish() {
+            if let event = notice.make() {
+                present(event, duration: notice.duration, lasting: notice)
+                return
+            }
+        }
+        event = nil
     }
 }
