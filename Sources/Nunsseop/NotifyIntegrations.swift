@@ -48,27 +48,46 @@ enum NotifyIntegration: String, CaseIterable, Identifiable {
         }
     }
 
-    func install() throws {
+    /// Connecting, disconnecting and the update at launch all change the same files, so they take turns here.
+    private static let queue = DispatchQueue(label: "nunsseop.integrations")
+
+    /// Connects the tool, or brings a connection from an older version up to date (a hook command without
+    /// the X-App header, say), leaving a connection that's already current alone.
+    func install() throws { try Self.queue.sync { try installNow() } }
+
+    func uninstall() throws { try Self.queue.sync { try uninstallNow() } }
+
+    private func installNow() throws {
         switch self {
         case .claudeCode, .gemini:
             let settings = try Self.loadJSON(at: configURL)
-            guard !JSONHook.isInstalled(in: settings) else { return }
-            try Self.writeJSON(JSONHook.adding(NotifyServer.hookCommand(title: name), to: settings), to: configURL)
+            guard let updated = try JSONHook.updating(NotifyServer.hookCommand(title: name), in: settings) else { return }
+            try Self.writeJSON(updated, to: configURL)
         case .codex:
             let text = try Self.loadText(at: configURL)
-            guard !CodexNotify.isInstalled(in: text) else { return }
             let script = CodexNotify.scriptURL
-            try FileManager.default.createDirectory(at: script.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try Data(CodexNotify.script.utf8).write(to: script, options: .atomic)
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+            if (try? String(contentsOf: script, encoding: .utf8)) != CodexNotify.script {
+                try FileManager.default.createDirectory(at: script.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try Data(CodexNotify.script.utf8).write(to: script, options: .atomic)
+                try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+            }
+            guard !CodexNotify.isInstalled(in: text) else { return }
             try Self.writeText(CodexNotify.adding(to: text), to: configURL)
         case .openCode:
-            try FileManager.default.createDirectory(at: configURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try Data(Self.openCodePlugin.utf8).write(to: configURL, options: .atomic)
+            guard (try? String(contentsOf: configURL, encoding: .utf8)) != Self.openCodePlugin else { return }
+            // Through write(), so a plugin edited by hand is kept as a backup.
+            try Self.write(Data(Self.openCodePlugin.utf8), to: configURL)
         }
     }
 
-    func uninstall() throws {
+    /// Updates every connected tool to this version's hook, script or plugin, in the background; the rest stay untouched.
+    static func updateConnected() {
+        queue.async {
+            for tool in allCases where tool.isInstalled { try? tool.installNow() }
+        }
+    }
+
+    private func uninstallNow() throws {
         switch self {
         case .claudeCode, .gemini:
             let settings = try Self.loadJSON(at: configURL)
@@ -146,16 +165,33 @@ enum NotifyIntegration: String, CaseIterable, Identifiable {
 }
 
 /// Claude Code and Gemini CLI both read `hooks.Notification` groups from a JSON settings file.
+/// A group can hold other tools' hooks and a matcher besides Nunsseop's, so everything here works on single hooks.
 enum JSONHook {
-    private static func isOurs(_ group: [String: Any]) -> Bool {
-        (group["hooks"] as? [[String: Any]] ?? []).contains {
-            ($0["command"] as? String)?.contains("127.0.0.1:\(NotifyServer.port)/notify") == true
-        }
+    private static func isOurs(hook: [String: Any]) -> Bool {
+        (hook["command"] as? String)?.contains("127.0.0.1:\(NotifyServer.port)/notify") == true
     }
+
+    private static func hooks(in group: [String: Any]) -> [[String: Any]] { group["hooks"] as? [[String: Any]] ?? [] }
+
+    private static func holdsOurs(_ group: [String: Any]) -> Bool { hooks(in: group).contains(where: isOurs(hook:)) }
 
     static func isInstalled(in settings: [String: Any]) -> Bool {
         let groups = (settings["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]] ?? []
-        return groups.contains(where: isOurs)
+        return groups.contains(where: holdsOurs)
+    }
+
+    /// The settings with exactly one Nunsseop hook running `command`, replacing an older one;
+    /// nil when that's already so.
+    static func updating(_ command: String, in settings: [String: Any]) throws -> [String: Any]? {
+        guard !isCurrent(command, in: settings) else { return nil }
+        return try adding(command, to: removing(from: settings))
+    }
+
+    /// Whether, across all groups, there's exactly one Nunsseop hook and it runs this command.
+    static func isCurrent(_ command: String, in settings: [String: Any]) -> Bool {
+        let groups = (settings["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]] ?? []
+        let ours = groups.flatMap { hooks(in: $0).filter(isOurs(hook:)) }
+        return ours.count == 1 && ours[0]["command"] as? String == command
     }
 
     /// The settings with the hook added next to any Notification hooks already there.
@@ -170,14 +206,22 @@ enum JSONHook {
         return settings
     }
 
-    /// The settings without Nunsseop's hook, dropping keys that end up empty.
+    /// The settings without Nunsseop's hooks. Other hooks in the same group, and its matcher, stay; a group is
+    /// dropped only when nothing is left in it, and keys only when they end up empty.
     static func removing(from settings: [String: Any]) -> [String: Any] {
         var settings = settings
-        guard var hooks = settings["hooks"] as? [String: Any],
-              let groups = hooks["Notification"] as? [[String: Any]] else { return settings }
-        let kept = groups.filter { !isOurs($0) }
-        hooks["Notification"] = kept.isEmpty ? nil : kept
-        settings["hooks"] = hooks.isEmpty ? nil : hooks
+        guard var events = settings["hooks"] as? [String: Any],
+              let groups = events["Notification"] as? [[String: Any]] else { return settings }
+        let kept = groups.compactMap { group -> [String: Any]? in
+            guard holdsOurs(group) else { return group }
+            let others = hooks(in: group).filter { !isOurs(hook: $0) }
+            guard !others.isEmpty else { return nil }
+            var group = group
+            group["hooks"] = others
+            return group
+        }
+        events["Notification"] = kept.isEmpty ? nil : kept
+        settings["hooks"] = events.isEmpty ? nil : events
         return settings
     }
 }

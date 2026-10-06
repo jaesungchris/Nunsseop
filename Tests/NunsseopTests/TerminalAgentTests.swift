@@ -108,12 +108,15 @@ struct TerminalAgentWatcherTests {
         }
     }
 
-    /// Serves a herdr socket at `socket` that lists one working pane and then reports it done.
-    private func fakeHerdr(at socket: URL) async throws -> () -> Void {
+    /// Serves a herdr socket at `socket` that lists one working pane and then reports it done. With `quietSubscription`,
+    /// the pane is done by the time of the second list and the subscription never reports it.
+    private func fakeHerdr(at socket: URL, quietSubscription: Bool = false) async throws -> () -> Void {
         let script = temporary("herdr.py")
         try """
         import json, os, socket, sys, threading, time
         path = sys.argv[1]
+        quiet = len(sys.argv) > 2
+        lists = []
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server.bind(path); server.listen(4)
         def serve(conn):
@@ -122,11 +125,15 @@ struct TerminalAgentWatcherTests {
                 request = json.loads(line)
                 def send(obj): conn.sendall((json.dumps(obj) + "\\n").encode())
                 if request["method"] == "pane.list":
+                    lists.append(1)
+                    status = "done" if quiet and len(lists) > 1 else "working"
                     send({"id": request["id"], "result": {"type": "pane_list", "panes": [
-                        {"pane_id": "w1:p1", "agent_status": "working"}]}})
+                        {"pane_id": "w1:p1", "agent_status": status, "display_agent": "Pi", "title": "refactor"}]}})
                 elif request["method"] == "events.subscribe":
                     send({"id": request["id"], "result": {"type": "subscription_started"}})
                     time.sleep(0.2)
+                    if quiet:
+                        time.sleep(5); continue
                     send({"event": "pane.agent_status_changed", "data": {"pane_id": "w1:p1", "workspace_id": "w1",
                           "agent_status": "done", "agent": "pi", "display_agent": "Pi", "title": "refactor"}})
                     time.sleep(5)
@@ -136,7 +143,7 @@ struct TerminalAgentWatcherTests {
         """.write(to: script, atomically: true, encoding: .utf8)
         let server = Process()
         server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        server.arguments = [script.path, socket.path]
+        server.arguments = [script.path, socket.path] + (quietSubscription ? ["quiet"] : [])
         try server.run()
         await waitUntil { FileManager.default.fileExists(atPath: socket.path) }
         return {
@@ -151,6 +158,19 @@ struct TerminalAgentWatcherTests {
         let shutDown = try await fakeHerdr(at: socket)
         defer { shutDown() }
 
+        let watcher = HerdrWatcher(socketURL: socket)
+        var received: [Herdr.Notice] = []
+        watcher.onNotice = { received.append($0) }
+        watcher.start()
+        defer { watcher.stop() }
+        await waitUntil { !received.isEmpty }
+        #expect(received == [Herdr.Notice(agent: "Pi", status: "done", title: "refactor", pane: "w1:p1", socket: socket)])
+    }
+
+    @Test func herdrCatchesUpWhatChangedBeforeTheSubscriptionStarted() async throws {
+        let socket = temporary("herdr.sock")
+        let shutDown = try await fakeHerdr(at: socket, quietSubscription: true)
+        defer { shutDown() }
         let watcher = HerdrWatcher(socketURL: socket)
         var received: [Herdr.Notice] = []
         watcher.onNotice = { received.append($0) }
@@ -178,6 +198,38 @@ struct TerminalAgentWatcherTests {
         #expect(received.map(\.1) == ["work"])
     }
 
+    @Test func cmuxRetriesOnceAfterBeingTurnedOffAndOnWhileMissing() async throws {
+        // Against one started once, under the same load: turning it off and on must not add a second retry chain.
+        let toggled = CmuxWatcher(findCLI: { nil }, retryDelay: 0.1)
+        let control = CmuxWatcher(findCLI: { nil }, retryDelay: 0.1)
+        toggled.start()
+        toggled.stop()
+        toggled.start()
+        control.start()
+        defer { toggled.stop(); control.stop() }
+        try await Task.sleep(for: .milliseconds(1500))
+        // Other tests can keep the main actor busy, so only that a retry happened is assumed.
+        #expect(control.launches >= 2)
+        // The toggled one has its extra first start; a second chain would roughly double it.
+        #expect(toggled.launches <= control.launches + 2, "toggled \(toggled.launches), control \(control.launches)")
+    }
+
+    @Test func cmuxFoundLaterIsUsed() async throws {
+        var installed: URL?
+        let watcher = CmuxWatcher(findCLI: { installed }, retryDelay: 0.2)
+        watcher.start()
+        defer { watcher.stop() }
+        let cli = temporary("cmux")
+        try "#!/bin/sh\nsleep 30\n".write(to: cli, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: cli.path)
+        defer { try? FileManager.default.removeItem(at: cli) }
+        installed = cli
+        let before = watcher.launches
+        try await Task.sleep(for: .milliseconds(700))
+        // Found on the next retry, then running: no more attempts.
+        #expect(watcher.launches == before + 1)
+    }
+
     @Test func cmuxWatcherLooksUpCreatedNotifications() async throws {
         let cli = temporary("cmux")
         try """
@@ -203,29 +255,47 @@ struct TerminalAgentWatcherTests {
 }
 
 struct TmuxHookTests {
-    @Test func hookCommandQuotesNamesForTheShell() {
-        let command = Tmux.hookCommand(script: URL(fileURLWithPath: "/Users/a/Library/Application Support/Nunsseop/tmux-notify.sh"))
-        #expect(command == #"run-shell -b "'/Users/a/Library/Application Support/Nunsseop/tmux-notify.sh' tmux #{q:session_name} #{q:window_name} #{q:pane_current_command} #{q:pane_id}""#)
+    let script = URL(fileURLWithPath: "/Users/a/Library/Application Support/Nunsseop/terminal-notify.sh")
+    let binary = URL(fileURLWithPath: "/opt/homebrew/bin/tmux")
+
+    @Test func hookPassesOnlyKnownValuesAndTheWindowID() {
+        #expect(Tmux.hookCommand(script: script, binary: binary)
+                == #"run-shell -b "'/Users/a/Library/Application Support/Nunsseop/terminal-notify.sh' tmux-window '/opt/homebrew/bin/tmux' '' #{window_id}""#)
+        #expect(Tmux.hookCommand(script: script, binary: binary, socketName: "test")?.contains("'test' #{window_id}") == true)
+        // No names, and nothing tmux or sh could expand.
+        #expect(Tmux.hookCommand(script: script, binary: binary)?.contains("_name") == false)
+        for bad in ["/Users/o'brien/x.sh", "/Users/a/$HOME/x.sh", "/Users/a/#{x}.sh", "/Users/a/\\x.sh"] {
+            #expect(Tmux.hookCommand(script: URL(fileURLWithPath: bad), binary: binary) == nil)
+        }
+        #expect(Tmux.hookCommand(script: script, binary: binary, socketName: "a'b") == nil)
     }
 
-    @Test func recognisesItsOwnHookOnly() {
-        let script = URL(fileURLWithPath: "/x/terminal-notify.sh")
-        let current = "alert-bell[4775] " + Tmux.hookCommand(script: script)
-        #expect(Tmux.isHooked("alert-activity\n\(current)\n", script: script))
-        #expect(!Tmux.isHooked("alert-bell[0] run-shell 'say bell'\n", script: script))
-        #expect(!Tmux.isHooked("alert-bell[12] " + Tmux.hookCommand(script: script) + "\n", script: script))
-        // A hook from an older version, without the pane id, gets replaced.
-        #expect(!Tmux.isHooked("alert-bell[4775] run-shell -b \"'/x/terminal-notify.sh' tmux #{q:session_name} #{q:window_name} #{q:pane_current_command}\"\n", script: script))
+    @Test func recognisesItsOwnHookOnly() throws {
+        let command = try #require(Tmux.hookCommand(script: script, binary: binary))
+        #expect(Tmux.isHooked("alert-activity\nalert-bell[4775] \(command)\n", command: command))
+        #expect(!Tmux.isHooked("alert-bell[0] run-shell 'say bell'\n", command: command))
+        #expect(!Tmux.isHooked("alert-bell[12] \(command)\n", command: command))
+        // A hook from an older version gets replaced.
+        #expect(!Tmux.isHooked("alert-bell[4775] run-shell -b \"'\(script.path)' tmux #{q:session_name} #{q:window_name}\"\n", command: command))
+    }
+
+    @Test func idsAreAPrefixAndDigits() {
+        #expect(Tmux.isID("%12", prefix: "%") && Tmux.isID("@3", prefix: "@"))
+        for bad in ["%", "@", "%1a", "%١", "12", "%1 ", "@%1"] {
+            #expect(!Tmux.isID(bad, prefix: "%") && !Tmux.isID(bad, prefix: "@"))
+        }
     }
 }
 
-/// Against a real tmux server on a socket of its own, so the user's tmux is never touched.
+/// Against a real tmux server on a socket of its own, so the user's tmux is never touched. The server runs with a
+/// HOME holding a token and a PATH whose `curl` records each request, so the shipped script runs as it would.
 @MainActor
 struct TmuxWatcherTests {
-    private func tmux(_ socket: String, _ arguments: String...) -> String? {
+    private func tmux(_ socket: String, environment: [String: String]? = nil, _ arguments: String...) -> String? {
         let process = Process()
         process.executableURL = Tmux.binary
         process.arguments = ["-L", socket] + arguments
+        if let environment { process.environment = environment }
         let output = Pipe()
         process.standardOutput = output
         process.standardError = FileHandle.nullDevice
@@ -236,42 +306,72 @@ struct TmuxWatcherTests {
     }
 
     private func waitUntil(_ condition: () -> Bool) async {
-        // Up to five seconds, stopping as soon as it holds.
         for _ in 0..<100 {
             if condition() { return }
             try? await Task.sleep(for: .milliseconds(50))
         }
     }
 
-    @Test(.enabled(if: Tmux.isInstalled)) func bellReachesTheScriptWithEscapedNamesAndHookComesOff() async throws {
+    @Test(.enabled(if: Tmux.isInstalled)) func bellsCarryNamesReadByTheScriptUnexpanded() async throws {
         let id = UUID().uuidString.prefix(8)
         let socket = "nunsseop-test-\(id)"
-        let log = URL(fileURLWithPath: "/tmp/nunsseop-test-\(id).log")
-        let pwned = URL(fileURLWithPath: "/tmp/nunsseop-test-\(id).pwned")
-        let script = URL(fileURLWithPath: "/tmp/nunsseop-test-\(id) script.sh")
+        let home = URL(fileURLWithPath: "/tmp/nunsseop-test-\(id)")
+        let requests = home.appendingPathComponent("requests")
         defer {
             _ = tmux(socket, "kill-server")
-            let socketFile = URL(fileURLWithPath: "/private/tmp/tmux-\(getuid())/\(socket)")
-            for url in [log, pwned, script, socketFile] { try? FileManager.default.removeItem(at: url) }
+            try? FileManager.default.removeItem(at: home)
+            try? FileManager.default.removeItem(atPath: "/private/tmp/tmux-\(getuid())/\(socket)")
         }
-        #expect(tmux(socket, "-f", "/dev/null", "new-session", "-d", "-s", "work", "-n", "api", "sleep 60") != nil)
-        // A program can rename its window to anything; none of it may run.
-        #expect(tmux(socket, "rename-window", "-t", "work:api", "api\"; touch \(pwned.path); echo '$(touch \(pwned.path))") != nil)
+        let support = home.appendingPathComponent("Library/Application Support/Nunsseop")
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: requests, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: home.appendingPathComponent("bin"), withIntermediateDirectories: true)
+        try "token".write(to: support.appendingPathComponent("notify-token"), atomically: true, encoding: .utf8)
+        let curl = home.appendingPathComponent("bin/curl")
+        try """
+        #!/bin/sh
+        out=$(mktemp "\(requests.path)/req.XXXXXX")
+        for arg; do printf '%s\\n' "$arg"; done > "$out.args"
+        cat > "$out.body"
+        rm "$out"
+        """.write(to: curl, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: curl.path)
 
-        let watcher = TmuxWatcher(socketName: socket, scriptURL: script,
-                                  script: "#!/bin/sh\nprintf '%s|%s|%s|%s\\n' \"$1\" \"$2\" \"$3\" \"$4\" >> \(log.path)\n")
+        let environment = ["HOME": home.path, "PATH": "\(home.path)/bin:/usr/bin:/bin", "TERM": "xterm"]
+        // Names a program could set: braces, commas and ~ must arrive as typed, not expanded by sh.
+        let names = ["x{a,claude}", "{z,claude}", "~root", "{1..5}"]
+        #expect(tmux(socket, environment: environment, "-f", "/dev/null", "new-session", "-d", "-s", "work", "-n", names[0], "sleep 60") != nil)
+        for name in names.dropFirst() { _ = tmux(socket, "new-window", "-d", "-t", "work", "-n", name, "sleep 60") }
+        // A split window: which pane rang isn't known, so no agent is named.
+        // Windows are targeted by index: tmux reads `{…}` in a target as one of its own tokens.
+        _ = tmux(socket, "split-window", "-d", "-t", "work:2", "sleep 60")
+
+        let watcher = TmuxWatcher(socketName: socket, scriptURL: home.appendingPathComponent("terminal-notify.sh"))
         watcher.start()
-        await waitUntil { Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", script: script) }
-        #expect(Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", script: script))
+        defer { watcher.stop(waiting: true) }
+        let binary = try #require(Tmux.binary)
+        let command = try #require(Tmux.hookCommand(script: home.appendingPathComponent("terminal-notify.sh"),
+                                                     binary: binary, socketName: socket))
+        await waitUntil { Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", command: command) }
+        #expect(Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", command: command))
 
-        _ = tmux(socket, "respawn-pane", "-k", "-t", "work:0", "printf '\\a'; sleep 60")
-        await waitUntil { FileManager.default.fileExists(atPath: log.path) }
-        let line = (try? String(contentsOf: log, encoding: .utf8)) ?? ""
-        #expect(line.hasPrefix("tmux|work|api\"; touch \(pwned.path); echo '$(touch \(pwned.path))|"))
-        #expect(!FileManager.default.fileExists(atPath: pwned.path))
+        for index in names.indices { _ = tmux(socket, "respawn-pane", "-k", "-t", "work:\(index).0", "printf '\\a'; sleep 60") }
+        let bodies = { (try? FileManager.default.contentsOfDirectory(atPath: requests.path))?.filter { $0.hasSuffix(".body") } ?? [] }
+        await waitUntil { bodies().count >= names.count }
 
-        watcher.stop(waiting: true)
-        #expect(!Tmux.isHooked(tmux(socket, "show-hooks", "-g") ?? "", script: script))
+        var sent: [String: [String]] = [:]
+        for file in bodies() {
+            let base = requests.appendingPathComponent(String(file.dropLast(5)))
+            let body = try String(contentsOf: base.appendingPathExtension("body"), encoding: .utf8)
+            sent[body] = try String(contentsOf: base.appendingPathExtension("args"), encoding: .utf8).split(separator: "\n").map(String.init)
+        }
+        #expect(Set(sent.keys) == Set(names.map { "work · \($0)" }))
+        for (body, args) in sent {
+            #expect(!args.contains("X-Agent: claude") && !args.contains("X-Title: claude"), "\(body): \(args)")
+            #expect(args.contains { $0.hasPrefix("X-Target: tmux:@") }, "\(body): \(args)")
+        }
+        #expect(sent["work · ~root"]?.contains("X-Agent: ") == true)
+        #expect(sent["work · x{a,claude}"]?.contains("X-Agent: ") == false)
     }
 }
 
@@ -306,6 +406,28 @@ struct TerminalBellScriptTests {
         return (args, body)
     }
 
+    /// The tmux-window mode with a stand-in tmux that knows no window: nothing is sent.
+    @Test func goneWindowOrBadIdSendsNothing() throws {
+        let dir = URL(fileURLWithPath: "/tmp/nunsseop-test-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: dir.appendingPathComponent("bin"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let curl = dir.appendingPathComponent("bin/curl"), tmux = dir.appendingPathComponent("tmux")
+        try "#!/bin/sh\ntouch \(dir.path)/sent\n".write(to: curl, atomically: true, encoding: .utf8)
+        try "#!/bin/sh\nexit 1\n".write(to: tmux, atomically: true, encoding: .utf8)
+        for file in [curl, tmux] { try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: file.path) }
+        let script = dir.appendingPathComponent("terminal-notify.sh")
+        TerminalBell.install(at: script)
+        for window in ["@9", "@9;x", "9", ""] {
+            let process = Process()
+            process.executableURL = script
+            process.arguments = ["tmux-window", tmux.path, "", window]
+            process.environment = ["HOME": dir.path, "PATH": "\(dir.path)/bin:/usr/bin:/bin"]
+            try process.run()
+            process.waitUntilExit()
+        }
+        #expect(!FileManager.default.fileExists(atPath: dir.appendingPathComponent("sent").path))
+    }
+
     @Test func postsTheAgentAndWhereTheBellRang() throws {
         let sent = try run(["tmux", "work", "api", "claude"])
         #expect(sent.args.contains("http://127.0.0.1:\(NotifyServer.port)/notify"))
@@ -338,9 +460,91 @@ struct WezTermSnippetTests {
         #expect(snippet.contains("wezterm.on('bell', function(window, pane)"))
         #expect(snippet.contains("wezterm.background_child_process({ [==[/Users/a/Library/Application Support/Nunsseop/terminal-notify.sh]==], 'WezTerm', window:active_workspace(), pane:get_title(), process, tostring(pane:pane_id()) })"))
         #expect(!snippet.contains("os.execute") && !snippet.contains("run_child_process"))
+        // A pane ringing over and over (cat of a file full of BELs) starts one script per 2 seconds, not one per bell.
+        #expect(snippet.contains("if nunsseop_last_bell[id] and now - nunsseop_last_bell[id] < 3 then return end"))
+    }
+
+    @Test func focusDoesNotStartAMuxServer() throws {
+        let dir = URL(fileURLWithPath: "/tmp/nunsseop-test-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let cli = dir.appendingPathComponent("wezterm")
+        try "#!/bin/sh\nprintf '%s ' \"$@\" >> \(dir.path)/args\n".write(to: cli, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: cli.path)
+        WezTerm.focus(pane: "١٢", cli: cli)   // not ASCII digits: ignored
+        WezTerm.focus(pane: "7", cli: cli)
+        let args = dir.appendingPathComponent("args")
+        for _ in 0..<100 where !FileManager.default.fileExists(atPath: args.path) { usleep(20_000) }
+        #expect((try? String(contentsOf: args, encoding: .utf8)) == "cli --no-auto-start activate-pane --pane-id 7 ")
     }
 }
 
+
+struct HookUpdateTests {
+    @Test func olderHookCommandsAreReplacedOnce() throws {
+        let current = NotifyServer.hookCommand(title: "Claude Code")
+        let old = "plutil -extract message raw -o - - | curl -s http://127.0.0.1:\(NotifyServer.port)/notify --data-binary @-"
+        let other: [String: Any] = ["hooks": [["type": "command", "command": "muxy-hook notification"]]]
+        let settings: [String: Any] = ["model": "opus", "hooks": ["Notification": [other, ["hooks": [["type": "command", "command": old]]]]]]
+        let updated = try #require(try JSONHook.updating(current, in: settings))
+        #expect(JSONHook.isCurrent(current, in: updated))
+        #expect(updated["model"] as? String == "opus")
+        let groups = ((updated["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]]) ?? []
+        #expect(groups.count == 2)
+        #expect(groups.first.flatMap { ($0["hooks"] as? [[String: Any]])?.first?["command"] as? String } == "muxy-hook notification")
+        #expect(try JSONHook.updating(current, in: updated) == nil)
+        #expect(current.contains("X-App: $__CFBundleIdentifier"))
+    }
+
+    private func commands(_ settings: [String: Any]) -> [[String]] {
+        (((settings["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]]) ?? []).map { group in
+            ((group["hooks"] as? [[String: Any]]) ?? []).compactMap { $0["command"] as? String }
+        }
+    }
+
+    @Test func currentHookSharingAGroupIsLeftAlone() throws {
+        let current = NotifyServer.hookCommand(title: "Claude Code")
+        let settings: [String: Any] = ["hooks": ["Notification": [
+            ["hooks": [["type": "command", "command": "say mine"], ["type": "command", "command": current]]],
+        ]]]
+        #expect(JSONHook.isCurrent(current, in: settings))
+        #expect(try JSONHook.updating(current, in: settings) == nil)
+    }
+
+    @Test func oldHookSharingAGroupIsReplacedAndTheRestKept() throws {
+        let current = NotifyServer.hookCommand(title: "Claude Code")
+        let old = "curl -s http://127.0.0.1:\(NotifyServer.port)/notify --data-binary @-"
+        let settings: [String: Any] = ["hooks": ["Notification": [
+            ["matcher": "", "hooks": [["type": "command", "command": "say mine"], ["type": "command", "command": old]]],
+        ]]]
+        let updated = try #require(try JSONHook.updating(current, in: settings))
+        let groups = ((updated["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]]) ?? []
+        #expect(groups.first?["matcher"] as? String == "")
+        #expect(commands(updated) == [["say mine"], [current]])
+        #expect(JSONHook.isCurrent(current, in: updated))
+    }
+
+    @Test func removingTakesOnlyNunsseopsHooks() {
+        let ours = NotifyServer.hookCommand(title: "Gemini CLI")
+        let settings: [String: Any] = ["hooks": ["Notification": [
+            ["matcher": "x", "hooks": [["type": "command", "command": "say mine"], ["type": "command", "command": ours]]],
+            ["hooks": [["type": "command", "command": ours]]],
+        ], "Stop": [["hooks": [["type": "command", "command": "stop.sh"]]]]]]
+        let removed = JSONHook.removing(from: settings)
+        #expect(commands(removed) == [["say mine"]])
+        #expect(((removed["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]])?.first?["matcher"] as? String == "x")
+        #expect((removed["hooks"] as? [String: Any])?["Stop"] != nil)
+    }
+
+    @Test func duplicateHooksBecomeOne() throws {
+        let current = NotifyServer.hookCommand(title: "Gemini CLI")
+        let group: [String: Any] = ["hooks": [["type": "command", "command": current]]]
+        let settings: [String: Any] = ["hooks": ["Notification": [group, group]]]
+        #expect(!JSONHook.isCurrent(current, in: settings))
+        let updated = try #require(try JSONHook.updating(current, in: settings))
+        #expect(((updated["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]])?.count == 1)
+    }
+}
 
 struct NoticeClickTests {
     @Test func muxyGoesToTheNotificationsTab() throws {
@@ -472,5 +676,73 @@ struct TmuxFocusTests {
         Tmux.focus(pane: "%1; kill-server", socketName: socket)
         try? await Task.sleep(for: .milliseconds(200))
         #expect(tmux(socket, "display-message", "-p", "#{window_name}") != nil)
+    }
+}
+
+
+/// Nunsseop's tmux slot against a real server: someone else's hook stays, a leftover one of ours goes,
+/// and the hook as tmux prints it back matches, so it isn't set again every 10 s.
+@MainActor
+struct TmuxSlotTests {
+    private func tmux(_ socket: String, _ arguments: String...) -> String? {
+        TerminalFocus.run(Tmux.binary!, ["-L", socket] + arguments)
+    }
+
+    private func withServer(_ body: (String) async throws -> Void) async throws {
+        let socket = "nunsseop-test-\(UUID().uuidString.prefix(8))"
+        defer {
+            _ = tmux(socket, "kill-server")
+            try? FileManager.default.removeItem(atPath: "/private/tmp/tmux-\(getuid())/\(socket)")
+        }
+        _ = tmux(socket, "-f", "/dev/null", "new-session", "-d", "-s", "w", "sleep 60")
+        try await body(socket)
+    }
+
+    private func slot(_ socket: String) -> String? { Tmux.slot(in: tmux(socket, "show-hooks", "-g") ?? "") }
+
+    @Test(.enabled(if: Tmux.isInstalled)) func someoneElsesHookInTheSlotStays() async throws {
+        try await withServer { socket in
+            _ = tmux(socket, "set-hook", "-g", Tmux.hook, "run-shell 'say mine'")
+            let script = URL(fileURLWithPath: "/tmp/nunsseop-test slot/terminal-notify.sh")
+            let watcher = TmuxWatcher(socketName: socket, scriptURL: script)
+            watcher.start()
+            try await Task.sleep(for: .milliseconds(400))
+            #expect(slot(socket) == "alert-bell[4775] run-shell \"say mine\"")
+            watcher.stop(waiting: true)
+            #expect(slot(socket) == "alert-bell[4775] run-shell \"say mine\"")
+            try? FileManager.default.removeItem(at: script.deletingLastPathComponent())
+        }
+    }
+
+    @Test(.enabled(if: Tmux.isInstalled)) func leftoverHookComesOffWhileTheFeatureIsOff() async throws {
+        try await withServer { socket in
+            _ = tmux(socket, "set-hook", "-g", Tmux.hook,
+                     "run-shell -b \"'/Users/a/Library/Application Support/Nunsseop/tmux-notify.sh' tmux #{q:session_name}\"")
+            let watcher = TmuxWatcher(socketName: socket)
+            watcher.clearLeftover()
+            for _ in 0..<50 { if slot(socket) == nil { break }; try await Task.sleep(for: .milliseconds(20)) }
+            #expect(slot(socket) == nil)
+            // Someone else's is kept.
+            _ = tmux(socket, "set-hook", "-g", Tmux.hook, "run-shell 'say mine'")
+            watcher.clearLeftover()
+            try await Task.sleep(for: .milliseconds(300))
+            #expect(slot(socket) != nil)
+        }
+    }
+
+    @Test(.enabled(if: Tmux.isInstalled)) func hookAsTmuxPrintsItMatches() async throws {
+        try await withServer { socket in
+            // Spaces, as in "Application Support", and a socket name.
+            let dir = URL(fileURLWithPath: "/tmp/nunsseop-test \(UUID().uuidString.prefix(4))/Application Support")
+            defer { try? FileManager.default.removeItem(at: dir.deletingLastPathComponent()) }
+            let script = dir.appendingPathComponent("terminal-notify.sh")
+            let watcher = TmuxWatcher(socketName: socket, scriptURL: script)
+            watcher.start()
+            defer { watcher.stop(waiting: true) }
+            let command = try #require(Tmux.hookCommand(script: script, binary: Tmux.binary!, socketName: socket))
+            for _ in 0..<50 { if slot(socket) != nil { break }; try await Task.sleep(for: .milliseconds(20)) }
+            let printed = try #require(tmux(socket, "show-hooks", "-g"))
+            #expect(Tmux.isHooked(printed, command: command), "\(printed)")
+        }
     }
 }

@@ -88,18 +88,32 @@ enum Cmux {
 @MainActor
 final class CmuxWatcher {
     var onNotice: ((Cmux.Notice) -> Void)?
-    private let cli: URL?
+    /// Looked up on every launch, so a cmux installed later is found.
+    private let findCLI: () -> URL?
+    private let retryDelay: TimeInterval
+    private var cli: URL?
+    /// Launch attempts, for tests.
+    private(set) var launches = 0
     private var stream: Process?
     private var lines = JSONLines()
     private var running = false
+    /// Bumped on every start and stop, so a retry scheduled before them doesn't run as well as a new one.
+    private var generation = 0
     private var quitObserver: NSObjectProtocol?
     private let queue = DispatchQueue(label: "nunsseop.cmux")
 
-    init(cli: URL? = Cmux.cli) { self.cli = cli }
+    init(findCLI: @escaping () -> URL? = { Cmux.cli }, retryDelay: TimeInterval = 30) {
+        self.findCLI = findCLI
+        self.retryDelay = retryDelay
+    }
+
+    /// A fixed command, for tests.
+    convenience init(cli: URL) { self.init(findCLI: { cli }) }
 
     func start() {
         guard !running else { return }
         running = true
+        generation += 1
         // The event stream is a child process, which would outlive Nunsseop otherwise.
         quitObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                               object: nil, queue: .main) { [weak self] _ in
@@ -110,6 +124,7 @@ final class CmuxWatcher {
 
     func stop() {
         running = false
+        generation += 1
         if let quitObserver { NotificationCenter.default.removeObserver(quitObserver) }
         quitObserver = nil
         if stream?.isRunning == true { stream?.terminate() }
@@ -119,9 +134,10 @@ final class CmuxWatcher {
 
     /// Tries again after a pause, when the command couldn't start or stopped on its own.
     private func relaunch(after process: Process?) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+        let generation = generation
+        DispatchQueue.main.asyncAfter(deadline: .now() + retryDelay) { [weak self] in
             MainActor.assumeIsolated {
-                guard let self, self.running, self.stream === process else { return }
+                guard let self, self.running, self.generation == generation, self.stream === process else { return }
                 self.stream = nil
                 self.lines = JSONLines()
                 self.launch()
@@ -130,7 +146,11 @@ final class CmuxWatcher {
     }
 
     private func launch() {
-        guard running, stream == nil, let cli else { return }
+        guard running, stream == nil else { return }
+        launches += 1
+        cli = findCLI()
+        // Not installed (yet): looked for again after the pause.
+        guard let cli else { return relaunch(after: nil) }
         let process = Process()
         process.executableURL = cli
         // --reconnect keeps waiting while cmux isn't running and resumes after it restarts.
@@ -144,7 +164,7 @@ final class CmuxWatcher {
             guard !data.isEmpty else { handle.readabilityHandler = nil; return }
             DispatchQueue.main.async { MainActor.assumeIsolated { self?.received(data) } }
         }
-        process.terminationHandler = { [weak self] _ in
+        process.terminationHandler = { [weak self, weak process] _ in
             output.fileHandleForReading.readabilityHandler = nil
             DispatchQueue.main.async { MainActor.assumeIsolated { self?.relaunch(after: process) } }
         }
@@ -242,7 +262,7 @@ enum Herdr {
             let clients = TerminalFocus.run(URL(fileURLWithPath: "/usr/bin/pgrep"), ["-x", "herdr"]) ?? ""
             let pids = clients.split(separator: "\n").compactMap { pid_t($0) }
             DispatchQueue.main.async {
-                pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first?.activate()
+                pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first.map(TerminalFocus.activate)
             }
         }
     }
@@ -446,6 +466,8 @@ final class HerdrWatcher {
     }
 
     private func handle(_ frame: [String: Any]) {
+        // Subscribed: states that changed between the pane list and now are caught up from a second list.
+        if frame["id"] as? String == "sub", frame["result"] != nil { return relist() }
         switch Herdr.event(in: frame) {
         case .panesChanged:
             // Subscribe again with the new pane list.
@@ -456,6 +478,24 @@ final class HerdrWatcher {
         case nil:
             // A rejected subscription (a pane closed meanwhile): the timer subscribes again with a fresh list.
             if frame["error"] != nil { drop() }
+        }
+    }
+
+    private func relist() {
+        let socket = socketURL.path
+        let request = String(decoding: Herdr.request("relist", "pane.list").dropLast(), as: UTF8.self)
+        queue.async { [weak self] in
+            guard let reply = TerminalFocus.send([request], toSocket: socket).first,
+                  let frame = (try? JSONSerialization.jsonObject(with: Data(reply.utf8))) as? [String: Any],
+                  let panes = Herdr.panes(in: frame) else { return }
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self, self.running else { return }
+                    for pane in self.states.reconcile(panes) {
+                        self.announce(Herdr.Notice(agent: pane.agent ?? "herdr", status: pane.status, title: pane.title, pane: pane.id))
+                    }
+                }
+            }
         }
     }
 
@@ -482,10 +522,26 @@ enum TerminalBell {
     static let script = """
         #!/bin/sh
         # Added by Nunsseop: shows bells from terminal panes in the notch.
+        # tmux passes only its binary, socket name and the window's id; the names are read here, so nothing a
+        # program can put in a window name reaches a command line.
+        if [ "$1" = tmux-window ]; then
+            tmux=$2 socket=$3 window=$4
+            case "$window" in @[0-9]*) ;; *) exit 0 ;; esac
+            case "${window#@}" in *[!0-9]*) exit 0 ;; esac
+            t() { if [ -n "$socket" ]; then "$tmux" -L "$socket" "$@"; else "$tmux" "$@"; fi; }
+            session=$(t display-message -p -t "$window" '#{session_name}')
+            # The window is gone already (closed right after the bell): nothing to show.
+            [ -n "$session" ] || exit 0
+            name=$(t display-message -p -t "$window" '#{window_name}')
+            commands=$(t list-panes -t "$window" -F '#{pane_current_command}')
+            # tmux doesn't say which pane rang, so the running command counts as the agent only in a one-pane window.
+            [ "$(printf '%s\n' "$commands" | wc -l | tr -d ' ')" = 1 ] || commands=
+            set -- tmux "$session" "$name" "$commands" "$window"
+        fi
         token=$(cat "$HOME/Library/Application Support/Nunsseop/notify-token" 2>/dev/null)
         app=$(printf '%s' "$1" | tr -cd '[:alnum:]._-' | cut -c1-40)
         agent=$(printf '%s' "$4" | tr -cd '[:alnum:]._-' | cut -c1-40)
-        target=$(printf '%s' "$5" | tr -cd '[:alnum:]%._-' | cut -c1-40)
+        target=$(printf '%s' "$5" | tr -cd '[:alnum:]%@._-' | cut -c1-40)
         bundle=$(printf '%s' "$__CFBundleIdentifier" | tr -cd '[:alnum:].-' | cut -c1-80)
         if [ -n "$2" ] && [ -n "$3" ]; then where="$2 · $3"; else where="$2$3"; fi
         printf '%s' "$where" | curl -s -m 2 -X POST http://127.0.0.1:\(NotifyServer.port)/notify \\
@@ -522,18 +578,24 @@ enum WezTerm {
     }
 
     /// Activates the pane and brings WezTerm forward.
-    static func focus(pane: String) {
-        guard pane.allSatisfy(\.isNumber), !pane.isEmpty else { return }
+    static func focus(pane: String, cli: URL? = WezTerm.cli) {
+        guard !pane.isEmpty, pane.allSatisfy({ $0.isASCII && $0.isNumber }) else { return }
         DispatchQueue.global(qos: .userInitiated).async {
-            if let cli { _ = TerminalFocus.run(cli, ["cli", "activate-pane", "--pane-id", pane]) }
+            // --no-auto-start: otherwise, with no GUI running, a mux server starts and holds the output open.
+            if let cli { _ = TerminalFocus.run(cli, ["cli", "--no-auto-start", "activate-pane", "--pane-id", pane]) }
             DispatchQueue.main.async { TerminalFocus.activate(bundleID: bundleID) }
         }
     }
 
     static func snippet(script: URL = TerminalBell.scriptURL) -> String {
         """
-        -- Nunsseop: show bells from WezTerm panes in the notch.
+        -- Nunsseop: show bells from WezTerm panes in the notch, at most one per pane every 2 seconds or so.
+        local nunsseop_last_bell = {}
         wezterm.on('bell', function(window, pane)
+          local id, now = pane:pane_id(), os.time()
+          -- os.time() counts whole seconds, so < 3 waits at least 2 seconds.
+          if nunsseop_last_bell[id] and now - nunsseop_last_bell[id] < 3 then return end
+          nunsseop_last_bell[id] = now
           local process = (pane:get_foreground_process_name() or ''):match('[^/]*$')
           wezterm.background_child_process({ [==[\(script.path)]==], 'WezTerm', window:active_workspace(), pane:get_title(), process, tostring(pane:pane_id()) })
         end)
@@ -558,22 +620,34 @@ enum Tmux {
 
     static var isInstalled: Bool { binary != nil }
 
-    /// The hook's tmux command. `#{q:…}` escapes each name for the shell, since programs can rename windows.
-    static func hookCommand(script: URL) -> String {
-        "run-shell -b \"'\(script.path)' tmux #{q:session_name} #{q:window_name} #{q:pane_current_command} #{q:pane_id}\""
+    /// The hook's tmux command. Only values Nunsseop knows (the script, tmux and the socket name, single-quoted) and
+    /// the window id (`@` and digits) go in: names would be expanded by the shell even with `#{q:}`, which leaves
+    /// braces, commas and `~` alone. nil when a path has characters tmux or sh would read into.
+    static func hookCommand(script: URL, binary: URL, socketName: String? = nil) -> String? {
+        let values = [script.path, binary.path, socketName ?? ""]
+        guard values.allSatisfy({ !$0.contains(where: { "'\"\\$#`\n".contains($0) }) }) else { return nil }
+        let quoted = values.map { "'\($0)'" }
+        return "run-shell -b \"\(quoted[0]) tmux-window \(quoted[1]) \(quoted[2]) #{window_id}\""
     }
 
-    /// Selects the pane and its window, and brings forward the terminal app showing that session.
+    /// A tmux id: `%` and digits for a pane, `@` and digits for a window.
+    static func isID(_ value: String, prefix: Character) -> Bool {
+        value.count > 1 && value.first == prefix && value.dropFirst().allSatisfy { $0.isASCII && $0.isNumber }
+    }
+
+    /// Selects the pane or window, and brings forward the terminal app showing that session.
     static func focus(pane: String, binary: URL? = Tmux.binary, socketName: String? = nil) {
-        guard let binary, pane.hasPrefix("%"), pane.dropFirst().allSatisfy(\.isNumber) else { return }
+        guard let binary, isID(pane, prefix: "%") || isID(pane, prefix: "@") else { return }
         let socket = socketName.map { ["-L", $0] } ?? []
         DispatchQueue.global(qos: .userInitiated).async {
             let tmux = { (arguments: [String]) in TerminalFocus.run(binary, socket + arguments) }
             _ = tmux(["select-window", "-t", pane])
-            _ = tmux(["select-pane", "-t", pane])
+            if pane.hasPrefix("%") { _ = tmux(["select-pane", "-t", pane]) }
             // A client showing the pane's session, else any client, switched to it.
             let session = tmux(["display-message", "-p", "-t", pane, "#{session_name}"])?
                 .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            // Without the session (the pane is gone, say) there's no client to pick.
+            guard !session.isEmpty else { return }
             var clients = (tmux(["list-clients", "-t", session, "-F", "#{client_pid} #{client_tty}"]) ?? "")
                 .split(separator: "\n")
             if clients.isEmpty, let any = (tmux(["list-clients", "-F", "#{client_pid} #{client_tty}"]) ?? "").split(separator: "\n").first {
@@ -582,13 +656,24 @@ enum Tmux {
                 clients = [any]
             }
             let pids = clients.compactMap { $0.split(separator: " ").first.flatMap { pid_t($0) } }
-            DispatchQueue.main.async { pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first?.activate() }
+            DispatchQueue.main.async { pids.lazy.compactMap(TerminalFocus.hostingApp(of:)).first.map(TerminalFocus.activate) }
         }
     }
 
     /// Whether the server has this version's hook; an older one (different arguments) is replaced.
-    static func isHooked(_ showHooks: String, script: URL) -> Bool {
-        showHooks.split(separator: "\n").contains { $0 == "\(hook) \(hookCommand(script: script))" }
+    static func isHooked(_ showHooks: String, command: String) -> Bool {
+        showHooks.split(separator: "\n").contains { $0 == "\(hook) \(command)" }
+    }
+
+    /// What's in Nunsseop's slot, `alert-bell[4775]`, if anything.
+    static func slot(in showHooks: String) -> String? {
+        showHooks.split(separator: "\n").first { $0.hasPrefix(hook + " ") }.map(String.init)
+    }
+
+    /// Whether a hook in the slot is Nunsseop's, this version's or an older one: it runs Nunsseop's bell script.
+    /// Anything else there belongs to the user and is neither replaced nor removed.
+    static func isOurs(_ line: String, script: URL = TerminalBell.scriptURL) -> Bool {
+        line.contains(script.path) || line.contains("/Nunsseop/terminal-notify.sh") || line.contains("/Nunsseop/tmux-notify.sh")
     }
 }
 
@@ -634,9 +719,22 @@ final class TmuxWatcher {
         timer = nil
         if let quitObserver { NotificationCenter.default.removeObserver(quitObserver) }
         quitObserver = nil
-        let run = runner
-        let unhook: @Sendable () -> Void = { _ = run(["set-hook", "-gu", Tmux.hook]) }
+        let unhook = unhookIfOurs
         if waiting { queue.sync(execute: unhook) } else { queue.async(execute: unhook) }
+    }
+
+    /// Takes off a hook left by a Nunsseop that crashed while the feature is now off. Only Nunsseop's own.
+    func clearLeftover() {
+        guard timer == nil, binary != nil else { return }
+        queue.async(execute: unhookIfOurs)
+    }
+
+    private var unhookIfOurs: @Sendable () -> Void {
+        let run = runner, script = scriptURL
+        return {
+            guard let hooks = run(["show-hooks", "-g"]), let line = Tmux.slot(in: hooks), Tmux.isOurs(line, script: script) else { return }
+            _ = run(["set-hook", "-gu", Tmux.hook])
+        }
     }
 
     /// Runs tmux with the given arguments; nil when it fails, as when no server is running.
@@ -658,10 +756,13 @@ final class TmuxWatcher {
     }
 
     private func check() {
+        guard let binary, let command = Tmux.hookCommand(script: scriptURL, binary: binary, socketName: socketName) else { return }
         let run = runner, script = scriptURL
         queue.async {
-            guard let hooks = run(["show-hooks", "-g"]), !Tmux.isHooked(hooks, script: script) else { return }
-            _ = run(["set-hook", "-g", Tmux.hook, Tmux.hookCommand(script: script)])
+            guard let hooks = run(["show-hooks", "-g"]), !Tmux.isHooked(hooks, command: command) else { return }
+            // The slot holds someone else's hook: left alone.
+            if let line = Tmux.slot(in: hooks), !Tmux.isOurs(line, script: script) { return }
+            _ = run(["set-hook", "-g", Tmux.hook, command])
         }
     }
 }
@@ -671,7 +772,15 @@ final class TmuxWatcher {
 enum TerminalFocus {
     /// Brings an app that's already running to the front. Apps that aren't running aren't launched for a notice.
     static func activate(bundleID: String) {
-        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.activate()
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first.map(activate)
+    }
+
+    /// That exact process, which matters when an app runs more than once (`open -n`, `wezterm start`). Under
+    /// macOS 14's cooperative activation Nunsseop yields to it and asks for it, rather than going through
+    /// NSWorkspace, which picks an instance itself and sends a reopen event that opens a window in apps showing none.
+    static func activate(_ app: NSRunningApplication) {
+        NSApp.yieldActivation(to: app)
+        if !app.activate(from: .current, options: []) { app.activate() }
     }
 
     /// The app a process runs in, found by walking up its parents: a shell in Terminal, tmux's client in Ghostty...

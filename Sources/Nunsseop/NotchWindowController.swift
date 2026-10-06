@@ -79,6 +79,8 @@ final class NotchWindowController {
                         model.notifyServer.start()
                         // Kept current for WezTerm's pasted lines, which call it.
                         TerminalBell.install()
+                        // Tools connected with an older version get this version's hook.
+                        NotifyIntegration.updateConnected()
                         if model.settings.tmuxBells { model.tmux.start() }
                     },
                     stop: { _ in
@@ -88,9 +90,10 @@ final class NotchWindowController {
             Feature(setting: \.muxyNotifications, changes: \.$muxyNotifications,
                     start: { model.muxy.start() }, stop: { _ in model.muxy.stop() }),
             Feature(setting: \.cmuxNotifications, changes: \.$cmuxNotifications,
-                    start: { if Cmux.isInstalled { model.cmux.start() } }, stop: { _ in model.cmux.stop() }),
+                    // Started even before they're installed: both look for their app again while running.
+                    start: { model.cmux.start() }, stop: { _ in model.cmux.stop() }),
             Feature(setting: \.herdrNotifications, changes: \.$herdrNotifications,
-                    start: { if Herdr.isInstalled { model.herdr.start() } }, stop: { _ in model.herdr.stop() }),
+                    start: { model.herdr.start() }, stop: { _ in model.herdr.stop() }),
             // The hook sends to the notification server, so it's only added while that runs.
             Feature(setting: \.tmuxBells, changes: \.$tmuxBells,
                     start: { if model.settings.localNotifications { model.tmux.start() } }, stop: { _ in model.tmux.stop() }),
@@ -342,6 +345,8 @@ final class NotchWindowController {
                 if enabled && self.panel.isVisible { feature.start() } else { feature.stop(false) }
             })
         }
+        // A Nunsseop that crashed with tmux bells on left its hook; with the feature off now, it comes off once.
+        if !(model.settings.tmuxBells && model.settings.localNotifications) { model.tmux.clearLeftover() }
         updatesObserver = model.settings.$checkForUpdates
             .removeDuplicates()
             .sink { UpdateChecker.shared.startAutomaticChecks(enabled: $0) }
