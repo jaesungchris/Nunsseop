@@ -342,3 +342,5 @@
 "Waiting for you" = "입력 대기 중";
 "Show bells from tmux windows" = "tmux 창의 벨 표시";
 "Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is." = "에이전트는 작업을 마치거나 입력을 기다릴 때 벨을 울립니다(Claude Code는 알림 방식을 터미널 벨로 설정하세요). 실행 중인 tmux 서버에만 훅을 추가하며 tmux.conf는 그대로 둡니다.";
+"Copy WezTerm config" = "WezTerm 설정 복사";
+"Paste it into ~/.wezterm.lua before `return config`. Bells from any WezTerm pane then show in the notch; WezTerm's config isn't changed for you." = "~/.wezterm.lua의 `return config` 앞에 붙여 넣으면 모든 WezTerm 창의 벨이 노치에 표시됩니다. WezTerm 설정은 자동으로 바꾸지 않습니다.";

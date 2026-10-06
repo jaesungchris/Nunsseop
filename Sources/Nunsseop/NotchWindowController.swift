@@ -77,6 +77,8 @@ final class NotchWindowController {
             Feature(setting: \.localNotifications, changes: \.$localNotifications,
                     start: {
                         model.notifyServer.start()
+                        // Kept current for WezTerm's pasted lines, which call it.
+                        TerminalBell.install()
                         if model.settings.tmuxBells { model.tmux.start() }
                     },
                     stop: { _ in

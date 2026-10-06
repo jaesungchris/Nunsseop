@@ -307,6 +307,20 @@ private struct AlertsPane: View {
                     Text("Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                if WezTerm.isInstalled {
+                    HStack {
+                        Text("WezTerm")
+                        Spacer()
+                        Button("Copy WezTerm config") {
+                            TerminalBell.install()
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(WezTerm.snippet(), forType: .string)
+                        }
+                        .disabled(!settings.localNotifications)
+                    }
+                    Text("Paste it into ~/.wezterm.lua before `return config`. Bells from any WezTerm pane then show in the notch; WezTerm's config isn't changed for you.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 if Herdr.isInstalled {
                     Toggle("Show when agents in herdr finish or wait for you", isOn: $settings.herdrNotifications)
                     Text("Read from herdr's socket while its server runs, so nothing needs setting up.")
