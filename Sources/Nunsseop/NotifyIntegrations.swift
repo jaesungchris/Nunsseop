@@ -48,24 +48,34 @@ enum NotifyIntegration: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Connects the tool, or brings a connection from an older version up to date (a hook command without
+    /// the X-App header, say), leaving a connection that's already current alone.
     func install() throws {
         switch self {
         case .claudeCode, .gemini:
             let settings = try Self.loadJSON(at: configURL)
-            guard !JSONHook.isInstalled(in: settings) else { return }
-            try Self.writeJSON(JSONHook.adding(NotifyServer.hookCommand(title: name), to: settings), to: configURL)
+            guard let updated = try JSONHook.updating(NotifyServer.hookCommand(title: name), in: settings) else { return }
+            try Self.writeJSON(updated, to: configURL)
         case .codex:
             let text = try Self.loadText(at: configURL)
-            guard !CodexNotify.isInstalled(in: text) else { return }
             let script = CodexNotify.scriptURL
-            try FileManager.default.createDirectory(at: script.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try Data(CodexNotify.script.utf8).write(to: script, options: .atomic)
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+            if (try? String(contentsOf: script, encoding: .utf8)) != CodexNotify.script {
+                try FileManager.default.createDirectory(at: script.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try Data(CodexNotify.script.utf8).write(to: script, options: .atomic)
+                try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+            }
+            guard !CodexNotify.isInstalled(in: text) else { return }
             try Self.writeText(CodexNotify.adding(to: text), to: configURL)
         case .openCode:
+            guard (try? String(contentsOf: configURL, encoding: .utf8)) != Self.openCodePlugin else { return }
             try FileManager.default.createDirectory(at: configURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try Data(Self.openCodePlugin.utf8).write(to: configURL, options: .atomic)
         }
+    }
+
+    /// Updates every connected tool to this version's hook, script or plugin; the rest stay untouched.
+    static func updateConnected() {
+        for tool in allCases where tool.isInstalled { try? tool.install() }
     }
 
     func uninstall() throws {
@@ -156,6 +166,20 @@ enum JSONHook {
     static func isInstalled(in settings: [String: Any]) -> Bool {
         let groups = (settings["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]] ?? []
         return groups.contains(where: isOurs)
+    }
+
+    /// The settings with exactly one Nunsseop hook running `command`, replacing an older one;
+    /// nil when that's already so.
+    static func updating(_ command: String, in settings: [String: Any]) throws -> [String: Any]? {
+        guard !isCurrent(command, in: settings) else { return nil }
+        return try adding(command, to: removing(from: settings))
+    }
+
+    /// Whether Nunsseop's hook is there with exactly this command, and only once.
+    static func isCurrent(_ command: String, in settings: [String: Any]) -> Bool {
+        let groups = (settings["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]] ?? []
+        let ours = groups.filter(isOurs)
+        return ours.count == 1 && (ours[0]["hooks"] as? [[String: Any]] ?? []).compactMap { $0["command"] as? String } == [command]
     }
 
     /// The settings with the hook added next to any Notification hooks already there.

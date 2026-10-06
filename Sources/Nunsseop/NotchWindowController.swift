@@ -79,6 +79,8 @@ final class NotchWindowController {
                         model.notifyServer.start()
                         // Kept current for WezTerm's pasted lines, which call it.
                         TerminalBell.install()
+                        // Tools connected with an older version get this version's hook.
+                        DispatchQueue.global(qos: .utility).async { NotifyIntegration.updateConnected() }
                         if model.settings.tmuxBells { model.tmux.start() }
                     },
                     stop: { _ in

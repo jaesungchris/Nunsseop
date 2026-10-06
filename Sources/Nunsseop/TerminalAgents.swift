@@ -482,10 +482,24 @@ enum TerminalBell {
     static let script = """
         #!/bin/sh
         # Added by Nunsseop: shows bells from terminal panes in the notch.
+        # tmux passes only its binary, socket name and the window's id; the names are read here, so nothing a
+        # program can put in a window name reaches a command line.
+        if [ "$1" = tmux-window ]; then
+            tmux=$2 socket=$3 window=$4
+            case "$window" in @[0-9]*) ;; *) exit 0 ;; esac
+            case "${window#@}" in *[!0-9]*) exit 0 ;; esac
+            t() { if [ -n "$socket" ]; then "$tmux" -L "$socket" "$@"; else "$tmux" "$@"; fi; }
+            session=$(t display-message -p -t "$window" '#{session_name}')
+            name=$(t display-message -p -t "$window" '#{window_name}')
+            commands=$(t list-panes -t "$window" -F '#{pane_current_command}')
+            # tmux doesn't say which pane rang, so the running command counts as the agent only in a one-pane window.
+            [ "$(printf '%s\n' "$commands" | wc -l | tr -d ' ')" = 1 ] || commands=
+            set -- tmux "$session" "$name" "$commands" "$window"
+        fi
         token=$(cat "$HOME/Library/Application Support/Nunsseop/notify-token" 2>/dev/null)
         app=$(printf '%s' "$1" | tr -cd '[:alnum:]._-' | cut -c1-40)
         agent=$(printf '%s' "$4" | tr -cd '[:alnum:]._-' | cut -c1-40)
-        target=$(printf '%s' "$5" | tr -cd '[:alnum:]%._-' | cut -c1-40)
+        target=$(printf '%s' "$5" | tr -cd '[:alnum:]%@._-' | cut -c1-40)
         bundle=$(printf '%s' "$__CFBundleIdentifier" | tr -cd '[:alnum:].-' | cut -c1-80)
         if [ -n "$2" ] && [ -n "$3" ]; then where="$2 · $3"; else where="$2$3"; fi
         printf '%s' "$where" | curl -s -m 2 -X POST http://127.0.0.1:\(NotifyServer.port)/notify \\
@@ -558,22 +572,34 @@ enum Tmux {
 
     static var isInstalled: Bool { binary != nil }
 
-    /// The hook's tmux command. `#{q:…}` escapes each name for the shell, since programs can rename windows.
-    static func hookCommand(script: URL) -> String {
-        "run-shell -b \"'\(script.path)' tmux #{q:session_name} #{q:window_name} #{q:pane_current_command} #{q:pane_id}\""
+    /// The hook's tmux command. Only values Nunsseop knows (the script, tmux and the socket name, single-quoted) and
+    /// the window id (`@` and digits) go in: names would be expanded by the shell even with `#{q:}`, which leaves
+    /// braces, commas and `~` alone. nil when a path has characters tmux or sh would read into.
+    static func hookCommand(script: URL, binary: URL, socketName: String? = nil) -> String? {
+        let values = [script.path, binary.path, socketName ?? ""]
+        guard values.allSatisfy({ !$0.contains(where: { "'\"\\$#`\n".contains($0) }) }) else { return nil }
+        let quoted = values.map { "'\($0)'" }
+        return "run-shell -b \"\(quoted[0]) tmux-window \(quoted[1]) \(quoted[2]) #{window_id}\""
     }
 
-    /// Selects the pane and its window, and brings forward the terminal app showing that session.
+    /// A tmux id: `%` and digits for a pane, `@` and digits for a window.
+    static func isID(_ value: String, prefix: Character) -> Bool {
+        value.count > 1 && value.first == prefix && value.dropFirst().allSatisfy { $0.isASCII && $0.isNumber }
+    }
+
+    /// Selects the pane or window, and brings forward the terminal app showing that session.
     static func focus(pane: String, binary: URL? = Tmux.binary, socketName: String? = nil) {
-        guard let binary, pane.hasPrefix("%"), pane.dropFirst().allSatisfy(\.isNumber) else { return }
+        guard let binary, isID(pane, prefix: "%") || isID(pane, prefix: "@") else { return }
         let socket = socketName.map { ["-L", $0] } ?? []
         DispatchQueue.global(qos: .userInitiated).async {
             let tmux = { (arguments: [String]) in TerminalFocus.run(binary, socket + arguments) }
             _ = tmux(["select-window", "-t", pane])
-            _ = tmux(["select-pane", "-t", pane])
+            if pane.hasPrefix("%") { _ = tmux(["select-pane", "-t", pane]) }
             // A client showing the pane's session, else any client, switched to it.
             let session = tmux(["display-message", "-p", "-t", pane, "#{session_name}"])?
                 .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            // Without the session (the pane is gone, say) there's no client to pick.
+            guard !session.isEmpty else { return }
             var clients = (tmux(["list-clients", "-t", session, "-F", "#{client_pid} #{client_tty}"]) ?? "")
                 .split(separator: "\n")
             if clients.isEmpty, let any = (tmux(["list-clients", "-F", "#{client_pid} #{client_tty}"]) ?? "").split(separator: "\n").first {
@@ -587,8 +613,8 @@ enum Tmux {
     }
 
     /// Whether the server has this version's hook; an older one (different arguments) is replaced.
-    static func isHooked(_ showHooks: String, script: URL) -> Bool {
-        showHooks.split(separator: "\n").contains { $0 == "\(hook) \(hookCommand(script: script))" }
+    static func isHooked(_ showHooks: String, command: String) -> Bool {
+        showHooks.split(separator: "\n").contains { $0 == "\(hook) \(command)" }
     }
 }
 
@@ -658,10 +684,11 @@ final class TmuxWatcher {
     }
 
     private func check() {
-        let run = runner, script = scriptURL
+        guard let binary, let command = Tmux.hookCommand(script: scriptURL, binary: binary, socketName: socketName) else { return }
+        let run = runner
         queue.async {
-            guard let hooks = run(["show-hooks", "-g"]), !Tmux.isHooked(hooks, script: script) else { return }
-            _ = run(["set-hook", "-g", Tmux.hook, Tmux.hookCommand(script: script)])
+            guard let hooks = run(["show-hooks", "-g"]), !Tmux.isHooked(hooks, command: command) else { return }
+            _ = run(["set-hook", "-g", Tmux.hook, command])
         }
     }
 }
