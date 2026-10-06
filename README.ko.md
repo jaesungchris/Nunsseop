@@ -149,7 +149,9 @@ Claude의 5시간·주간 %는 터미널에서 Claude Code를 쓸 때 [oh-my-cla
 
 Nunsseop은 이 Mac 안(`127.0.0.1:47750`)에서만 다른 도구의 알림을 받습니다. 요청에는 `~/Library/Application Support/Nunsseop/notify-token`에 저장된 비밀 토큰이 있어야 합니다.
 
-설정에서 **Claude Code 훅 명령 복사**를 누르고 `~/.claude/settings.json`에 넣으세요.
+설정 → 알림에서 **Claude Code에 연결**을 누르세요. Nunsseop이 `~/.claude/settings.json`에 Notification 훅을 추가하고, 기존 파일은 `settings.json.nunsseop-backup`으로 남겨 둡니다. 그 뒤에 시작한 Claude Code 세션의 알림이 노치에 뜹니다.
+
+직접 넣으려면 **Claude Code 훅 명령 복사**를 누르고 `~/.claude/settings.json`에 넣으세요.
 
 ```json
 {

@@ -110,6 +110,10 @@
 "Let tools on this Mac show notifications in the notch" = "この Mac のツールがノッチに通知を表示するのを許可";
 "Used by Claude Code hooks and scripts. Only requests from this Mac with the secret token are accepted." = "Claude Code のフックやスクリプトで使います。この Mac からの、秘密トークン付きのリクエストだけを受け付けます。";
 "Copy Claude Code hook command" = "Claude Code フックのコマンドをコピー";
+"Connected to Claude Code" = "Claude Code に接続済み";
+"Connect to Claude Code" = "Claude Code に接続";
+"Adds a Notification hook to `~/.claude/settings.json` and keeps the old file as `settings.json.nunsseop-backup`. Claude Code sessions started afterwards send their notifications here." = "`~/.claude/settings.json` に Notification フックを追加し、元のファイルを `settings.json.nunsseop-backup` として残します。この後に始めた Claude Code セッションの通知がノッチに表示されます。";
+"Couldn't read `~/.claude/settings.json`. Copy the hook command and add it by hand." = "`~/.claude/settings.json` を読み込めませんでした。フックのコマンドをコピーして手動で追加してください。";
 "Timer" = "タイマー";
 "Pomodoro" = "ポモドーロ";
 "Stopwatch" = "ストップウォッチ";

@@ -225,6 +225,8 @@ private struct TabRow: View {
 /// Pop-ups the notch can show.
 private struct AlertsPane: View {
     @ObservedObject var settings: AppSettings
+    @State private var claudeHookInstalled = ClaudeCodeHook.isInstalled()
+    @State private var claudeHookFailed = false
 
     var body: some View {
         Form {
@@ -258,12 +260,33 @@ private struct AlertsPane: View {
                 Toggle("Let tools on this Mac show notifications in the notch", isOn: $settings.localNotifications)
                 Text("Used by Claude Code hooks and scripts. Only requests from this Mac with the secret token are accepted.")
                     .font(.caption).foregroundStyle(.secondary)
+                if claudeHookInstalled {
+                    Label("Connected to Claude Code", systemImage: "checkmark.circle.fill")
+                } else {
+                    Button("Connect to Claude Code") {
+                        do {
+                            try ClaudeCodeHook.install()
+                            claudeHookInstalled = true
+                            claudeHookFailed = false
+                        } catch {
+                            claudeHookFailed = true
+                        }
+                    }
+                    .disabled(!settings.localNotifications)
+                    Text("Adds a Notification hook to `~/.claude/settings.json` and keeps the old file as `settings.json.nunsseop-backup`. Claude Code sessions started afterwards send their notifications here.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                if claudeHookFailed {
+                    Text("Couldn't read `~/.claude/settings.json`. Copy the hook command and add it by hand.")
+                        .font(.caption).foregroundStyle(.red)
+                }
                 Button("Copy Claude Code hook command") {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(NotifyServer.hookCommand, forType: .string)
                 }
                 .disabled(!settings.localNotifications)
             }
+            .onAppear { claudeHookInstalled = ClaudeCodeHook.isInstalled() }
         }
         .formStyle(.grouped)
     }

@@ -149,7 +149,9 @@ Versions before 0.8.3 were signed in a way that made macOS forget the Accessibil
 
 Nunsseop listens on `127.0.0.1:47750` for notifications from tools on your Mac. Requests must carry the secret token stored in `~/Library/Application Support/Nunsseop/notify-token`.
 
-Open Settings, press **Copy Claude Code hook command**, and add it to `~/.claude/settings.json`:
+Open Settings → Alerts and press **Connect to Claude Code**. Nunsseop adds its Notification hook to `~/.claude/settings.json`, keeps the old file as `settings.json.nunsseop-backup`, and Claude Code sessions started after that show their notifications in the notch.
+
+To do it by hand, press **Copy Claude Code hook command** and add it to `~/.claude/settings.json`:
 
 ```json
 {

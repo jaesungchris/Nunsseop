@@ -110,6 +110,10 @@
 "Let tools on this Mac show notifications in the notch" = "Autoriser les outils de ce Mac à afficher des notifications dans l’encoche";
 "Used by Claude Code hooks and scripts. Only requests from this Mac with the secret token are accepted." = "Utilisé par les hooks Claude Code et les scripts. Seules les requêtes de ce Mac avec le jeton secret sont acceptées.";
 "Copy Claude Code hook command" = "Copier la commande du hook Claude Code";
+"Connected to Claude Code" = "Connecté à Claude Code";
+"Connect to Claude Code" = "Connecter à Claude Code";
+"Adds a Notification hook to `~/.claude/settings.json` and keeps the old file as `settings.json.nunsseop-backup`. Claude Code sessions started afterwards send their notifications here." = "Ajoute un hook Notification à `~/.claude/settings.json` et conserve l’ancien fichier sous `settings.json.nunsseop-backup`. Les sessions Claude Code lancées ensuite envoient leurs notifications ici.";
+"Couldn't read `~/.claude/settings.json`. Copy the hook command and add it by hand." = "Impossible de lire `~/.claude/settings.json`. Copiez la commande du hook et ajoutez-la vous-même.";
 "Timer" = "Minuteur";
 "Pomodoro" = "Pomodoro";
 "Stopwatch" = "Chronomètre";

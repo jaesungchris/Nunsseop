@@ -85,6 +85,68 @@ final class CapsLockWatcher {
     }
 }
 
+/// Adds Nunsseop's Notification hook to Claude Code's user settings, ~/.claude/settings.json.
+enum ClaudeCodeHook {
+    enum InstallError: Error { case unreadableSettings }
+
+    static var settingsURL: URL {
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude/settings.json")
+    }
+
+    /// Whether the settings already send Notification events to Nunsseop.
+    static func isInstalled(in settings: [String: Any]) -> Bool {
+        let groups = (settings["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]] ?? []
+        return groups.contains { group in
+            (group["hooks"] as? [[String: Any]] ?? []).contains {
+                ($0["command"] as? String)?.contains("127.0.0.1:\(NotifyServer.port)/notify") == true
+            }
+        }
+    }
+
+    /// The settings with the hook added next to any Notification hooks already there.
+    static func adding(to settings: [String: Any]) throws -> [String: Any] {
+        var settings = settings
+        guard var hooks = (settings["hooks"] ?? [String: Any]()) as? [String: Any],
+              var groups = (hooks["Notification"] ?? [[String: Any]]()) as? [[String: Any]]
+        else { throw InstallError.unreadableSettings }
+        groups.append(["hooks": [["type": "command", "command": NotifyServer.hookCommand]]])
+        hooks["Notification"] = groups
+        settings["hooks"] = hooks
+        return settings
+    }
+
+    static func load() throws -> [String: Any] {
+        guard FileManager.default.fileExists(atPath: settingsURL.path) else { return [:] }
+        let data = try Data(contentsOf: settingsURL)
+        guard let settings = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw InstallError.unreadableSettings
+        }
+        return settings
+    }
+
+    static func isInstalled() -> Bool {
+        (try? load()).map(isInstalled(in:)) ?? false
+    }
+
+    /// Writes the hook into the settings, keeping a copy of the old file next to it.
+    static func install() throws {
+        let settings = try load()
+        guard !isInstalled(in: settings) else { return }
+        let data = try JSONSerialization.data(withJSONObject: try adding(to: settings),
+                                              options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
+        let fileManager = FileManager.default
+        let url = settingsURL
+        if fileManager.fileExists(atPath: url.path) {
+            let backup = url.appendingPathExtension("nunsseop-backup")
+            try? fileManager.removeItem(at: backup)
+            try fileManager.copyItem(at: url, to: backup)
+        } else {
+            try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        }
+        try data.write(to: url, options: .atomic)
+    }
+}
+
 /// Accepts notifications from local tools such as Claude Code hooks:
 /// `POST http://127.0.0.1:47750/notify` with `Authorization: Bearer <token>` and a JSON body
 /// `{"title": "...", "message": "..."}`. The token lives in Application Support/Nunsseop/notify-token.
