@@ -214,3 +214,44 @@ struct JoinButtonTests {
         #expect(!noLink.canJoin(at: start))
     }
 }
+
+
+@MainActor
+struct MeetingNoticeTests {
+    func item(link: String?) -> CalendarItem {
+        let start = Date.now.addingTimeInterval(300)
+        return CalendarItem(id: "a", title: "Standup", start: start, end: start.addingTimeInterval(900), isAllDay: false,
+                            color: .blue, joinURL: link.flatMap(URL.init(string:)))
+    }
+
+    @Test func noticeSaysAMeetingCanBeJoined() {
+        let plain = NotchViewModel.upcomingDetail(item(link: nil))
+        let joinable = NotchViewModel.upcomingDetail(item(link: "https://zoom.us/j/1"))
+        #expect(!plain.contains("·"))
+        #expect(joinable.hasPrefix(plain + " · "))
+    }
+
+    @Test func clickingAMeetingNoticeRunsItsActionEvenAfterBeingCovered() async {
+        let hud = HUDCenter(settings: AppSettings.shared)
+        var joined = 0
+        hud.showLasting(duration: 8, action: { joined += 1 }) { .notice(symbol: "video.fill", title: "Standup", detail: nil) }
+        #expect(hud.action != nil)
+        // A volume HUD covers it, then goes: the notice comes back, still clickable.
+        hud.show(.volume(0.4, muted: false), duration: 0.05)
+        #expect(hud.action == nil)
+        for _ in 0..<50 {
+            if hud.action != nil { break }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(hud.action != nil)
+        #expect(hud.performAction())
+        #expect(joined == 1)
+    }
+
+    @Test func noticeWithoutALinkOpensTheNotchAsBefore() {
+        let hud = HUDCenter(settings: AppSettings.shared)
+        hud.showLasting(duration: 8) { .notice(symbol: "calendar", title: "Lunch", detail: nil) }
+        #expect(hud.action == nil)
+        #expect(!hud.performAction())
+    }
+}

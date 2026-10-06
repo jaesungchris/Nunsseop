@@ -319,3 +319,4 @@
 "Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is." = "Les agents font sonner la cloche quand ils terminent ou vous attendent (pour Claude Code, choisissez la cloche du terminal comme notification). Nunsseop ajoute seulement un hook au serveur tmux en cours ; tmux.conf reste inchangé.";
 "Copy WezTerm config" = "Copier la configuration WezTerm";
 "Paste it into ~/.wezterm.lua before `return config`. Bells from any WezTerm pane then show in the notch; WezTerm's config isn't changed for you." = "Collez-la dans ~/.wezterm.lua avant `return config`. Les sonneries de tous les panneaux WezTerm s'afficheront dans l'encoche ; la configuration de WezTerm n'est pas modifiée pour vous.";
+"Click to join" = "Cliquez pour rejoindre";
