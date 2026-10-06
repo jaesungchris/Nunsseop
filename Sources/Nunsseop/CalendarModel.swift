@@ -213,6 +213,17 @@ final class CalendarModel: ObservableObject {
         alertTimer = timer
     }
 
+    /// Whether a notice for `item` may still show, checked again when one covered by another HUD comes back.
+    func stillAlerts(_ item: CalendarItem) -> Bool {
+        guard alertsEnabled, access == .granted, !isDemo else { return false }
+        let calendars = shownCalendars
+        guard calendars?.isEmpty != true else { return false }
+        let predicate = store.predicateForEvents(withStart: item.start, end: max(item.end, item.start.addingTimeInterval(1)),
+                                                 calendars: calendars)
+        let current = store.events(matching: predicate).filter(Self.isAlertable).map { self.item($0, findingLink: false) }
+        return EventAlert.isStillDue(item, enabled: true, among: current, now: .now)
+    }
+
     /// Picking another day leaves the alerts alone; they don't depend on it.
     func reload(alerts: Bool = true) {
         if isDemo { showDemoItems(); return }

@@ -196,9 +196,10 @@ final class NotchViewModel: ObservableObject {
             .sink { [weak self] in self?.calendar.hiddenCalendarIDs = Set($0) }
             .store(in: &cancellables)
         calendar.onUpcoming = { [weak self] item in
-            self?.hud.showLasting(duration: CalendarModel.alertSpacing) {
-                // When it comes back after another HUD: not once the event is well under way.
-                guard item.start.timeIntervalSinceNow > -EventAlert.grace else { return nil }
+            self?.hud.showLasting(duration: CalendarModel.alertSpacing) { [weak self] in
+                // When it comes back after another HUD: only if alerts are still on, the event is still there
+                // and not well under way.
+                guard let self, self.calendar.stillAlerts(item) else { return nil }
                 return .notice(symbol: "calendar", title: item.title,
                                detail: item.start.formatted(.relative(presentation: .named)))
             }

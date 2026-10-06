@@ -121,30 +121,74 @@ struct EventAlertQueueTests {
 }
 
 struct LastingNoticeTests {
-    @Test func coveredNoticeComesBackAfterTheOtherHUD() {
+    let t0 = Date(timeIntervalSinceReferenceDate: 800_000_000)
+    func at(_ seconds: TimeInterval) -> Date { t0.addingTimeInterval(seconds) }
+
+    @Test func coveredNoticeComesBackForTheTimeItHadLeft() {
         var notices = LastingNotices<String>()
-        notices.replace(with: "meeting")
-        notices.replace(with: nil)          // volume HUD covers it
-        notices.replace(with: nil)          // another volume step
-        #expect(notices.finish() == "meeting")
-        notices.replace(with: "meeting")
-        #expect(notices.finish() == nil)    // shown in full this time
+        notices.replace(with: "meeting", duration: 8, now: at(0))
+        notices.replace(with: nil, duration: 1.6, now: at(3))      // volume HUD covers it
+        notices.replace(with: nil, duration: 1.6, now: at(4))      // another volume step
+        let back = notices.finish(now: at(5.6))
+        #expect(back?.notice == "meeting")
+        #expect(back?.remaining == 5)
+        #expect(notices.finish(now: at(10.6)) == nil)              // shown out this time
     }
 
-    @Test func noticesCoveredByEachOtherAllComeBackInOrder() {
+    @Test func noticeComesBackOnlyOnce() {
+        // A and B start together; a volume HUD covers A, and B arrives on schedule while A is back.
         var notices = LastingNotices<String>()
-        notices.replace(with: "a")
-        notices.replace(with: "b")
-        #expect(notices.finish() == "a")
-        notices.replace(with: "a")
-        #expect(notices.finish() == nil)
+        notices.replace(with: "A", duration: 8, now: at(0))
+        notices.replace(with: nil, duration: 1.6, now: at(3))
+        #expect(notices.finish(now: at(4.6))?.notice == "A")
+        notices.replace(with: "B", duration: 8, now: at(8))
+        #expect(notices.finish(now: at(16)) == nil)               // A isn't queued a third time
+        #expect(notices.interrupted.isEmpty)
+    }
+
+    @Test func noticeNearlyDoneIsNotBroughtBack() {
+        var notices = LastingNotices<String>()
+        notices.replace(with: "meeting", duration: 8, now: at(0))
+        notices.replace(with: nil, duration: 1.6, now: at(7.5))
+        #expect(notices.finish(now: at(9.1)) == nil)
     }
 
     @Test func plainNoticesAreNotBroughtBack() {
         var notices = LastingNotices<String>()
-        notices.replace(with: nil)
-        notices.replace(with: nil)
-        #expect(notices.finish() == nil)
+        notices.replace(with: nil, duration: 1.6, now: at(0))
+        notices.replace(with: nil, duration: 1.6, now: at(1))
+        #expect(notices.finish(now: at(2.6)) == nil)
+    }
+}
+
+struct StillDueTests {
+    let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+
+    func event(_ id: String, in minutes: Double) -> CalendarItem {
+        let start = now.addingTimeInterval(minutes * 60)
+        return CalendarItem(id: id, title: id, start: start, end: start.addingTimeInterval(1800), isAllDay: false, color: .blue)
+    }
+
+    @Test func showsWhileTheEventIsStillThere() {
+        let item = event("a", in: 4)
+        #expect(EventAlert.isStillDue(item, enabled: true, among: [item], now: now))
+    }
+
+    @Test func notOnceAlertsAreOff() {
+        let item = event("a", in: 4)
+        #expect(!EventAlert.isStillDue(item, enabled: false, among: [item], now: now))
+    }
+
+    @Test func notOnceCancelledDeletedOrMoved() {
+        let item = event("a", in: 4)
+        #expect(!EventAlert.isStillDue(item, enabled: true, among: [], now: now))
+        #expect(!EventAlert.isStillDue(item, enabled: true, among: [event("a", in: 30)], now: now))
+        #expect(!EventAlert.isStillDue(item, enabled: true, among: [event("b", in: 4)], now: now))
+    }
+
+    @Test func notOnceWellUnderWay() {
+        let item = event("a", in: -2)
+        #expect(!EventAlert.isStillDue(item, enabled: true, among: [item], now: now))
     }
 }
 

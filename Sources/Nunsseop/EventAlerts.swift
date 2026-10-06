@@ -69,6 +69,14 @@ enum EventAlert {
     }
 }
 
+extension EventAlert {
+    /// Whether a notice for `item` may still show: alerts are on, the event hasn't been under way for long,
+    /// and the occurrence is still among the alertable events (not cancelled, deleted, declined or hidden since).
+    static func isStillDue(_ item: CalendarItem, enabled: Bool, among items: [CalendarItem], now: Date) -> Bool {
+        enabled && item.start.timeIntervalSince(now) > -grace && items.contains { key($0) == key(item) }
+    }
+}
+
 /// Decides which event to announce, one at a time: each notice gets `spacing` seconds before the next,
 /// however often the events are checked in between.
 struct EventAlertQueue {
@@ -91,20 +99,32 @@ struct EventAlertQueue {
     }
 }
 
-/// Notices that must be seen once: one another HUD covers before its time is up comes back after it.
+/// Notices that must be seen once: one another HUD covers before its time is up comes back after it,
+/// for the time it had left. It comes back once at most, so covered notices don't keep reshuffling.
 struct LastingNotices<Notice> {
-    private(set) var current: Notice?
-    private(set) var interrupted: [Notice] = []
+    /// Less than this left isn't worth bringing a notice back for.
+    static var minimumReplay: TimeInterval { 1 }
 
-    /// Something else takes the HUD; a lasting notice still on screen waits its turn.
-    mutating func replace(with notice: Notice?) {
-        if let current { interrupted.append(current) }
-        current = notice
+    private struct Shown { let notice: Notice; let ends: Date; let isReplay: Bool }
+    private var current: Shown?
+    private(set) var interrupted: [(notice: Notice, remaining: TimeInterval)] = []
+
+    /// Something else takes the HUD at `now` (a lasting notice, or nil for any other HUD).
+    /// A first showing still on screen waits its turn; a notice already brought back once is dropped.
+    mutating func replace(with notice: Notice?, duration: TimeInterval, now: Date) {
+        if let current, !current.isReplay {
+            let remaining = current.ends.timeIntervalSince(now)
+            if remaining >= Self.minimumReplay { interrupted.append((current.notice, remaining)) }
+        }
+        current = notice.map { Shown(notice: $0, ends: now.addingTimeInterval(duration), isReplay: false) }
     }
 
-    /// The HUD went away on its own: `current` had its full time. Returns the notice to bring back, if any.
-    mutating func finish() -> Notice? {
+    /// The HUD went away on its own at `now`. Returns the notice to bring back, if any, with how long to show it.
+    mutating func finish(now: Date) -> (notice: Notice, remaining: TimeInterval)? {
         current = nil
-        return interrupted.isEmpty ? nil : interrupted.removeFirst()
+        guard !interrupted.isEmpty else { return nil }
+        let next = interrupted.removeFirst()
+        current = Shown(notice: next.notice, ends: now.addingTimeInterval(next.remaining), isReplay: true)
+        return next
     }
 }
