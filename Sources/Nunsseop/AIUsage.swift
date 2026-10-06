@@ -3,9 +3,9 @@ import os
 import SQLite3
 import SwiftUI
 
-/// Usage of AI coding tools, read only from files those tools already keep on this Mac.
-/// Limits: Claude's from the oh-my-claudecode HUD cache, Codex's from Codex's session logs, or either from the usage
-/// cache gjc keeps, whichever was fetched last. Token totals add up the logs of every tool that used the provider's
+/// Usage of AI coding tools, read from files those tools already keep on this Mac.
+/// Limits: Claude's from Anthropic with Claude Code's own sign-in (ClaudeUsageAPI) or the oh-my-claudecode HUD cache,
+/// Codex's from Codex's session logs, or either from the usage cache gjc keeps, whichever was fetched last. Token totals add up the logs of every tool that used the provider's
 /// models: Claude Code, Codex, gjc, omo and OpenCode.
 @MainActor
 final class AIUsageModel: ObservableObject {
@@ -69,7 +69,7 @@ final class AIUsageModel: ObservableObject {
         }
         loading = true
         Task.detached(priority: .utility) {
-            let limits = Self.limits()
+            let limits = await Self.limits()
             let totals = includeTokens ? Self.tokenTotals() : nil
             await MainActor.run {
                 self.providers = Family.allCases.compactMap { family in
@@ -143,7 +143,8 @@ final class AIUsageModel: ObservableObject {
     // MARK: Limits
 
     /// Each provider's limits from whichever source fetched them last.
-    nonisolated private static func limits() -> [Family: Limits] {
+    nonisolated private static func limits() async -> [Family: Limits] {
+        let anthropic = await ClaudeUsageAPI.current()
         var result: [Family: Limits] = [:]
         func offer(_ family: Family, _ limits: Limits?) {
             guard let limits, (limits.session ?? limits.weekly) != nil else { return }
@@ -151,6 +152,7 @@ final class AIUsageModel: ObservableObject {
             result[family] = limits
         }
         offer(.claude, (try? Data(contentsOf: home.appendingPathComponent(".claude/plugins/oh-my-claudecode/.usage-cache-anthropic.json"))).flatMap(omcLimits))
+        offer(.claude, anthropic)
         offer(.codex, codexLimits())
         let gjc = home.appendingPathComponent(".gjc/agent/agent.db").path
         // Only the usage cache is read; this database also holds gjc's credentials, which are never touched.
@@ -423,9 +425,13 @@ final class AIUsageModel: ObservableObject {
 
 struct AIUsageTab: View {
     @ObservedObject var usage: AIUsageModel
+    @ObservedObject var settings = AppSettings.shared
 
     var body: some View {
         HStack(spacing: 10) {
+            if !settings.claudeLimitsAsked && !settings.claudeLimitsFromAnthropic {
+                LiveLimitsPrompt(settings: settings) { usage.refresh(includeTokens: false) }
+            }
             if usage.providers.isEmpty {
                 VStack(spacing: 6) {
                     Image(systemName: "sparkles").font(.system(size: 22)).foregroundStyle(.white.opacity(0.4))
@@ -482,6 +488,42 @@ struct AIUsageTab: View {
                 try? await Task.sleep(for: .seconds(20))
             }
         }
+    }
+}
+
+/// Asked once: whether to read Claude Code's sign-in and ask Anthropic for the limits. Either answer is final here;
+/// Settings › Services can change it later.
+private struct LiveLimitsPrompt: View {
+    @ObservedObject var settings: AppSettings
+    let turnedOn: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Live Claude limits?").font(.system(size: 13, weight: .semibold))
+            Text("Nunsseop can read the sign-in Claude Code keeps in the Keychain and ask Anthropic directly for your 5-hour and weekly limits, about once an hour, so they update without Claude Code running.")
+                .font(.system(size: 10)).foregroundStyle(.white.opacity(0.6))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            HStack(spacing: 6) {
+                Button("Turn On") {
+                    settings.claudeLimitsFromAnthropic = true
+                    settings.claudeLimitsAsked = true
+                    turnedOn()
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .semibold))
+                .padding(.horizontal, 10).padding(.vertical, 4)
+                .background(Capsule().fill(Color.accentColor.opacity(0.8)))
+                Button("No Thanks") { settings.claudeLimitsAsked = true }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11, weight: .semibold))
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(Capsule().fill(.white.opacity(0.15)))
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .frame(maxWidth: 230, maxHeight: .infinity, alignment: .topLeading)
+        .surface(RoundedRectangle(cornerRadius: 14))
     }
 }
 

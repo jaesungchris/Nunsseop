@@ -319,4 +319,10 @@
 "Agents ring the bell when they finish or wait for you (for Claude Code, set its notifications to the terminal bell). Nunsseop adds a hook to the running tmux server only; tmux.conf stays as it is." = "エージェントは終了時や入力待ちのときにベルを鳴らします(Claude Code は通知をターミナルベルに設定してください)。フックは実行中の tmux サーバーにだけ追加し、tmux.conf はそのままです。";
 "Copy WezTerm config" = "WezTerm の設定をコピー";
 "Paste it into ~/.wezterm.lua before `return config`. Bells from any WezTerm pane then show in the notch; WezTerm's config isn't changed for you." = "~/.wezterm.lua の `return config` の前に貼り付けると、すべての WezTerm ペインのベルがノッチに表示されます。WezTerm の設定は自動では変更しません。";
+"Ask Anthropic for Claude's limits" = "Claude の上限を Anthropic から取得";
+"Reads the sign-in Claude Code keeps in the Keychain and asks api.anthropic.com for your 5-hour and weekly limits about once an hour, so they also move when another app or claude.ai uses them. While that sign-in has expired they stop updating, until Claude Code signs in again. The sign-in is never changed or sent anywhere else." = "Claude Code がキーチェーンに保存したサインイン情報を読み、約 1 時間ごとに api.anthropic.com に 5 時間と週の上限を問い合わせます。ほかのアプリや claude.ai での使用も反映されます。そのサインインが期限切れの間は、Claude Code が再びサインインするまで更新されません。サインイン情報は変更せず、ほかへ送ることもありません。";
+"Live Claude limits?" = "Claude の上限をリアルタイムで取得しますか?";
+"Nunsseop can read the sign-in Claude Code keeps in the Keychain and ask Anthropic directly for your 5-hour and weekly limits, about once an hour, so they update without Claude Code running." = "Claude Code がキーチェーンに保存したサインイン情報を読み、約 1 時間ごとに Anthropic に 5 時間と週の上限を直接問い合わせます。Claude Code を起動していなくても更新されます。";
+"Turn On" = "オンにする";
+"No Thanks" = "今はしない";
 "Click to join" = "クリックして参加";
