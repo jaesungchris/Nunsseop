@@ -61,6 +61,19 @@ struct TerminalAgentParseTests {
         #expect(Herdr.event(in: ["id": "sub", "result": ["type": "subscription_started"]]) == nil)
     }
 
+    @Test func herdrFindsNamedSessions() throws {
+        let config = URL(fileURLWithPath: "/tmp/nunsseop-test-\(UUID().uuidString.prefix(8))")
+        defer { try? FileManager.default.removeItem(at: config) }
+        for name in ["work", "empty"] {
+            try FileManager.default.createDirectory(at: config.appendingPathComponent("sessions/\(name)"), withIntermediateDirectories: true)
+        }
+        FileManager.default.createFile(atPath: config.appendingPathComponent("sessions/work/herdr.sock").path, contents: nil)
+        let sockets = Herdr.sockets(in: config)
+        #expect(sockets.map(\.session) == [nil, "work"])
+        #expect(sockets.map(\.url.lastPathComponent) == ["herdr.sock", "herdr.sock"])
+        #expect(sockets.last?.url.deletingLastPathComponent().lastPathComponent == "work")
+    }
+
     @Test func herdrCatchesChangesBetweenSubscriptions() {
         var states = Herdr.States()
         _ = states.reconcile([Herdr.Pane(id: "a", status: "working"), Herdr.Pane(id: "b", status: "blocked")])
@@ -91,8 +104,8 @@ struct TerminalAgentWatcherTests {
         for _ in 0..<100 where !condition() { try? await Task.sleep(for: .milliseconds(50)) }
     }
 
-    @Test func herdrWatcherListsSubscribesAndAnnounces() async throws {
-        let socket = temporary("herdr.sock")
+    /// Serves a herdr socket at `socket` that lists one working pane and then reports it done.
+    private func fakeHerdr(at socket: URL) async throws -> () -> Void {
         let script = temporary("herdr.py")
         try """
         import json, os, socket, sys, threading, time
@@ -121,12 +134,18 @@ struct TerminalAgentWatcherTests {
         server.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
         server.arguments = [script.path, socket.path]
         try server.run()
-        defer {
+        await waitUntil { FileManager.default.fileExists(atPath: socket.path) }
+        return {
             server.terminate()
             try? FileManager.default.removeItem(at: socket)
             try? FileManager.default.removeItem(at: script)
         }
-        await waitUntil { FileManager.default.fileExists(atPath: socket.path) }
+    }
+
+    @Test func herdrWatcherListsSubscribesAndAnnounces() async throws {
+        let socket = temporary("herdr.sock")
+        let shutDown = try await fakeHerdr(at: socket)
+        defer { shutDown() }
 
         let watcher = HerdrWatcher(socketURL: socket)
         var received: [Herdr.Notice] = []
@@ -135,6 +154,23 @@ struct TerminalAgentWatcherTests {
         defer { watcher.stop() }
         await waitUntil { !received.isEmpty }
         #expect(received == [Herdr.Notice(agent: "Pi", status: "done", title: "refactor")])
+    }
+
+    @Test func herdrSessionsTellWhichSessionANoticeCameFrom() async throws {
+        let config = temporary("config")
+        try FileManager.default.createDirectory(at: config.appendingPathComponent("sessions/work"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: config) }
+        let shutDown = try await fakeHerdr(at: config.appendingPathComponent("sessions/work/herdr.sock"))
+        defer { shutDown() }
+
+        let sessions = HerdrSessions(config: config)
+        var received: [(Herdr.Notice, String?)] = []
+        sessions.onNotice = { received.append(($0, $1)) }
+        sessions.start()
+        defer { sessions.stop() }
+        await waitUntil { !received.isEmpty }
+        #expect(received.map(\.0) == [Herdr.Notice(agent: "Pi", status: "done", title: "refactor")])
+        #expect(received.map(\.1) == ["work"])
     }
 
     @Test func cmuxWatcherLooksUpCreatedNotifications() async throws {

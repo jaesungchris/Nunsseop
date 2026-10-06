@@ -296,10 +296,12 @@ final class NotchWindowController {
             self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.title.prefix(80)),
                                          detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200))), duration: 6)
         }
-        model.herdr.onNotice = { [weak self] notice in
+        model.herdr.onNotice = { [weak self] notice, session in
             let state = notice.status == "blocked" ? String(localized: "Waiting for you") : String(localized: "Finished")
             let detail = [state, notice.title].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
-            self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.agent.prefix(80)),
+            // A named session shows its name beside the agent.
+            let title = session.map { "\(notice.agent) · \($0)" } ?? notice.agent
+            self?.model.hud.show(.notice(symbol: "terminal", title: String(title.prefix(80)),
                                          detail: String(detail.prefix(200))), duration: 6)
         }
         model.muxy.onNotice = { [weak self] notice in
