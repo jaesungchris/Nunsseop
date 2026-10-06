@@ -490,6 +490,8 @@ enum TerminalBell {
             case "${window#@}" in *[!0-9]*) exit 0 ;; esac
             t() { if [ -n "$socket" ]; then "$tmux" -L "$socket" "$@"; else "$tmux" "$@"; fi; }
             session=$(t display-message -p -t "$window" '#{session_name}')
+            # The window is gone already (closed right after the bell): nothing to show.
+            [ -n "$session" ] || exit 0
             name=$(t display-message -p -t "$window" '#{window_name}')
             commands=$(t list-panes -t "$window" -F '#{pane_current_command}')
             # tmux doesn't say which pane rang, so the running command counts as the agent only in a one-pane window.
