@@ -250,6 +250,10 @@ private struct AlertsPane: View {
             Section("Privacy") {
                 Toggle("Show when an app uses the camera or microphone", isOn: $settings.privacyIndicator)
             }
+            Section("Calendar") {
+                Toggle("Show events 5 minutes before they start", isOn: $settings.eventAlerts)
+                    .disabled(!settings.calendarEnabled)
+            }
             Section("Files") {
                 Toggle("Add new screenshots to the shelf", isOn: $settings.screenshotsToShelf)
                 Toggle("Show when downloads start and finish", isOn: $settings.downloadAlerts)

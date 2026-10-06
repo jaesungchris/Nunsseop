@@ -86,6 +86,7 @@
 "Google, iCloud, Exchange and other accounts added to macOS appear here." = "macOS에 추가한 Google, iCloud, Exchange 등의 계정이 여기에 나타납니다.";
 "No reminders" = "미리 알림 없음";
 "Mark as completed" = "완료로 표시";
+"Join" = "참가";
 "Allow Reminders" = "미리 알림 허용";
 "Events" = "일정";
 
@@ -248,6 +249,7 @@
 "Search the web for “%@”" = "웹에서 “%@” 검색";
 "Show mouse and keyboard batteries and warn when low" = "마우스와 키보드 배터리를 표시하고 부족하면 알림";
 "Privacy" = "개인정보 보호";
+"Show events 5 minutes before they start" = "일정 시작 5분 전에 표시";
 "Show when an app uses the camera or microphone" = "앱이 카메라나 마이크를 사용하면 표시";
 "Quick search" = "빠른 검색";
 "Screen recording" = "화면 녹화";

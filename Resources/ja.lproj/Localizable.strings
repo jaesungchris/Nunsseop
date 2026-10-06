@@ -69,6 +69,7 @@
 "Google, iCloud, Exchange and other accounts added to macOS appear here." = "macOS に追加した Google、iCloud、Exchange などのアカウントがここに表示されます。";
 "No reminders" = "リマインダーなし";
 "Mark as completed" = "完了にする";
+"Join" = "参加";
 "Allow Reminders" = "リマインダーを許可";
 "Events" = "予定";
 "Camera access is off" = "カメラへのアクセスがオフです";
@@ -223,6 +224,7 @@
 "Search the web for “%@”" = "Web で「%@」を検索";
 "Show mouse and keyboard batteries and warn when low" = "マウスとキーボードのバッテリーを表示し、残量が少ないと通知";
 "Privacy" = "プライバシー";
+"Show events 5 minutes before they start" = "予定の5分前に表示";
 "Show when an app uses the camera or microphone" = "アプリがカメラやマイクを使っているときに表示";
 "Quick search" = "クイック検索";
 "Screen recording" = "画面収録";

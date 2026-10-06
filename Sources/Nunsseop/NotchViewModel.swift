@@ -195,6 +195,15 @@ final class NotchViewModel: ObservableObject {
         settings.$hiddenCalendarIDs
             .sink { [weak self] in self?.calendar.hiddenCalendarIDs = Set($0) }
             .store(in: &cancellables)
+        calendar.onUpcoming = { [weak self] item in
+            self?.hud.show(.notice(symbol: "calendar", title: item.title,
+                                   detail: item.start.formatted(.relative(presentation: .named))),
+                           duration: CalendarModel.alertSpacing)
+        }
+        settings.$eventAlerts.combineLatest(settings.$calendarEnabled)
+            .map { $0 && $1 }
+            .sink { [weak self] in self?.calendar.alertsEnabled = $0 }
+            .store(in: &cancellables)
         settings.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)

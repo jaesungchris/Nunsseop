@@ -35,6 +35,8 @@ final class AppSettings: ObservableObject {
     @Published var calendarEnabled: Bool = AppSettings.load("calendarEnabled", default: true) { didSet { save(calendarEnabled, "calendarEnabled") } }
     /// Calendars left out of the Home tab. Stored as hidden so newly added calendars show up.
     @Published var hiddenCalendarIDs: [String] = AppSettings.load("hiddenCalendarIDs", default: []) { didSet { save(hiddenCalendarIDs, "hiddenCalendarIDs") } }
+    /// Shows a timed event under the notch five minutes before it starts.
+    @Published var eventAlerts: Bool = AppSettings.load("eventAlerts", default: true) { didSet { save(eventAlerts, "eventAlerts") } }
     @Published var remindersEnabled: Bool = AppSettings.load("remindersEnabled", default: true) { didSet { save(remindersEnabled, "remindersEnabled") } }
     /// NSScreen.localizedName of the display to use; empty means automatic.
     @Published var displayName: String = AppSettings.load("displayName", default: "") { didSet { save(displayName, "displayName") } }
