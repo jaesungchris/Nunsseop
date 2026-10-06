@@ -374,6 +374,28 @@ struct TerminalBellScriptTests {
         return (args, body)
     }
 
+    /// The tmux-window mode with a stand-in tmux that knows no window: nothing is sent.
+    @Test func goneWindowOrBadIdSendsNothing() throws {
+        let dir = URL(fileURLWithPath: "/tmp/nunsseop-test-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: dir.appendingPathComponent("bin"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let curl = dir.appendingPathComponent("bin/curl"), tmux = dir.appendingPathComponent("tmux")
+        try "#!/bin/sh\ntouch \(dir.path)/sent\n".write(to: curl, atomically: true, encoding: .utf8)
+        try "#!/bin/sh\nexit 1\n".write(to: tmux, atomically: true, encoding: .utf8)
+        for file in [curl, tmux] { try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: file.path) }
+        let script = dir.appendingPathComponent("terminal-notify.sh")
+        TerminalBell.install(at: script)
+        for window in ["@9", "@9;x", "9", ""] {
+            let process = Process()
+            process.executableURL = script
+            process.arguments = ["tmux-window", tmux.path, "", window]
+            process.environment = ["HOME": dir.path, "PATH": "\(dir.path)/bin:/usr/bin:/bin"]
+            try process.run()
+            process.waitUntilExit()
+        }
+        #expect(!FileManager.default.fileExists(atPath: dir.appendingPathComponent("sent").path))
+    }
+
     @Test func postsTheAgentAndWhereTheBellRang() throws {
         let sent = try run(["tmux", "work", "api", "claude"])
         #expect(sent.args.contains("http://127.0.0.1:\(NotifyServer.port)/notify"))
@@ -440,6 +462,46 @@ struct HookUpdateTests {
         #expect(groups.first.flatMap { ($0["hooks"] as? [[String: Any]])?.first?["command"] as? String } == "muxy-hook notification")
         #expect(try JSONHook.updating(current, in: updated) == nil)
         #expect(current.contains("X-App: $__CFBundleIdentifier"))
+    }
+
+    private func commands(_ settings: [String: Any]) -> [[String]] {
+        (((settings["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]]) ?? []).map { group in
+            ((group["hooks"] as? [[String: Any]]) ?? []).compactMap { $0["command"] as? String }
+        }
+    }
+
+    @Test func currentHookSharingAGroupIsLeftAlone() throws {
+        let current = NotifyServer.hookCommand(title: "Claude Code")
+        let settings: [String: Any] = ["hooks": ["Notification": [
+            ["hooks": [["type": "command", "command": "say mine"], ["type": "command", "command": current]]],
+        ]]]
+        #expect(JSONHook.isCurrent(current, in: settings))
+        #expect(try JSONHook.updating(current, in: settings) == nil)
+    }
+
+    @Test func oldHookSharingAGroupIsReplacedAndTheRestKept() throws {
+        let current = NotifyServer.hookCommand(title: "Claude Code")
+        let old = "curl -s http://127.0.0.1:\(NotifyServer.port)/notify --data-binary @-"
+        let settings: [String: Any] = ["hooks": ["Notification": [
+            ["matcher": "", "hooks": [["type": "command", "command": "say mine"], ["type": "command", "command": old]]],
+        ]]]
+        let updated = try #require(try JSONHook.updating(current, in: settings))
+        let groups = ((updated["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]]) ?? []
+        #expect(groups.first?["matcher"] as? String == "")
+        #expect(commands(updated) == [["say mine"], [current]])
+        #expect(JSONHook.isCurrent(current, in: updated))
+    }
+
+    @Test func removingTakesOnlyNunsseopsHooks() {
+        let ours = NotifyServer.hookCommand(title: "Gemini CLI")
+        let settings: [String: Any] = ["hooks": ["Notification": [
+            ["matcher": "x", "hooks": [["type": "command", "command": "say mine"], ["type": "command", "command": ours]]],
+            ["hooks": [["type": "command", "command": ours]]],
+        ], "Stop": [["hooks": [["type": "command", "command": "stop.sh"]]]]]]
+        let removed = JSONHook.removing(from: settings)
+        #expect(commands(removed) == [["say mine"]])
+        #expect(((removed["hooks"] as? [String: Any])?["Notification"] as? [[String: Any]])?.first?["matcher"] as? String == "x")
+        #expect((removed["hooks"] as? [String: Any])?["Stop"] != nil)
     }
 
     @Test func duplicateHooksBecomeOne() throws {
