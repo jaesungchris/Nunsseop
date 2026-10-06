@@ -15,6 +15,8 @@ enum HUDEvent: Equatable {
 @MainActor
 final class HUDCenter: ObservableObject {
     @Published private(set) var event: HUDEvent?
+    /// What clicking the notice on screen does, such as going to the terminal it came from.
+    private(set) var action: (() -> Void)?
     @Published private(set) var power: PowerState?
     @Published private(set) var interceptorNeedsPermission = false
 
@@ -233,9 +235,19 @@ final class HUDCenter: ObservableObject {
         }
     }
 
-    func show(_ newEvent: HUDEvent, duration: Double = 1.6) {
+    func show(_ newEvent: HUDEvent, duration: Double = 1.6, action: (() -> Void)? = nil) {
         lasting.replace(with: nil, duration: duration, now: .now)
         present(newEvent, duration: duration)
+        self.action = action
+    }
+
+    /// Runs the notice's action and takes the notice away; false when it has none.
+    func performAction() -> Bool {
+        guard let action else { return false }
+        action()
+        dismissWork?.cancel()
+        dismiss()
+        return true
     }
 
     /// A notice that must be seen once: if another HUD covers it before its time is up, it comes back
@@ -248,6 +260,7 @@ final class HUDCenter: ObservableObject {
 
     private func present(_ newEvent: HUDEvent, duration: Double) {
         dismissWork?.cancel()
+        action = nil
         event = newEvent
         let work = DispatchWorkItem { [weak self] in
             MainActor.assumeIsolated { self?.dismiss() }
@@ -263,6 +276,7 @@ final class HUDCenter: ObservableObject {
                 return
             }
         }
+        action = nil
         event = nil
     }
 }

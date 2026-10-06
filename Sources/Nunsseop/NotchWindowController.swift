@@ -301,12 +301,15 @@ final class NotchWindowController {
             self.model.lyrics.isEnabled = enabled
             self.model.lyrics.update(for: enabled ? self.model.nowPlaying.track : nil)
         })
-        model.notifyServer.onNotify = { [weak self] title, message in
-            self?.model.hud.show(.notice(symbol: "sparkles", title: title, detail: message), duration: 6)
+        // A click on a notice goes to the terminal, and where possible the pane, it came from.
+        model.notifyServer.onNotify = { [weak self] notice in
+            self?.model.hud.show(.notice(symbol: "sparkles", title: notice.title, detail: notice.message), duration: 6,
+                                 action: TerminalFocus.action(app: notice.app, target: notice.target))
         }
         model.cmux.onNotice = { [weak self] notice in
             self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.title.prefix(80)),
-                                         detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200))), duration: 6)
+                                         detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200))), duration: 6,
+                                 action: { Cmux.focus(notice) })
         }
         model.herdr.onNotice = { [weak self] notice, session in
             let state = notice.status == "blocked" ? String(localized: "Waiting for you") : String(localized: "Finished")
@@ -314,11 +317,13 @@ final class NotchWindowController {
             // A named session shows its name beside the agent.
             let title = session.map { "\(notice.agent) · \($0)" } ?? notice.agent
             self?.model.hud.show(.notice(symbol: "terminal", title: String(title.prefix(80)),
-                                         detail: String(detail.prefix(200))), duration: 6)
+                                         detail: String(detail.prefix(200))), duration: 6,
+                                 action: { Herdr.focus(notice) })
         }
         model.muxy.onNotice = { [weak self] notice in
             self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.title.prefix(80)),
-                                         detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200))), duration: 6)
+                                         detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200))), duration: 6,
+                                 action: { notice.focus() })
         }
         // App volume taps run whenever the setting is on; the list of apps refreshes only while the Tools tab shows.
         settingsObservers.append(model.settings.$perAppVolume.combineLatest(model.$isExpanded, model.$tab)
@@ -513,7 +518,8 @@ final class NotchWindowController {
                 openWork?.cancel()
                 openWork = nil
                 hoverOpenBlocked = false
-            } else if openWork == nil && !hoverOpenBlocked {
+            } else if openWork == nil && !hoverOpenBlocked && model.hud.action == nil {
+                // While a notice that can be clicked shows, hovering doesn't open the notch, so it can be clicked.
                 let work = DispatchWorkItem { [weak self] in
                     MainActor.assumeIsolated {
                         self?.openWork = nil

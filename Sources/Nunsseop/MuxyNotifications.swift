@@ -8,6 +8,10 @@ struct MuxyNotice: Equatable {
     let isRead: Bool
     /// The agent that sent it ("claude", "codex", "pi"...); nil for a terminal (OSC) notification.
     let provider: String?
+    /// Where it came from in Muxy, to go back there.
+    var projectID: String? = nil
+    var worktreeID: String? = nil
+    var tabID: String? = nil
 
     /// Muxy keeps its last 200 notifications, from every agent and terminal in it, in this file.
     static var feedURL: URL {
@@ -29,12 +33,43 @@ struct MuxyNotice: Equatable {
             guard let id = entry["id"] as? String else { return nil }
             let provider = ((entry["source"] as? [String: Any])?["aiProvider"] as? [String: Any])?["_0"] as? String
             return MuxyNotice(id: id, title: entry["title"] as? String ?? "Muxy", body: entry["body"] as? String ?? "",
-                              isRead: entry["isRead"] as? Bool ?? false, provider: provider)
+                              isRead: entry["isRead"] as? Bool ?? false, provider: provider,
+                              projectID: entry["projectID"] as? String, worktreeID: entry["worktreeID"] as? String,
+                              tabID: entry["tabID"] as? String)
         }
     }
 
     /// The tool whose own Nunsseop hook, when connected, already sends this notification.
     var integration: NotifyIntegration? { NotifyIntegration.forAgent(provider) }
+
+    static var socketURL: URL { feedURL.deletingLastPathComponent().appendingPathComponent("muxy.sock") }
+
+    /// Commands for Muxy's local socket that select the notification's project, worktree and tab,
+    /// as Muxy's own notification panel does. A tab is looked up in the active project, so that comes first.
+    var focusCommands: [String] {
+        guard let projectID else { return [] }
+        let safe = { (id: String) in !id.isEmpty && id.allSatisfy { $0.isHexDigit || $0 == "-" } }
+        guard safe(projectID) else { return [] }
+        var commands = ["switch-project|\(projectID)"]
+        if let worktreeID, safe(worktreeID) { commands.append("switch-worktree|\(worktreeID)|\(projectID)") }
+        if let tabID, safe(tabID) { commands.append("switch-tab|\(tabID)") }
+        return commands
+    }
+
+    /// Sends commands to Muxy's socket, which answers one command per connection and then closes it.
+    @discardableResult
+    static func send(_ commands: [String], toSocket socket: String = socketURL.path) -> [String] {
+        commands.compactMap { TerminalFocus.send([$0], toSocket: socket).first }
+    }
+
+    /// Goes to the notification's tab and brings Muxy forward.
+    func focus() {
+        let commands = focusCommands
+        DispatchQueue.global(qos: .userInitiated).async {
+            Self.send(commands)
+            DispatchQueue.main.async { TerminalFocus.activate(bundleID: Self.bundleID) }
+        }
+    }
 }
 
 /// Which of Muxy's notifications are new: the list read first is only remembered, so history isn't replayed.
