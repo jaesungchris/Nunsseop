@@ -176,33 +176,31 @@ private struct EventList: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.45))
         } else {
-            VStack(alignment: .leading, spacing: 5) {
-                ForEach(items) { item in
-                    HStack(alignment: .top, spacing: 6) {
-                        Capsule().fill(item.color).frame(width: 3, height: 24)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(item.title)
-                                .font(.system(size: 11, weight: .medium))
-                                .lineLimit(1)
-                            Text(item.isAllDay ? String(localized: "All day") : "\(item.start.formatted(date: .omitted, time: .shortened)) – \(item.end.formatted(date: .omitted, time: .shortened))")
-                                .font(.system(size: 9).monospacedDigit())
-                                .foregroundStyle(.white.opacity(0.5))
-                        }
-                        if let url = item.joinURL {
-                            Spacer(minLength: 4)
-                            // Checked every minute, so the button goes away when the event ends with the tab open.
-                            TimelineView(.everyMinute) { context in
-                                if item.canJoin(at: context.date) {
-                                    Button { NSWorkspace.shared.open(url) } label: {
-                                        Image(systemName: "video.fill")
-                                            .font(.system(size: 9, weight: .semibold))
-                                            .frame(width: 22, height: 22)
-                                            .background(Circle().fill(Color.green.opacity(0.85)))
-                                            .contentShape(Circle())
-                                    }
-                                    .buttonStyle(.plain)
-                                    .help(Text("Join"))
+            // Checked every minute, so join buttons go away when their event ends with the tab open.
+            TimelineView(.everyMinute) { context in
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(items) { item in
+                        HStack(alignment: .top, spacing: 6) {
+                            Capsule().fill(item.color).frame(width: 3, height: 24)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(item.title)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .lineLimit(1)
+                                Text(item.isAllDay ? String(localized: "All day") : "\(item.start.formatted(date: .omitted, time: .shortened)) – \(item.end.formatted(date: .omitted, time: .shortened))")
+                                    .font(.system(size: 9).monospacedDigit())
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+                            if let url = item.joinURL, item.canJoin(at: context.date) {
+                                Spacer(minLength: 4)
+                                Button { NSWorkspace.shared.open(url) } label: {
+                                    Image(systemName: "video.fill")
+                                        .font(.system(size: 9, weight: .semibold))
+                                        .frame(width: 22, height: 22)
+                                        .background(Circle().fill(Color.green.opacity(0.85)))
+                                        .contentShape(Circle())
                                 }
+                                .buttonStyle(.plain)
+                                .help(Text("Join"))
                             }
                         }
                     }

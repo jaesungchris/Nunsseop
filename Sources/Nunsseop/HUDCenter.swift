@@ -24,7 +24,7 @@ final class HUDCenter: ObservableObject {
     private let interceptor = MediaKeyInterceptor()
     private var dismissWork: DispatchWorkItem?
     /// A notice to bring back if covered: built again each time it shows, so its wording stays current.
-    private struct Lasting { let make: () -> HUDEvent?; let duration: Double }
+    private struct Lasting { let make: () -> HUDEvent? }
     private var lasting = LastingNotices<Lasting>()
     private var lastHeadphones: HeadphoneBattery?
     private var headphoneCheckInFlight = false
@@ -234,19 +234,20 @@ final class HUDCenter: ObservableObject {
     }
 
     func show(_ newEvent: HUDEvent, duration: Double = 1.6) {
-        present(newEvent, duration: duration, lasting: nil)
+        lasting.replace(with: nil, duration: duration, now: .now)
+        present(newEvent, duration: duration)
     }
 
     /// A notice that must be seen once: if another HUD covers it before its time is up, it comes back
-    /// when that HUD is gone. `make` runs again then; returning nil drops it.
+    /// when that HUD is gone, for the time it had left. `make` runs again then; returning nil drops it.
     func showLasting(duration: Double, _ make: @escaping () -> HUDEvent?) {
         guard let notice = make() else { return }
-        present(notice, duration: duration, lasting: Lasting(make: make, duration: duration))
+        lasting.replace(with: Lasting(make: make), duration: duration, now: .now)
+        present(notice, duration: duration)
     }
 
-    private func present(_ newEvent: HUDEvent, duration: Double, lasting notice: Lasting?) {
+    private func present(_ newEvent: HUDEvent, duration: Double) {
         dismissWork?.cancel()
-        lasting.replace(with: notice)
         event = newEvent
         let work = DispatchWorkItem { [weak self] in
             MainActor.assumeIsolated { self?.dismiss() }
@@ -256,9 +257,9 @@ final class HUDCenter: ObservableObject {
     }
 
     private func dismiss() {
-        while let notice = lasting.finish() {
-            if let event = notice.make() {
-                present(event, duration: notice.duration, lasting: notice)
+        while let next = lasting.finish(now: .now) {
+            if let event = next.notice.make() {
+                present(event, duration: next.remaining)
                 return
             }
         }
