@@ -252,13 +252,13 @@
         <svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
       </button>
       <ul class="lang-menu" role="listbox" aria-label="Language">
-        <li><button type="button" role="option" data-set="en" lang="en">English</button></li>
-        <li><button type="button" role="option" data-set="ko" lang="ko">한국어</button></li>
-        <li><button type="button" role="option" data-set="ja" lang="ja">日本語</button></li>
-        <li><button type="button" role="option" data-set="zh" lang="zh-Hans">简体中文</button></li>
-        <li><button type="button" role="option" data-set="es" lang="es">Español</button></li>
-        <li><button type="button" role="option" data-set="de" lang="de">Deutsch</button></li>
-        <li><button type="button" role="option" data-set="fr" lang="fr">Français</button></li>
+        <li role="none"><button type="button" role="option" data-set="en" lang="en">English</button></li>
+        <li role="none"><button type="button" role="option" data-set="ko" lang="ko">한국어</button></li>
+        <li role="none"><button type="button" role="option" data-set="ja" lang="ja">日本語</button></li>
+        <li role="none"><button type="button" role="option" data-set="zh" lang="zh-Hans">简体中文</button></li>
+        <li role="none"><button type="button" role="option" data-set="es" lang="es">Español</button></li>
+        <li role="none"><button type="button" role="option" data-set="de" lang="de">Deutsch</button></li>
+        <li role="none"><button type="button" role="option" data-set="fr" lang="fr">Français</button></li>
       </ul>
     </div>
   </div>
@@ -727,7 +727,10 @@ open build/Nunsseop.app</pre></div>
     langOptions.forEach(function (o) {
       var on = o.dataset.set === lang;
       o.setAttribute('aria-selected', String(on));
-      if (on) document.getElementById('langLabel').textContent = o.textContent;
+      if (on) {
+        document.getElementById('langLabel').textContent = o.textContent;
+        langBtn.setAttribute('aria-label', 'Language: ' + o.textContent);
+      }
     });
     langListeners.forEach(function (fn) { fn(); });
     try { localStorage.setItem('nunsseop-lang', lang); } catch (e) {}
@@ -754,10 +757,16 @@ open build/Nunsseop.app</pre></div>
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         langOptions[(i + (e.key === 'ArrowDown' ? 1 : langOptions.length - 1)) % langOptions.length].focus();
+      } else if (e.key === 'Home' || e.key === 'End') {
+        e.preventDefault();
+        langOptions[e.key === 'Home' ? 0 : langOptions.length - 1].focus();
       }
     });
   });
   document.addEventListener('click', function (e) { if (!langBox.contains(e.target)) openMenu(false); });
+  // Safari doesn't focus buttons on click, so keep focus where it is; otherwise focusout would close the menu mid-click.
+  langBox.addEventListener('mousedown', function (e) { e.preventDefault(); });
+  langBox.addEventListener('focusout', function (e) { if (!langBox.contains(e.relatedTarget)) openMenu(false); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && langBox.classList.contains('open')) { openMenu(false); langBtn.focus(); }
   });
