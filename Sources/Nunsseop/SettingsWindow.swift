@@ -225,6 +225,8 @@ private struct TabRow: View {
 /// Pop-ups the notch can show.
 private struct AlertsPane: View {
     @ObservedObject var settings: AppSettings
+    @State private var connected: Set<NotifyIntegration> = []
+    @State private var failed: NotifyIntegration?
 
     var body: some View {
         Form {
@@ -258,14 +260,51 @@ private struct AlertsPane: View {
                 Toggle("Let tools on this Mac show notifications in the notch", isOn: $settings.localNotifications)
                 Text("Used by Claude Code hooks and scripts. Only requests from this Mac with the secret token are accepted.")
                     .font(.caption).foregroundStyle(.secondary)
+                ForEach(NotifyIntegration.allCases.filter(\.isPresent)) { tool in
+                    HStack {
+                        Text(tool.name)
+                        if connected.contains(tool) {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        }
+                        Spacer()
+                        Button(connected.contains(tool) ? LocalizedStringKey("Disconnect") : LocalizedStringKey("Connect")) { toggle(tool) }
+                            .disabled(!settings.localNotifications && !connected.contains(tool))
+                    }
+                }
+                Text("Connecting changes the tool's own settings file and keeps the old one with a `.nunsseop-backup` extension. Sessions started afterwards send their notifications here.")
+                    .font(.caption).foregroundStyle(.secondary)
+                if let failed {
+                    Text("Couldn't change \(failed.configURL.path.replacingOccurrences(of: NSHomeDirectory(), with: "~")). Copy the hook command and add it by hand.")
+                        .font(.caption).foregroundStyle(.red)
+                }
                 Button("Copy Claude Code hook command") {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(NotifyServer.hookCommand, forType: .string)
                 }
                 .disabled(!settings.localNotifications)
+                Button("Copy command for scripts") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(NotifyServer.scriptCommand, forType: .string)
+                }
+                .disabled(!settings.localNotifications)
             }
+            .onAppear(perform: refreshConnections)
         }
         .formStyle(.grouped)
+    }
+
+    private func refreshConnections() {
+        connected = Set(NotifyIntegration.allCases.filter(\.isInstalled))
+    }
+
+    private func toggle(_ tool: NotifyIntegration) {
+        do {
+            if connected.contains(tool) { try tool.uninstall() } else { try tool.install() }
+            failed = nil
+        } catch {
+            failed = tool
+        }
+        refreshConnections()
     }
 }
 

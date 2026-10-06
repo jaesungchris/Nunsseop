@@ -102,10 +102,20 @@ final class NotifyServer: @unchecked Sendable {
 
     /// A shell command for Claude Code's Notification hook. Claude Code passes the event as
     /// JSON on stdin; its `message` field is sent as the notification text.
-    static var hookCommand: String {
+    static var hookCommand: String { hookCommand(title: "Claude Code") }
+
+    /// The same command for any tool that passes JSON with a `message` field on stdin, such as Gemini CLI.
+    static func hookCommand(title: String) -> String {
         "plutil -extract message raw -o - - 2>/dev/null | curl -s -m 2 -X POST http://127.0.0.1:\(port)/notify "
             + "-H \"Authorization: Bearer $(cat \"$HOME/Library/Application Support/Nunsseop/notify-token\")\" "
-            + "-H 'X-Title: Claude Code' --data-binary @- >/dev/null || true"
+            + "-H 'X-Title: \(title)' --data-binary @- >/dev/null || true"
+    }
+
+    /// A command for scripts: the text after `--data-binary` becomes the notification.
+    static var scriptCommand: String {
+        "curl -s -m 2 -X POST http://127.0.0.1:\(port)/notify "
+            + "-H \"Authorization: Bearer $(cat \"$HOME/Library/Application Support/Nunsseop/notify-token\")\" "
+            + "-H 'X-Title: Script' --data-binary 'Done'"
     }
 
     static var tokenURL: URL {

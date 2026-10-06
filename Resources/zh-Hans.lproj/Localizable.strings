@@ -110,6 +110,11 @@
 "Let tools on this Mac show notifications in the notch" = "允许本机工具在刘海中显示通知";
 "Used by Claude Code hooks and scripts. Only requests from this Mac with the secret token are accepted." = "供 Claude Code 钩子和脚本使用。只接受来自本机且带有密钥令牌的请求。";
 "Copy Claude Code hook command" = "拷贝 Claude Code 钩子命令";
+"Connect" = "连接";
+"Disconnect" = "断开连接";
+"Connecting changes the tool's own settings file and keeps the old one with a `.nunsseop-backup` extension. Sessions started afterwards send their notifications here." = "连接会修改该工具自己的设置文件，并以 `.nunsseop-backup` 扩展名保留原文件。之后启动的会话会把通知发送到这里。";
+"Couldn't change %@. Copy the hook command and add it by hand." = "无法修改 %@。请拷贝钩子命令并手动添加。";
+"Copy command for scripts" = "拷贝脚本用命令";
 "Timer" = "计时器";
 "Pomodoro" = "番茄钟";
 "Stopwatch" = "秒表";
