@@ -70,6 +70,8 @@ struct NotchView: View {
                                 EmojiTab(model: model.emoji)
                             case .ai:
                                 AIUsageTab(usage: model.aiUsage)
+                            case .notices:
+                                NoticesTab(log: model.notices)
                             case .mirror:
                                 MirrorTab(mirror: model.mirror, deviceID: model.settings.mirrorCameraID)
                             }

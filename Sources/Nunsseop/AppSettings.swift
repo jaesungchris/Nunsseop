@@ -117,6 +117,7 @@ final class AppSettings: ObservableObject {
     @Published var cleanLinks: Bool = AppSettings.load("cleanLinks", default: true) { didSet { save(cleanLinks, "cleanLinks") } }
     @Published var notesTab: Bool = AppSettings.load("notesTab", default: true) { didSet { save(notesTab, "notesTab") } }
     @Published var toolsTab: Bool = AppSettings.load("toolsTab", default: true) { didSet { save(toolsTab, "toolsTab") } }
+    @Published var noticesTab: Bool = AppSettings.load("noticesTab", default: true) { didSet { save(noticesTab, "noticesTab") } }
     @Published var mirrorEnabled: Bool = AppSettings.load("mirrorEnabled", default: true) { didSet { save(mirrorEnabled, "mirrorEnabled") } }
     /// AVCaptureDevice.uniqueID; empty means the system default camera.
     @Published var mirrorCameraID: String = AppSettings.load("mirrorCameraID", default: "") { didSet { save(mirrorCameraID, "mirrorCameraID") } }
@@ -191,6 +192,7 @@ final class AppSettings: ObservableObject {
         case .search: return searchTab
         case .emoji: return emojiTab
         case .ai: return aiTab
+        case .notices: return noticesTab
         case .mirror: return mirrorEnabled
         }
     }
@@ -208,6 +210,7 @@ final class AppSettings: ObservableObject {
         case .search: searchTab = visible
         case .emoji: emojiTab = visible
         case .ai: aiTab = visible
+        case .notices: noticesTab = visible
         case .mirror: mirrorEnabled = visible
         }
     }

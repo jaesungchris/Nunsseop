@@ -37,7 +37,7 @@ enum IdleItem: String, CaseIterable, Identifiable {
 }
 
 enum NotchTab: String, CaseIterable, Identifiable {
-    case home, shelf, timer, clipboard, notes, tools, system, apps, search, emoji, ai, mirror
+    case home, shelf, timer, clipboard, notes, tools, system, apps, search, emoji, ai, notices, mirror
 
     var id: String { rawValue }
 
@@ -54,6 +54,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .search: return "magnifyingglass"
         case .emoji: return "face.smiling"
         case .ai: return "sparkles"
+        case .notices: return "bell.fill"
         case .mirror: return "camera.fill"
         }
     }
@@ -71,6 +72,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
         case .search: return String(localized: "Search")
         case .emoji: return String(localized: "Emoji")
         case .ai: return String(localized: "AI usage")
+        case .notices: return String(localized: "Notifications")
         case .mirror: return String(localized: "Mirror")
         }
     }
@@ -101,6 +103,7 @@ final class NotchViewModel: ObservableObject {
     let capsLock = CapsLockWatcher()
     let notifyServer = NotifyServer()
     let muxy = MuxyWatcher()
+    let notices = NoticeLog()
     let cmux = CmuxWatcher()
     let herdr = HerdrSessions()
     let tmux = TmuxWatcher()
@@ -160,6 +163,11 @@ final class NotchViewModel: ObservableObject {
         calls.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
+        // The tab's badge counts unseen notices.
+        notices.$unseen
+            .removeDuplicates()
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
         calls.$call
             .sink { [weak self] in self?.callControls.follow($0) }
             .store(in: &cancellables)
@@ -202,6 +210,8 @@ final class NotchViewModel: ObservableObject {
         calendar.onUpcoming = { [weak self] item in
             // With a video-call link, clicking the notice joins the meeting; otherwise it opens the notch as before.
             let join = item.joinURL.map { url in { _ = NSWorkspace.shared.open(url) } }
+            self?.notices.add(symbol: item.joinURL == nil ? "calendar" : "video.fill", title: item.title,
+                              detail: Self.upcomingDetail(item), action: join)
             self?.hud.showLasting(duration: CalendarModel.alertSpacing, action: join) { [weak self] in
                 // When it comes back after another HUD: only if alerts are still on, the event is still there
                 // and not well under way.
