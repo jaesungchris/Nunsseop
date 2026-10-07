@@ -109,6 +109,12 @@ final class NotchWindowController {
         ]
     }()
 
+    /// Shows a notice from an agent, terminal or tool, and keeps it in the Notifications tab.
+    private func announce(symbol: String, title: String, detail: String?, action: (() -> Void)?) {
+        model.hud.show(.notice(symbol: symbol, title: title, detail: detail), duration: 6, action: action)
+        model.notices.add(symbol: symbol, title: title, detail: detail, action: action)
+    }
+
     /// Opens the notch on the Search tab with the keyboard focus in the search field.
     private func openSearch() {
         guard panel.isVisible else { return }
@@ -304,29 +310,27 @@ final class NotchWindowController {
             self.model.lyrics.isEnabled = enabled
             self.model.lyrics.update(for: enabled ? self.model.nowPlaying.track : nil)
         })
-        // A click on a notice goes to the terminal, and where possible the pane, it came from.
+        // A click on a notice goes to the terminal, and where possible the pane, it came from. Every one is also kept
+        // in the Notifications tab, in case it went by unseen.
         model.notifyServer.onNotify = { [weak self] notice in
-            self?.model.hud.show(.notice(symbol: "sparkles", title: notice.title, detail: notice.message), duration: 6,
-                                 action: TerminalFocus.action(app: notice.app, target: notice.target))
+            self?.announce(symbol: "sparkles", title: notice.title, detail: notice.message,
+                           action: TerminalFocus.action(app: notice.app, target: notice.target))
         }
         model.cmux.onNotice = { [weak self] notice in
-            self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.title.prefix(80)),
-                                         detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200))), duration: 6,
-                                 action: { Cmux.focus(notice) })
+            self?.announce(symbol: "terminal", title: String(notice.title.prefix(80)),
+                           detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200)), action: { Cmux.focus(notice) })
         }
         model.herdr.onNotice = { [weak self] notice, session in
             let state = notice.status == "blocked" ? String(localized: "Waiting for you") : String(localized: "Finished")
             let detail = [state, notice.title].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
             // A named session shows its name beside the agent.
             let title = session.map { "\(notice.agent) · \($0)" } ?? notice.agent
-            self?.model.hud.show(.notice(symbol: "terminal", title: String(title.prefix(80)),
-                                         detail: String(detail.prefix(200))), duration: 6,
-                                 action: { Herdr.focus(notice) })
+            self?.announce(symbol: "terminal", title: String(title.prefix(80)), detail: String(detail.prefix(200)),
+                           action: { Herdr.focus(notice) })
         }
         model.muxy.onNotice = { [weak self] notice in
-            self?.model.hud.show(.notice(symbol: "terminal", title: String(notice.title.prefix(80)),
-                                         detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200))), duration: 6,
-                                 action: { notice.focus() })
+            self?.announce(symbol: "terminal", title: String(notice.title.prefix(80)),
+                           detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200)), action: { notice.focus() })
         }
         // App volume taps run whenever the setting is on; the list of apps refreshes only while the Tools tab shows.
         settingsObservers.append(model.settings.$perAppVolume.combineLatest(model.$isExpanded, model.$tab)

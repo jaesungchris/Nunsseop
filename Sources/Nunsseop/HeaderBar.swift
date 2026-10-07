@@ -136,7 +136,7 @@ private struct TabStrip: View {
             HStack(spacing: 6) {
                 ForEach(tabs) { tab in
                     TabButton(symbol: tab.symbol, selected: model.tab == tab,
-                              badge: tab == .shelf ? shelf.items.count : 0) { model.tab = tab }
+                              badge: tab == .shelf ? shelf.items.count : tab == .notices ? model.notices.unseen : 0) { model.tab = tab }
                         .help(tab.title)
                         .id(tab)
                 }
