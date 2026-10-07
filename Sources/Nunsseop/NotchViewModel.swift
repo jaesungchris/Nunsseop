@@ -163,6 +163,9 @@ final class NotchViewModel: ObservableObject {
         calls.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
+        settings.$noticesTab
+            .sink { [weak self] in self?.notices.isEnabled = $0 }
+            .store(in: &cancellables)
         // The tab's badge counts unseen notices.
         notices.$unseen
             .removeDuplicates()

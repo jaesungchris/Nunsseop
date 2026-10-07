@@ -38,6 +38,22 @@ struct NoticeLogTests {
         #expect(log.entries.map(\.title) == ["Script"])
     }
 
+    @Test func nothingIsKeptWhileTheTabIsHidden() {
+        let log = NoticeLog()
+        log.add(symbol: "terminal", title: "kept", detail: nil)
+        log.isEnabled = false
+        #expect(log.entries.isEmpty && log.unseen == 0)
+        log.add(symbol: "terminal", title: "dropped", detail: nil)
+        #expect(log.entries.isEmpty && log.unseen == 0)
+        log.isEnabled = true
+        log.add(symbol: "terminal", title: "again", detail: nil)
+        #expect(log.entries.map(\.title) == ["again"])
+    }
+
+    @MainActor @Test func tabIsHiddenByDefault() {
+        #expect(UserDefaults.standard.object(forKey: "noticesTab") != nil || !AppSettings.shared.noticesTab)
+    }
+
     @Test func noBadgeForNoticesArrivingWhileTheTabIsOpenEvenWhenFull() {
         let log = NoticeLog()
         for index in 0..<NoticeLog.limit { log.add(symbol: "terminal", title: "n\(index)", detail: nil) }

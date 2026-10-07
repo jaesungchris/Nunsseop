@@ -35,7 +35,13 @@ final class NoticeLog: ObservableObject {
         #endif
     }
 
+    /// With the tab hidden nothing is kept, like any feature that's turned off.
+    var isEnabled = true {
+        didSet { if !isEnabled { clear() } }
+    }
+
     func add(symbol: String, title: String, detail: String?, action: (() -> Void)? = nil, at date: Date = .now) {
+        guard isEnabled else { return }
         entries.insert(Entry(date: date, symbol: symbol, title: title, detail: detail, action: action), at: 0)
         if entries.count > Self.limit { entries.removeLast(entries.count - Self.limit) }
         if !isShowing { unseen = min(unseen + 1, Self.limit) }
