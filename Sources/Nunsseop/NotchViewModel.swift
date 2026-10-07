@@ -18,7 +18,7 @@ enum AIWindow: String, CaseIterable, Identifiable {
 
 /// What each side of the collapsed notch shows while nothing is playing or running.
 enum IdleItem: String, CaseIterable, Identifiable {
-    case none, claude, codex, battery, weather, date
+    case none, claude, codex, battery, weather, date, agents
 
     var id: String { rawValue }
 
@@ -30,6 +30,7 @@ enum IdleItem: String, CaseIterable, Identifiable {
         case .battery: return String(localized: "Battery")
         case .weather: return String(localized: "Weather")
         case .date: return String(localized: "Date")
+        case .agents: return String(localized: "Agents at work")
         }
     }
 
@@ -106,6 +107,7 @@ final class NotchViewModel: ObservableObject {
     let notices = NoticeLog()
     let cmux = CmuxWatcher()
     let herdr = HerdrSessions()
+    let agents = AgentBoard()
     let tmux = TmuxWatcher()
     let stats = SystemStats()
     let launcher = AppLauncher()
@@ -165,6 +167,14 @@ final class NotchViewModel: ObservableObject {
             .store(in: &cancellables)
         settings.$noticesTab
             .sink { [weak self] in self?.notices.isEnabled = $0 }
+            .store(in: &cancellables)
+        // Agents working or waiting, for the closed notch; each herdr session is a source of its own.
+        herdr.onStates = { [weak self] socket, panes in
+            self?.agents.replace(source: "herdr:\(socket)", with: Herdr.boardStates(panes))
+        }
+        agents.$counts
+            .removeDuplicates()
+            .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
         // The tab's badge counts unseen notices.
         notices.$unseen

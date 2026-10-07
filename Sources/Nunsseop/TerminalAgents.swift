@@ -338,6 +338,8 @@ enum Herdr {
 final class HerdrSessions {
     /// The notice, and the session it came from (nil for the default one).
     var onNotice: ((Herdr.Notice, String?) -> Void)?
+    /// Every pane's state in one session, keyed by its socket; empty when that session went away.
+    var onStates: ((String, [String: String]) -> Void)?
     private let config: URL
     private var watchers: [URL: HerdrWatcher] = [:]
     private var scan: Timer?
@@ -357,6 +359,7 @@ final class HerdrSessions {
         scan?.invalidate()
         scan = nil
         watchers.values.forEach { $0.stop() }
+        for url in watchers.keys { onStates?(url.path, [:]) }
         watchers = [:]
     }
 
@@ -366,10 +369,12 @@ final class HerdrSessions {
         for (url, watcher) in watchers where !current.contains(url) {
             watcher.stop()
             watchers[url] = nil
+            onStates?(url.path, [:])
         }
         for socket in sockets where watchers[socket.url] == nil {
             let watcher = HerdrWatcher(socketURL: socket.url)
             watcher.onNotice = { [weak self] notice in self?.onNotice?(notice, socket.session) }
+            watcher.onStates = { [weak self] states in self?.onStates?(socket.url.path, states) }
             watcher.start()
             watchers[socket.url] = watcher
         }
@@ -379,6 +384,8 @@ final class HerdrSessions {
 @MainActor
 final class HerdrWatcher {
     var onNotice: ((Herdr.Notice) -> Void)?
+    /// Every pane's state whenever one changes; empty when the server is gone or watching stops.
+    var onStates: (([String: String]) -> Void)?
     private let socketURL: URL
     private var connection: NWConnection?
     private var lines = JSONLines()
@@ -405,6 +412,13 @@ final class HerdrWatcher {
         retry?.invalidate()
         retry = nil
         drop()
+        forget()
+    }
+
+    /// Nothing is known about the panes any more (the server quit, or watching stopped).
+    private func forget() {
+        _ = states.reconcile([])
+        onStates?([:])
     }
 
     private func drop() {
@@ -423,6 +437,7 @@ final class HerdrWatcher {
             for pane in self.states.reconcile(panes) {
                 self.announce(Herdr.Notice(agent: pane.agent ?? "herdr", status: pane.status, title: pane.title, pane: pane.id))
             }
+            self.onStates?(self.states.byPane)
             self.open(sending: Herdr.subscription("sub", panes: panes)) { [weak self] frame in self?.handle(frame) }
         }
         connection?.send(content: Herdr.request("list", "pane.list"), completion: .contentProcessed { _ in })
@@ -435,7 +450,13 @@ final class HerdrWatcher {
             // A socket left behind by a server that quit can leave the connection waiting for good.
             case .failed, .cancelled, .waiting:
                 DispatchQueue.main.async {
-                    MainActor.assumeIsolated { if self?.connection === connection { self?.drop() } }
+                    // Only a connection that failed on its own; replaced ones are cancelled on purpose.
+                    MainActor.assumeIsolated {
+                        if self?.connection === connection {
+                            self?.drop()
+                            self?.forget()
+                        }
+                    }
                 }
             default: break
             }
@@ -475,6 +496,7 @@ final class HerdrWatcher {
             connect()
         case .status(let pane, let notice):
             if states.update(pane: pane, to: notice.status) { announce(notice) }
+            onStates?(states.byPane)
         case nil:
             // A rejected subscription (a pane closed meanwhile): the timer subscribes again with a fresh list.
             if frame["error"] != nil { drop() }
@@ -494,6 +516,7 @@ final class HerdrWatcher {
                     for pane in self.states.reconcile(panes) {
                         self.announce(Herdr.Notice(agent: pane.agent ?? "herdr", status: pane.status, title: pane.title, pane: pane.id))
                     }
+                    self.onStates?(self.states.byPane)
                 }
             }
         }
