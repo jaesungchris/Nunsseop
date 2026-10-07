@@ -37,4 +37,31 @@ struct NoticeLogTests {
         log.remove(pi)
         #expect(log.entries.map(\.title) == ["Script"])
     }
+
+    @Test func noBadgeForNoticesArrivingWhileTheTabIsOpenEvenWhenFull() {
+        let log = NoticeLog()
+        for index in 0..<NoticeLog.limit { log.add(symbol: "terminal", title: "n\(index)", detail: nil) }
+        log.isShowing = true
+        #expect(log.unseen == 0)
+        // Full: the count stays at 30, which a count-based check would miss.
+        log.add(symbol: "terminal", title: "new", detail: nil)
+        #expect(log.entries.count == NoticeLog.limit)
+        #expect(log.entries.first?.title == "new")
+        #expect(log.unseen == 0)
+        log.isShowing = false
+        log.add(symbol: "terminal", title: "later", detail: nil)
+        #expect(log.unseen == 1)
+    }
+}
+
+@MainActor
+struct LastingNoticeShownTests {
+    @Test func tellsWhetherItShowed() {
+        let hud = HUDCenter(settings: AppSettings.shared)
+        // Declined from the start (alerts off, event cancelled or well under way): not shown, so not recorded.
+        #expect(!hud.showLasting(duration: 8) { nil })
+        #expect(hud.event == nil)
+        #expect(hud.showLasting(duration: 8) { .notice(symbol: "calendar", title: "Lunch", detail: nil) })
+        #expect(hud.event != nil)
+    }
 }

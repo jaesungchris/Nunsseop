@@ -256,11 +256,14 @@ final class HUDCenter: ObservableObject {
 
     /// A notice that must be seen once: if another HUD covers it before its time is up, it comes back
     /// when that HUD is gone, for the time it had left. `make` runs again then; returning nil drops it.
-    func showLasting(duration: Double, action: (() -> Void)? = nil, _ make: @escaping () -> HUDEvent?) {
-        guard let notice = make() else { return }
+    /// Returns whether it showed: `make` can decline from the start.
+    @discardableResult
+    func showLasting(duration: Double, action: (() -> Void)? = nil, _ make: @escaping () -> HUDEvent?) -> Bool {
+        guard let notice = make() else { return false }
         lasting.replace(with: Lasting(make: make, action: action), duration: duration, now: .now)
         present(notice, duration: duration)
         self.action = action
+        return true
     }
 
     private func present(_ newEvent: HUDEvent, duration: Double) {

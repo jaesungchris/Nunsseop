@@ -19,6 +19,10 @@ final class NoticeLog: ObservableObject {
     @Published private(set) var entries: [Entry] = []
     /// Notices since the tab was last looked at.
     @Published private(set) var unseen = 0
+    /// While the tab is on screen, new notices are seen as they arrive.
+    var isShowing = false {
+        didSet { if isShowing { markSeen() } }
+    }
 
     init() {
         #if DEBUG
@@ -34,7 +38,7 @@ final class NoticeLog: ObservableObject {
     func add(symbol: String, title: String, detail: String?, action: (() -> Void)? = nil, at date: Date = .now) {
         entries.insert(Entry(date: date, symbol: symbol, title: title, detail: detail, action: action), at: 0)
         if entries.count > Self.limit { entries.removeLast(entries.count - Self.limit) }
-        unseen = min(unseen + 1, Self.limit)
+        if !isShowing { unseen = min(unseen + 1, Self.limit) }
     }
 
     func markSeen() { unseen = 0 }
@@ -77,8 +81,8 @@ struct NoticesTab: View {
             }
         }
         .foregroundStyle(.white)
-        .onAppear { log.markSeen() }
-        .onChange(of: log.entries.count) { _, _ in log.markSeen() }
+        .onAppear { log.isShowing = true }
+        .onDisappear { log.isShowing = false }
     }
 }
 
