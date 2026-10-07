@@ -210,14 +210,17 @@ final class NotchViewModel: ObservableObject {
         calendar.onUpcoming = { [weak self] item in
             // With a video-call link, clicking the notice joins the meeting; otherwise it opens the notch as before.
             let join = item.joinURL.map { url in { _ = NSWorkspace.shared.open(url) } }
-            self?.notices.add(symbol: item.joinURL == nil ? "calendar" : "video.fill", title: item.title,
-                              detail: Self.upcomingDetail(item), action: join)
-            self?.hud.showLasting(duration: CalendarModel.alertSpacing, action: join) { [weak self] in
+            let shown = self?.hud.showLasting(duration: CalendarModel.alertSpacing, action: join) { [weak self] in
                 // When it comes back after another HUD: only if alerts are still on, the event is still there
                 // and not well under way.
                 guard let self, self.calendar.stillAlerts(item) else { return nil }
                 return .notice(symbol: item.joinURL == nil ? "calendar" : "video.fill", title: item.title,
                                detail: Self.upcomingDetail(item))
+            }
+            // Kept only when it actually showed; coming back after another HUD doesn't add it again.
+            if shown == true {
+                self?.notices.add(symbol: item.joinURL == nil ? "calendar" : "video.fill", title: item.title,
+                                  detail: Self.upcomingDetail(item), action: join)
             }
         }
         settings.$eventAlerts.combineLatest(settings.$calendarEnabled)
