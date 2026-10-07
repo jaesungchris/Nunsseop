@@ -167,6 +167,33 @@ struct TerminalAgentWatcherTests {
         #expect(received == [Herdr.Notice(agent: "Pi", status: "done", title: "refactor", pane: "w1:p1", socket: socket)])
     }
 
+    @Test func herdrPaneStatesReachTheBoard() async throws {
+        let config = temporary("config")
+        try FileManager.default.createDirectory(at: config, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: config) }
+        let socket = config.appendingPathComponent("herdr.sock")
+        let shutDown = try await fakeHerdr(at: socket)
+        defer { shutDown() }
+
+        let sessions = HerdrSessions(config: config)
+        let board = AgentBoard()
+        var seen: [[String: String]] = []
+        sessions.onStates = { key, panes in
+            seen.append(panes)
+            board.replace(source: "herdr:\(key)", with: Herdr.boardStates(panes))
+        }
+        sessions.start()
+        // Listed working, then the subscription reports it done.
+        await waitUntil { seen.contains { $0["w1:p1"] == "done" } }
+        #expect(seen.contains { $0["w1:p1"] == "working" })
+        #expect(board.counts == AgentBoard.Counts(working: 0, waiting: 1))
+        // Stopping forgets the session's panes.
+        sessions.stop()
+        #expect(seen.last == [:])
+        board.replace(source: "herdr:\(socket.path)", with: Herdr.boardStates(seen.last ?? [:]))
+        #expect(board.counts.isEmpty)
+    }
+
     @Test func herdrCatchesUpWhatChangedBeforeTheSubscriptionStarted() async throws {
         let socket = temporary("herdr.sock")
         let shutDown = try await fakeHerdr(at: socket, quietSubscription: true)

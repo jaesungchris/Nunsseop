@@ -27,7 +27,16 @@ extension NotchViewModel {
                              text: "\(Int(weather.temperature.rounded()))°")
         case .date:
             return IdleValue(symbol: nil, tint: nil, text: date.formatted(.dateTime.day().weekday(.abbreviated)))
+        case .agents:
+            return Self.agentsValue(agents.counts)
         }
+    }
+
+    /// Agents waiting for you come first, in yellow; otherwise how many are working. Nothing when none are.
+    nonisolated static func agentsValue(_ counts: AgentBoard.Counts) -> IdleValue? {
+        if counts.waiting > 0 { return IdleValue(symbol: "hand.raised.fill", tint: .yellow, text: "\(counts.waiting)") }
+        if counts.working > 0 { return IdleValue(symbol: "bolt.fill", tint: .green, text: "\(counts.working)") }
+        return nil
     }
 
     /// Percent left of an AI tool's limits, or nil while none is known.
