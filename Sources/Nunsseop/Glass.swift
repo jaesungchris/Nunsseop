@@ -42,6 +42,7 @@ extension View {
 
 /// The notch body. With Liquid Glass the expanded notch turns into dark glass below the camera,
 /// while the band beside the camera stays black so it still merges with the housing.
+/// The collapsed eyebrow on a display without a notch is glass too, since it has no housing to merge with.
 struct NotchBackground<S: Shape>: View {
     let shape: S
     let glass: Bool
@@ -49,14 +50,18 @@ struct NotchBackground<S: Shape>: View {
     let tint: Double
     let expanded: Bool
     let notchHeight: CGFloat
+    /// The collapsed shape floats on its own, on a display without a notch.
+    var floatingPill = false
 
     var body: some View {
-        if glass && expanded, #available(macOS 26, *) {
+        if glass && (expanded || floatingPill), #available(macOS 26, *) {
             ZStack(alignment: .top) {
                 Color.clear.glassEffect(.regular.tint(.black.opacity(tint)), in: shape)
-                LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.55), .init(color: .black.opacity(0), location: 1)],
-                               startPoint: .top, endPoint: .bottom)
-                    .frame(height: notchHeight + 28)
+                if expanded {
+                    LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.55), .init(color: .black.opacity(0), location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: notchHeight + 28)
+                }
             }
         } else {
             shape.fill(Color.black)

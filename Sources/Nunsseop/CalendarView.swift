@@ -34,6 +34,7 @@ struct CalendarPanel: View {
                              : String(localized: "Allow calendar access to see your events"))
                             .font(.system(size: 11))
                             .foregroundStyle(.white.opacity(0.55))
+                            .lineLimit(2)
                         Button(calendar.access == .denied ? String(localized: "Open System Settings") : String(localized: "Allow Access")) {
                             calendar.requestAccess()
                         }

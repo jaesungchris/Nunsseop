@@ -71,6 +71,8 @@ final class AppSettings: ObservableObject {
     /// Liquid Glass surfaces on macOS 26 and later.
     @Published var liquidGlass: Bool = AppSettings.load("liquidGlass", default: true) { didSet { save(liquidGlass, "liquidGlass") } }
     /// How dark the expanded notch's glass is, in percent.
+    /// Glass tint of the collapsed eyebrow on displays without a notch, set apart from the expanded notch's.
+    @Published var browGlassTint: Double = AppSettings.load("browGlassTint", default: 55.0, in: glassTintRange) { didSet { save(browGlassTint, "browGlassTint") } }
     @Published var glassTint: Double = AppSettings.load("glassTint", default: 55.0, in: glassTintRange) { didSet { save(glassTint, "glassTint") } }
     /// A system-wide shortcut opens the Search tab from anywhere.
     @Published var searchHotkey: Bool = AppSettings.load("searchHotkey", default: true) { didSet { save(searchHotkey, "searchHotkey") } }

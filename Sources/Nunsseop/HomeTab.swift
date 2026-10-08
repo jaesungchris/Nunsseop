@@ -106,6 +106,7 @@ struct HomeTab: View {
                     Text(emptyMessage)
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.5))
+                        .lineLimit(4)
                     if nowPlaying.browserNeedingJavaScript == BrowserMedia.diaBundleID {
                         Button("Relaunch Dia with JavaScript allowed") { BrowserMedia.relaunchDiaWithJavaScript() }
                             .buttonStyle(.plain)
