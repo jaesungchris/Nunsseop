@@ -54,8 +54,9 @@ struct NotchBackground<S: Shape>: View {
     var floatingPill = false
 
     /// Glass only while there's something to see through: a full tint is solid black, with no glass edges left.
+    /// Compared as the slider shows it (whole percents), so a thumb left at 99.6, which reads "100 %", is solid too.
     static func showsGlass(glass: Bool, tint: Double, expanded: Bool, floatingPill: Bool) -> Bool {
-        glass && tint < 1 && (expanded || floatingPill)
+        glass && (tint * 100).rounded() < 100 && (expanded || floatingPill)
     }
 
     var body: some View {
