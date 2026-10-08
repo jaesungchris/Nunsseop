@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import os
 
 /// Current conditions for a city from Open-Meteo (open-meteo.com), which needs no API key.
 @MainActor
@@ -138,6 +139,10 @@ final class DownloadWatcher: ObservableObject {
     private var subscriber: Any?
     private var downloads: [ObjectIdentifier: Progress] = [:]
     private var observations: [ObjectIdentifier: NSKeyValueObservation] = [:]
+    /// Any process may publish progress for a file here, so how much it can make Nunsseop do is bounded:
+    /// this many downloads followed at once, and reports gathered into at most ten updates a second.
+    private static let maxFollowed = 32
+    private let updateQueued = OSAllocatedUnfairLock(initialState: false)
 
     func start(in directory: URL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]) {
         follow(directory)
@@ -173,10 +178,17 @@ final class DownloadWatcher: ObservableObject {
     }
 
     private func add(_ progress: Progress, id: ObjectIdentifier) {
+        guard downloads.count < Self.maxFollowed else { return }
         downloads[id] = progress
-        // Reports arrive many times a second; the status only changes with a whole percent.
-        observations[id] = progress.observe(\.fractionCompleted) { [weak self] _, _ in
-            DispatchQueue.main.async {
+        // Reports arrive many times a second, on any thread; one update a tenth of a second covers them all.
+        observations[id] = progress.observe(\.fractionCompleted) { [weak self, updateQueued] _, _ in
+            let first = updateQueued.withLock { queued in
+                defer { queued = true }
+                return !queued
+            }
+            guard first else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                updateQueued.withLock { $0 = false }
                 MainActor.assumeIsolated { self?.update() }
             }
         }
@@ -195,12 +207,13 @@ final class DownloadWatcher: ObservableObject {
     }
 
     /// Bytes done over bytes in all, counting only downloads that know their size. Rounded down, so 100% means done.
+    /// Summed as Double: reported sizes come from other processes, and Int64 sums of them could overflow.
     nonisolated static func status(of downloads: [(completed: Int64, total: Int64)]) -> Status? {
         guard !downloads.isEmpty else { return nil }
         let sized = downloads.filter { $0.total > 0 }
-        let total = sized.reduce(Int64(0)) { $0 + $1.total }
-        let done = sized.reduce(Int64(0)) { $0 + min(max($1.completed, 0), $1.total) }
-        let percent = total > 0 ? Int(Double(done) / Double(total) * 100) : nil
+        let total = sized.reduce(0.0) { $0 + Double($1.total) }
+        let done = sized.reduce(0.0) { $0 + Double(min(max($1.completed, 0), $1.total)) }
+        let percent = total > 0 ? Int(min(done / total, 1) * 100) : nil
         return Status(percent: percent)
     }
 

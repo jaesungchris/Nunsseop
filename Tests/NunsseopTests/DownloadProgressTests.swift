@@ -21,6 +21,8 @@ struct DownloadProgressTests {
         // Reports past the end, or negative, stay within 0...100.
         #expect(DownloadWatcher.status(of: [(completed: 150, total: 100)]) == .init(percent: 100))
         #expect(DownloadWatcher.status(of: [(completed: -3, total: 100)]) == .init(percent: 0))
+        // Sizes come from any process that publishes; huge ones mustn't overflow.
+        #expect(DownloadWatcher.status(of: [(completed: .max, total: .max), (completed: 0, total: .max)]) == .init(percent: 50))
     }
 
     /// The same path a browser's report takes: published for a file in the folder, then withdrawn when it's done.
