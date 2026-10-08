@@ -121,6 +121,8 @@ private struct GeneralPane: View {
                     if settings.liquidGlass {
                         SliderRow(title: "Glass tint", value: $settings.glassTint,
                                   range: AppSettings.glassTintRange, unit: "%")
+                        SliderRow(title: "Eyebrow glass tint", value: $settings.browGlassTint,
+                                  range: AppSettings.glassTintRange, unit: "%")
                     }
                 }
                 SliderRow(title: "Expanded height", value: $settings.expandedHeight,
