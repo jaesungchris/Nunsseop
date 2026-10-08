@@ -106,6 +106,7 @@ struct CollapsedActivity: View {
     @ObservedObject var nowPlaying: NowPlayingController
     @ObservedObject var timer: TimerModel
     @ObservedObject var recorder: ScreenRecorder
+    @ObservedObject var downloads: DownloadWatcher
     let privacy: PrivacyMonitor?
     let call: CallMonitor.Call?
     /// Known to be muted; unknown states show nothing.
@@ -114,10 +115,13 @@ struct CollapsedActivity: View {
     let earWidth: CGFloat
     let showsMusic: Bool
     let showsTimer: Bool
+    let showsDownloads: Bool
 
     var body: some View {
         let art = min(height - 10, 32)
         let playing = showsMusic && nowPlaying.track?.isPlaying == true
+        // A download takes the timer's place, after it: a timer someone set outranks a download.
+        let download = showsDownloads && !(showsTimer && timer.isRunning) ? downloads.status : nil
         HStack {
             // A call outranks music and timers; a screen recording keeps its time on the right.
             if let call {
@@ -135,6 +139,10 @@ struct CollapsedActivity: View {
                     if privacy.micInUse { Image(systemName: "mic.fill").foregroundStyle(.orange) }
                 }
                 .font(.system(size: 10, weight: .semibold))
+            } else if download != nil {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.blue)
             } else {
                 Image(systemName: timer.mode == .stopwatch ? "stopwatch.fill" : "timer")
                     .font(.system(size: 12, weight: .semibold))
@@ -171,6 +179,17 @@ struct CollapsedActivity: View {
                         .font(.system(size: 11, weight: .semibold).monospacedDigit())
                         .foregroundStyle(.orange)
                 }
+            } else if let download {
+                Group {
+                    if let percent = download.percent {
+                        Text("\(percent)%")
+                    } else {
+                        // Until the browser knows the size.
+                        Image(systemName: "ellipsis")
+                    }
+                }
+                .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                .foregroundStyle(.blue)
             } else {
                 SpectrumBars(isPlaying: playing, tint: nowPlaying.tint)
                     .frame(width: art - 2, height: max(8, art - 6))

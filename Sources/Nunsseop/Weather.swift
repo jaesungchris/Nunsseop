@@ -118,18 +118,29 @@ final class WeatherModel: ObservableObject {
     }
 }
 
-/// Announces downloads in ~/Downloads as they start and finish.
+/// Announces downloads in ~/Downloads as they start and finish, and follows how far along they are.
 @MainActor
-final class DownloadWatcher {
+final class DownloadWatcher: ObservableObject {
+    /// The downloads in progress together: how far along in whole percent, nil while none knows its size yet.
+    struct Status: Equatable {
+        var percent: Int?
+    }
+
     var onStart: ((String) -> Void)?
     var onFinish: ((URL) -> Void)?
+    /// What's downloading now, from the progress Safari and Chrome publish for the Finder's file icons; nil when nothing is.
+    /// Other apps' downloads still start and finish as before, they just don't show progress.
+    @Published private(set) var status: Status?
 
     private var source: DispatchSourceFileSystemObject?
     private var inProgress: [String: URL] = [:]
     private static let partialExtensions: Set<String> = ["crdownload", "download", "part", "partial", "opdownload"]
+    private var subscriber: Any?
+    private var downloads: [ObjectIdentifier: Progress] = [:]
+    private var observations: [ObjectIdentifier: NSKeyValueObservation] = [:]
 
-    func start() {
-        let directory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+    func start(in directory: URL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]) {
+        follow(directory)
         let fd = open(directory.path, O_EVTONLY)
         guard fd >= 0 else { return }
         let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: .write, queue: .main)
@@ -140,6 +151,57 @@ final class DownloadWatcher {
         source.resume()
         self.source = source
         inProgress = Self.partials(in: directory)
+    }
+
+    /// Subscribes to the file progress published for the folder's files: the same reports the Finder draws its bars from,
+    /// so nothing polls. Copies into the folder publish too and are left out.
+    private func follow(_ directory: URL) {
+        guard subscriber == nil else { return }
+        subscriber = Progress.addSubscriber(forFileURL: directory) { [weak self] progress in
+            let kind = progress.userInfo[.fileOperationKindKey] as? String ?? progress.fileOperationKind?.rawValue
+            guard kind == Progress.FileOperationKind.downloading.rawValue else { return nil }
+            let id = ObjectIdentifier(progress)
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { self?.add(progress, id: id) }
+            }
+            return {
+                DispatchQueue.main.async {
+                    MainActor.assumeIsolated { self?.remove(id) }
+                }
+            }
+        }
+    }
+
+    private func add(_ progress: Progress, id: ObjectIdentifier) {
+        downloads[id] = progress
+        // Reports arrive many times a second; the status only changes with a whole percent.
+        observations[id] = progress.observe(\.fractionCompleted) { [weak self] _, _ in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { self?.update() }
+            }
+        }
+        update()
+    }
+
+    private func remove(_ id: ObjectIdentifier) {
+        downloads[id] = nil
+        observations[id] = nil
+        update()
+    }
+
+    private func update() {
+        let new = Self.status(of: downloads.values.map { (completed: $0.completedUnitCount, total: $0.totalUnitCount) })
+        if new != status { status = new }
+    }
+
+    /// Bytes done over bytes in all, counting only downloads that know their size. Rounded down, so 100% means done.
+    nonisolated static func status(of downloads: [(completed: Int64, total: Int64)]) -> Status? {
+        guard !downloads.isEmpty else { return nil }
+        let sized = downloads.filter { $0.total > 0 }
+        let total = sized.reduce(Int64(0)) { $0 + $1.total }
+        let done = sized.reduce(Int64(0)) { $0 + min(max($1.completed, 0), $1.total) }
+        let percent = total > 0 ? Int(Double(done) / Double(total) * 100) : nil
+        return Status(percent: percent)
     }
 
     private static func partials(in directory: URL) -> [String: URL] {

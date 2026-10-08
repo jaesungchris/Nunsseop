@@ -104,6 +104,7 @@ final class AppSettings: ObservableObject {
     @Published var headerWeather: Bool = AppSettings.load("headerWeather", default: true) { didSet { save(headerWeather, "headerWeather") } }
     @Published var collapsedMusic: Bool = AppSettings.load("collapsedMusic", default: true) { didSet { save(collapsedMusic, "collapsedMusic") } }
     @Published var collapsedTimer: Bool = AppSettings.load("collapsedTimer", default: true) { didSet { save(collapsedTimer, "collapsedTimer") } }
+    @Published var collapsedDownloads: Bool = AppSettings.load("collapsedDownloads", default: true) { didSet { save(collapsedDownloads, "collapsedDownloads") } }
     /// Shows the call app and how long the call has run while one is in progress.
     @Published var callIsland: Bool = AppSettings.load("callIsland", default: true) { didSet { save(callIsland, "callIsland") } }
     @Published var idleLeft: IdleItem = AppSettings.load("idleLeft", default: .none) { didSet { save(idleLeft.rawValue, "idleLeft"); updateWatchesHerdr() } }

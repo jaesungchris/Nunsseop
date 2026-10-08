@@ -185,6 +185,7 @@
 "AI usage limit to show" = "Angezeigtes KI-Nutzungslimit";
 "Artwork and visualizer while music plays" = "Cover und Visualizer bei Musik";
 "Time left while a timer runs" = "Restzeit, während ein Timer läuft";
+"Progress while a download runs" = "Fortschritt, während ein Download läuft";
 "Call app and duration during calls" = "App und Dauer während Anrufen";
 "Title under the notch when the track changes" = "Titel unter der Notch beim Titelwechsel";
 "Always show the title while something is playing" = "Titel während der Wiedergabe immer zeigen";

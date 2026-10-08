@@ -185,6 +185,7 @@
 "AI usage limit to show" = "显示的 AI 用量限额";
 "Artwork and visualizer while music plays" = "播放音乐时的封面和可视化";
 "Time left while a timer runs" = "计时器运行时的剩余时间";
+"Progress while a download runs" = "下载时的进度";
 "Call app and duration during calls" = "通话时显示应用和通话时长";
 "Title under the notch when the track changes" = "曲目变化时在刘海下方显示标题";
 "Always show the title while something is playing" = "播放时始终显示标题";
