@@ -118,7 +118,7 @@ struct CollapsedActivity: View {
     let showsDownloads: Bool
 
     var body: some View {
-        let art = min(height - 10, 32)
+        let art = min(height - 14, 32)
         let playing = showsMusic && nowPlaying.track?.isPlaying == true
         // A download takes the timer's place, after it: a timer someone set outranks a download.
         let download = showsDownloads && !(showsTimer && timer.isRunning) ? downloads.status : nil
@@ -129,7 +129,7 @@ struct CollapsedActivity: View {
                     .resizable()
                     .frame(width: art, height: art)
             } else if playing {
-                ArtworkView(image: nowPlaying.artwork, cornerRadius: art > 16 ? 5 : 3)
+                ArtworkView(image: nowPlaying.artwork, cornerRadius: art > 16 ? 5 : 3, style: .circular)
                     .frame(width: art, height: art)
             } else if recorder.isRecording {
                 Circle().fill(.red).frame(width: 8, height: 8)
@@ -234,9 +234,11 @@ struct SneakPeekLine: View {
 struct ArtworkView: View {
     let image: NSImage?
     let cornerRadius: CGFloat
+    /// Circular where the artwork sits inside the notch's corner, so the two curves run parallel.
+    var style: RoundedCornerStyle = .continuous
 
     var body: some View {
-        RoundedRectangle(cornerRadius: cornerRadius)
+        RoundedRectangle(cornerRadius: cornerRadius, style: style)
             .fill(.white.opacity(0.12))
             .overlay {
                 if let image {
@@ -245,7 +247,7 @@ struct ArtworkView: View {
                     Image(systemName: "music.note").foregroundStyle(.white.opacity(0.5))
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: style))
     }
 }
 

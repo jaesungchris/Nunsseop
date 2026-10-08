@@ -94,7 +94,7 @@ struct NotchView: View {
                     .transition(motion.expandedContent)
                 } else if let event = model.hud.event {
                     HUDContent(event: event, height: notchHeight, earWidth: NotchViewModel.hudEarWidth, leadingInset: earLead)
-                        .padding(.horizontal, topRadius + 6)
+                        .padding(.horizontal, topRadius + 12)
                         .transition(motion.hudContent)
                 } else if model.showsLiveActivity || model.showsSneakPeek || model.showsIdleEars {
                     VStack(spacing: 0) {
@@ -128,7 +128,7 @@ struct NotchView: View {
                                 .transition(.opacity)
                         }
                     }
-                    .padding(.horizontal, topRadius + 3)
+                    .padding(.horizontal, topRadius + 7)
                     .transition(motion.collapsedContent)
                 }
             }
