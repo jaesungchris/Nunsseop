@@ -176,6 +176,10 @@ final class NotchViewModel: ObservableObject {
         recorder.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
+        // The ears widen for a download's percent even when another live activity already shows.
+        downloads.$status.map { $0 != nil }.removeDuplicates()
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
         privacy.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
