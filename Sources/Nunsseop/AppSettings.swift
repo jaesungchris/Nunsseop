@@ -51,7 +51,11 @@ final class AppSettings: ObservableObject {
     /// Shows the notifications agents running in Muxy send.
     @Published var muxyNotifications: Bool = AppSettings.load("muxyNotifications", default: true) { didSet { save(muxyNotifications, "muxyNotifications") } }
     @Published var cmuxNotifications: Bool = AppSettings.load("cmuxNotifications", default: true) { didSet { save(cmuxNotifications, "cmuxNotifications") } }
-    @Published var herdrNotifications: Bool = AppSettings.load("herdrNotifications", default: true) { didSet { save(herdrNotifications, "herdrNotifications") } }
+    @Published var herdrNotifications: Bool = AppSettings.load("herdrNotifications", default: true) {
+        didSet { save(herdrNotifications, "herdrNotifications"); updateWatchesHerdr() }
+    }
+    /// herdr is watched for its notifications, or for the agents count in the closed notch, or both.
+    @Published private(set) var watchesHerdr = false
     /// Shows bells from tmux windows, through a hook on the running tmux server.
     @Published var tmuxBells: Bool = AppSettings.load("tmuxBells", default: true) { didSet { save(tmuxBells, "tmuxBells") } }
     /// Asks Anthropic for Claude's limits with Claude Code's sign-in. Off until the user agrees, in the AI tab or Settings.
@@ -101,8 +105,13 @@ final class AppSettings: ObservableObject {
     @Published var collapsedTimer: Bool = AppSettings.load("collapsedTimer", default: true) { didSet { save(collapsedTimer, "collapsedTimer") } }
     /// Shows the call app and how long the call has run while one is in progress.
     @Published var callIsland: Bool = AppSettings.load("callIsland", default: true) { didSet { save(callIsland, "callIsland") } }
-    @Published var idleLeft: IdleItem = AppSettings.load("idleLeft", default: .none) { didSet { save(idleLeft.rawValue, "idleLeft") } }
-    @Published var idleRight: IdleItem = AppSettings.load("idleRight", default: .none) { didSet { save(idleRight.rawValue, "idleRight") } }
+    @Published var idleLeft: IdleItem = AppSettings.load("idleLeft", default: .none) { didSet { save(idleLeft.rawValue, "idleLeft"); updateWatchesHerdr() } }
+    @Published var idleRight: IdleItem = AppSettings.load("idleRight", default: .none) { didSet { save(idleRight.rawValue, "idleRight"); updateWatchesHerdr() } }
+
+    private func updateWatchesHerdr() {
+        let wanted = herdrNotifications || idleLeft == .agents || idleRight == .agents
+        if wanted != watchesHerdr { watchesHerdr = wanted }
+    }
     @Published var idleAIWindow: AIWindow = AppSettings.load("idleAIWindow", default: .tighter) { didSet { save(idleAIWindow.rawValue, "idleAIWindow") } }
     @Published var systemTab: Bool = AppSettings.load("systemTab", default: true) { didSet { save(systemTab, "systemTab") } }
     @Published var appsTab: Bool = AppSettings.load("appsTab", default: true) { didSet { save(appsTab, "appsTab") } }
@@ -132,6 +141,7 @@ final class AppSettings: ObservableObject {
     @Published var swipeForTracks: Bool = AppSettings.load("swipeForTracks", default: true) { didSet { save(swipeForTracks, "swipeForTracks") } }
 
     private init() {
+        updateWatchesHerdr()
         ClaudeUsageAPI.isEnabled = claudeLimitsFromAnthropic
     }
 

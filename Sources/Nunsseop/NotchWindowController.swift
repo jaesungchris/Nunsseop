@@ -94,7 +94,8 @@ final class NotchWindowController {
             Feature(setting: \.cmuxNotifications, changes: \.$cmuxNotifications,
                     // Started even before they're installed: both look for their app again while running.
                     start: { model.cmux.start() }, stop: { _ in model.cmux.stop() }),
-            Feature(setting: \.herdrNotifications, changes: \.$herdrNotifications,
+            // Watched for notices or for the agents count in the closed notch.
+            Feature(setting: \.watchesHerdr, changes: \.$watchesHerdr,
                     start: { model.herdr.start() }, stop: { _ in model.herdr.stop() }),
             // The hook sends to the notification server, so it's only added while that runs.
             Feature(setting: \.tmuxBells, changes: \.$tmuxBells,
@@ -323,6 +324,8 @@ final class NotchWindowController {
                            detail: notice.body.isEmpty ? nil : String(notice.body.prefix(200)), action: { Cmux.focus(notice) })
         }
         model.herdr.onNotice = { [weak self] notice, session in
+            // herdr may be watched only for the agents count, with its notices turned off.
+            guard self?.model.settings.herdrNotifications == true else { return }
             let state = notice.status == "blocked" ? String(localized: "Waiting for you") : String(localized: "Finished")
             let detail = [state, notice.title].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
             // A named session shows its name beside the agent.

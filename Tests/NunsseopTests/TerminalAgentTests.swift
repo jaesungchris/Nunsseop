@@ -177,20 +177,24 @@ struct TerminalAgentWatcherTests {
 
         let sessions = HerdrSessions(config: config)
         let board = AgentBoard()
-        var seen: [[String: String]] = []
+        var seen: [[String: Herdr.PaneState]] = []
         sessions.onStates = { key, panes in
             seen.append(panes)
-            board.replace(source: "herdr:\(key)", with: Herdr.boardStates(panes))
+            board.replace(source: "herdr:\(key)", with: Herdr.boardAgents(panes))
         }
         sessions.start()
         // Listed working, then the subscription reports it done.
-        await waitUntil { seen.contains { $0["w1:p1"] == "done" } }
-        #expect(seen.contains { $0["w1:p1"] == "working" })
+        await waitUntil { seen.contains { $0["w1:p1"]?.status == "done" } }
+        #expect(seen.contains { $0["w1:p1"]?.status == "working" })
         #expect(board.counts == AgentBoard.Counts(working: 0, waiting: 1))
+        // The time it finished is when it turned done, not when it was first listed.
+        let working = try #require(seen.first { $0["w1:p1"]?.status == "working" }?["w1:p1"])
+        let done = try #require(seen.first { $0["w1:p1"]?.status == "done" }?["w1:p1"])
+        #expect(done.since > working.since)
         // Stopping forgets the session's panes.
         sessions.stop()
         #expect(seen.last == [:])
-        board.replace(source: "herdr:\(socket.path)", with: Herdr.boardStates(seen.last ?? [:]))
+        board.replace(source: "herdr:\(socket.path)", with: Herdr.boardAgents(seen.last ?? [:]))
         #expect(board.counts.isEmpty)
     }
 

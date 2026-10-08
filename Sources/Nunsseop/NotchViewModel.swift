@@ -188,7 +188,7 @@ final class NotchViewModel: ObservableObject {
             .store(in: &cancellables)
         // Agents working or waiting, for the closed notch; each herdr session is a source of its own.
         herdr.onStates = { [weak self] socket, panes in
-            self?.agents.replace(source: "herdr:\(socket)", with: Herdr.boardStates(panes))
+            self?.agents.replace(source: "herdr:\(socket)", with: Herdr.boardAgents(panes))
         }
         agents.$counts
             .removeDuplicates()

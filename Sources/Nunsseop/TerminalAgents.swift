@@ -339,7 +339,7 @@ final class HerdrSessions {
     /// The notice, and the session it came from (nil for the default one).
     var onNotice: ((Herdr.Notice, String?) -> Void)?
     /// Every pane's state in one session, keyed by its socket; empty when that session went away.
-    var onStates: ((String, [String: String]) -> Void)?
+    var onStates: ((String, [String: Herdr.PaneState]) -> Void)?
     private let config: URL
     private var watchers: [URL: HerdrWatcher] = [:]
     private var scan: Timer?
@@ -384,8 +384,10 @@ final class HerdrSessions {
 @MainActor
 final class HerdrWatcher {
     var onNotice: ((Herdr.Notice) -> Void)?
-    /// Every pane's state whenever one changes; empty when the server is gone or watching stops.
-    var onStates: (([String: String]) -> Void)?
+    /// Every pane's state, with since when, whenever one changes; empty when the server is gone or watching stops.
+    var onStates: (([String: Herdr.PaneState]) -> Void)?
+    /// When each pane entered its current state, kept across reconnects.
+    private var since: [String: Herdr.PaneState] = [:]
     private let socketURL: URL
     private var connection: NWConnection?
     private var lines = JSONLines()
@@ -418,7 +420,18 @@ final class HerdrWatcher {
     /// Nothing is known about the panes any more (the server quit, or watching stopped).
     private func forget() {
         _ = states.reconcile([])
+        since = [:]
         onStates?([:])
+    }
+
+    /// Hands every pane's state on, keeping the time a pane entered its state for as long as it stays in it.
+    private func publish(now: Date = .now) {
+        var next: [String: Herdr.PaneState] = [:]
+        for (pane, status) in states.byPane {
+            next[pane] = since[pane].flatMap { $0.status == status ? $0 : nil } ?? Herdr.PaneState(status: status, since: now)
+        }
+        since = next
+        onStates?(next)
     }
 
     private func drop() {
@@ -429,7 +442,12 @@ final class HerdrWatcher {
 
     /// Lists the panes on one connection, then subscribes on a new one: a subscription takes its connection over.
     private func connect() {
-        guard running, connection == nil, FileManager.default.fileExists(atPath: socketURL.path) else { return }
+        guard running, connection == nil else { return }
+        // No socket: the server isn't running, so nothing it said earlier still holds.
+        guard FileManager.default.fileExists(atPath: socketURL.path) else {
+            if !states.byPane.isEmpty { forget() }
+            return
+        }
         open { [weak self] frame in
             guard let self, frame["id"] as? String == "list" else { return }
             self.drop()
@@ -437,7 +455,7 @@ final class HerdrWatcher {
             for pane in self.states.reconcile(panes) {
                 self.announce(Herdr.Notice(agent: pane.agent ?? "herdr", status: pane.status, title: pane.title, pane: pane.id))
             }
-            self.onStates?(self.states.byPane)
+            self.publish()
             self.open(sending: Herdr.subscription("sub", panes: panes)) { [weak self] frame in self?.handle(frame) }
         }
         connection?.send(content: Herdr.request("list", "pane.list"), completion: .contentProcessed { _ in })
@@ -449,12 +467,15 @@ final class HerdrWatcher {
             switch state {
             // A socket left behind by a server that quit can leave the connection waiting for good.
             case .failed, .cancelled, .waiting:
+                // A connection only waiting (a hiccup) keeps what's known, so the list after reconnecting still
+                // announces what changed meanwhile; one that failed means the server is gone.
+                let gone = { if case .waiting = state { return false } else { return true } }()
                 DispatchQueue.main.async {
                     // Only a connection that failed on its own; replaced ones are cancelled on purpose.
                     MainActor.assumeIsolated {
                         if self?.connection === connection {
                             self?.drop()
-                            self?.forget()
+                            if gone { self?.forget() }
                         }
                     }
                 }
@@ -496,7 +517,7 @@ final class HerdrWatcher {
             connect()
         case .status(let pane, let notice):
             if states.update(pane: pane, to: notice.status) { announce(notice) }
-            onStates?(states.byPane)
+            publish()
         case nil:
             // A rejected subscription (a pane closed meanwhile): the timer subscribes again with a fresh list.
             if frame["error"] != nil { drop() }
@@ -516,7 +537,7 @@ final class HerdrWatcher {
                     for pane in self.states.reconcile(panes) {
                         self.announce(Herdr.Notice(agent: pane.agent ?? "herdr", status: pane.status, title: pane.title, pane: pane.id))
                     }
-                    self.onStates?(self.states.byPane)
+                    self.publish()
                 }
             }
         }
