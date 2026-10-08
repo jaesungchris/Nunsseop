@@ -7,7 +7,6 @@ final class AppSettings: ObservableObject {
     /// Below these every tab no longer fits without clipping.
     nonisolated static let expandedWidthRange: ClosedRange<Double> = 540...780
     nonisolated static let expandedHeightRange: ClosedRange<Double> = 180...260
-    nonisolated static let pillWidthRange: ClosedRange<Double> = 140...320
     nonisolated static let glassTintRange: ClosedRange<Double> = 20...90
 
     private let defaults = UserDefaults.standard
@@ -15,7 +14,6 @@ final class AppSettings: ObservableObject {
     @Published var expandedWidth: Double = AppSettings.load("expandedWidth", default: 620.0, in: expandedWidthRange) { didSet { save(expandedWidth, "expandedWidth") } }
     @Published var expandedHeight: Double = AppSettings.load("expandedHeight", default: 196.0, in: expandedHeightRange) { didSet { save(expandedHeight, "expandedHeight") } }
     /// Width of the collapsed shape on screens without a camera housing.
-    @Published var pillWidth: Double = AppSettings.load("pillWidth", default: 190.0) { didSet { save(pillWidth, "pillWidth") } }
     /// Smaller artwork/visualizer "ears" beside the collapsed notch while music plays.
     @Published var compactLiveActivity: Bool = AppSettings.load("compactLiveActivity", default: false) { didSet { save(compactLiveActivity, "compactLiveActivity") } }
 
@@ -228,7 +226,6 @@ final class AppSettings: ObservableObject {
     func resetSizes() {
         expandedWidth = 620
         expandedHeight = 196
-        pillWidth = 190
         compactLiveActivity = false
     }
 }

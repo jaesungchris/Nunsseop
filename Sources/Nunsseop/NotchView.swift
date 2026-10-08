@@ -29,6 +29,13 @@ struct NotchView: View {
                     // Without this, content being removed is drawn under the black body and vanishes instead of fading.
                     .zIndex(-1)
 
+                if !model.isExpanded && !model.geometry.hasNotch {
+                    EyebrowMark(lifted: model.pointerOverCollapsed)
+                        .animation(motion.brow, value: model.pointerOverCollapsed)
+                        .frame(width: model.geometry.collapsedSize.width, height: notchHeight)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: shift > 0 ? .topLeading : .top)
+                }
+
                 if model.isExpanded {
                     VStack(spacing: 0) {
                         HeaderBar(model: model, height: notchHeight)
@@ -173,6 +180,8 @@ private struct NotchMotion {
     var open: Animation { reduceMotion ? Self.ease : .spring(response: 0.4, dampingFraction: 0.75) }
     /// Critically damped and quicker; it waits a moment for the content to fade out first.
     var close: Animation { reduceMotion ? Self.ease : .spring(response: 0.3, dampingFraction: 1).delay(0.04) }
+    /// A quick spring with a little bounce, like a brow popping up.
+    var brow: Animation { reduceMotion ? Self.ease : .spring(response: 0.25, dampingFraction: 0.55) }
     var earsGrow: Animation { reduceMotion ? Self.ease : .spring(response: 0.34, dampingFraction: 0.75) }
     var earsShrink: Animation { reduceMotion ? Self.ease : .spring(response: 0.28, dampingFraction: 1) }
 

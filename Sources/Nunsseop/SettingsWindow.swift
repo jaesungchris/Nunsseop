@@ -118,8 +118,6 @@ private struct GeneralPane: View {
                 }
                 SliderRow(title: "Expanded height", value: $settings.expandedHeight,
                           range: AppSettings.expandedHeightRange, unit: "pt")
-                SliderRow(title: "Collapsed width on screens without a notch", value: $settings.pillWidth,
-                          range: AppSettings.pillWidthRange, unit: "pt")
                 Toggle("Compact artwork and visualizer while playing", isOn: $settings.compactLiveActivity)
                 Button("Reset sizes") { settings.resetSizes() }
             }

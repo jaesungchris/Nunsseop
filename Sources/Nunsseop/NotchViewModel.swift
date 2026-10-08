@@ -125,6 +125,8 @@ final class NotchViewModel: ObservableObject {
     let recorder = ScreenRecorder()
     /// Set when opened by the hotkey; the notch then stays open until the pointer visits it or Escape is pressed.
     @Published var pinned = false
+    /// The pointer is over the collapsed shape; the eyebrow on displays without a notch lifts.
+    @Published var pointerOverCollapsed = false
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
     private var peekFilter = SneakPeekFilter(launchedAt: .now)
@@ -371,7 +373,10 @@ final class NotchViewModel: ObservableObject {
 
     /// The collapsed shape on screen.
     var collapsedRect: NSRect {
-        geometry.shapeRect(size: collapsedSize).offsetBy(dx: collapsedShift, dy: 0)
+        var rect = geometry.shapeRect(size: collapsedSize).offsetBy(dx: collapsedShift, dy: 0)
+        // The bare eyebrow is small, so the pointer may be a little off to the side.
+        if !geometry.hasNotch && collapsedSize.width == geometry.collapsedSize.width { rect = rect.insetBy(dx: -8, dy: 0) }
+        return rect
     }
 
     private func triggerSneakPeek() {

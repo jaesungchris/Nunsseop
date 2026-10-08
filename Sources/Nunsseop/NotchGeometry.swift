@@ -25,10 +25,13 @@ struct NotchGeometry: Equatable {
         return NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main ?? NSScreen.screens.first
     }
 
+    /// Width of the collapsed eyebrow on a display without a camera housing.
+    static let browWidth: CGFloat = 44
+
     /// Used only when no screen is attached at launch; the next screen change relayouts.
-    init(fallbackWidth: CGFloat) {
+    init() {
         screenFrame = NSRect(x: 0, y: 0, width: 1440, height: 900)
-        collapsedSize = CGSize(width: fallbackWidth, height: 24)
+        collapsedSize = CGSize(width: Self.browWidth, height: 24)
         hasNotch = false
     }
 
@@ -41,7 +44,7 @@ struct NotchGeometry: Equatable {
         return 0
     }()
 
-    init(screen: NSScreen, pillWidth: CGFloat) {
+    init(screen: NSScreen) {
         screenFrame = screen.frame
         if screen.safeAreaInsets.top > 0,
            let left = screen.auxiliaryTopLeftArea,
@@ -55,7 +58,7 @@ struct NotchGeometry: Equatable {
             hasNotch = true
         } else {
             let menuBarHeight = screen.frame.maxY - screen.visibleFrame.maxY
-            collapsedSize = CGSize(width: pillWidth, height: max(menuBarHeight, 24))
+            collapsedSize = CGSize(width: Self.browWidth, height: max(menuBarHeight, 24))
             hasNotch = false
         }
     }

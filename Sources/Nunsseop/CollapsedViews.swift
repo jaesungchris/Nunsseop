@@ -329,3 +329,37 @@ struct SpectrumBars: NSViewRepresentable {
         }
     }
 }
+
+/// The app's eyebrow, shown in place of the camera housing on displays without a notch.
+/// It lifts and arches while the pointer is over it, like a raised brow.
+struct EyebrowMark: View {
+    let lifted: Bool
+
+    var body: some View {
+        EyebrowArch(lift: lifted ? 1 : 0)
+            .stroke(LinearGradient(colors: [Color(red: 1, green: 0.37, blue: 0.56), Color(red: 0.78, green: 0.42, blue: 0.98)],
+                                   startPoint: .leading, endPoint: .trailing),
+                    style: StrokeStyle(lineWidth: 3, lineCap: .round))
+            .frame(width: 24)
+            .accessibilityHidden(true)
+    }
+}
+
+struct EyebrowArch: Shape {
+    /// 0 at rest, 1 fully raised.
+    var lift: CGFloat
+
+    var animatableData: CGFloat {
+        get { lift }
+        set { lift = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let base = rect.midY + 1 - lift * 2
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX, y: base + 2))
+        p.addQuadCurve(to: CGPoint(x: rect.maxX, y: base + 1 - lift * 2),
+                       control: CGPoint(x: rect.midX + 2, y: base - 6 - lift * 5))
+        return p
+    }
+}

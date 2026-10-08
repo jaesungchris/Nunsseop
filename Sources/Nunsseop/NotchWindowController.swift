@@ -45,7 +45,7 @@ final class NotchWindowController {
     private var swipeFired = false
     private var swipeIdleWork: DispatchWorkItem?
     private var screenObserver: NSObjectProtocol?
-    private var pillWidthObserver: AnyCancellable?
+    private var displayObserver: AnyCancellable?
     private var updatesObserver: AnyCancellable?
     private var settingsObservers: [AnyCancellable] = []
     /// Keeps the AI limits fresh while an idle ear shows them.
@@ -132,8 +132,8 @@ final class NotchWindowController {
     }
 
     init() {
-        let geometry = NotchGeometry.pickScreen(preferredName: AppSettings.shared.displayName).map { NotchGeometry(screen: $0, pillWidth: AppSettings.shared.pillWidth) }
-            ?? NotchGeometry(fallbackWidth: AppSettings.shared.pillWidth)
+        let geometry = NotchGeometry.pickScreen(preferredName: AppSettings.shared.displayName).map { NotchGeometry(screen: $0) }
+            ?? NotchGeometry()
         model = NotchViewModel(geometry: geometry, settings: .shared)
         panel = NotchPanel(frame: geometry.panelFrame)
 
@@ -360,9 +360,9 @@ final class NotchWindowController {
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.relayout() }
         }
-        pillWidthObserver = model.settings.$pillWidth.map { _ in () }
-            .merge(with: model.settings.$displayName.map { _ in () }, model.settings.$showInClamshell.map { _ in () })
-            .dropFirst(3)
+        displayObserver = model.settings.$displayName.map { _ in () }
+            .merge(with: model.settings.$showInClamshell.map { _ in () })
+            .dropFirst(2)
             .sink { [weak self] _ in
                 DispatchQueue.main.async { self?.relayout() }
             }
@@ -375,7 +375,7 @@ final class NotchWindowController {
 
     private func relayout() {
         guard let screen = NotchGeometry.pickScreen(preferredName: model.settings.displayName) else { return }
-        model.geometry = NotchGeometry(screen: screen, pillWidth: model.settings.pillWidth)
+        model.geometry = NotchGeometry(screen: screen)
         panel.setFrame(model.geometry.panelFrame, display: true)
         updateVisibility()
     }
@@ -491,6 +491,9 @@ final class NotchWindowController {
         let nearPanel = panel.frame.insetBy(dx: -8, dy: -8).contains(point)
 
         defer { wasExpanded = model.isExpanded }
+
+        let overCollapsed = !model.isExpanded && nearPanel && model.collapsedRect.contains(point)
+        if model.pointerOverCollapsed != overCollapsed { model.pointerOverCollapsed = overCollapsed }
 
         if model.isExpanded {
             let inside = nearPanel && model.geometry.shapeRect(size: model.expandedSize).insetBy(dx: -6, dy: -6).contains(point)
