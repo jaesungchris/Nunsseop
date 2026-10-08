@@ -8,7 +8,8 @@ final class AppSettings: ObservableObject {
     nonisolated static let expandedWidthRange: ClosedRange<Double> = 540...780
     nonisolated static let expandedHeightRange: ClosedRange<Double> = 180...260
     nonisolated static let browHideDelayRange: ClosedRange<Double> = 3...60
-    nonisolated static let glassTintRange: ClosedRange<Double> = 20...90
+    /// At 100% the glass gives way to solid black.
+    nonisolated static let glassTintRange: ClosedRange<Double> = 20...100
 
     private let defaults = UserDefaults.standard
 

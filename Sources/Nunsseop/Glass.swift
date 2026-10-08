@@ -53,8 +53,14 @@ struct NotchBackground<S: Shape>: View {
     /// The collapsed shape floats on its own, on a display without a notch.
     var floatingPill = false
 
+    /// Glass only while there's something to see through: a full tint is solid black, with no glass edges left.
+    /// Compared as the slider shows it (whole percents), so a thumb left at 99.6, which reads "100 %", is solid too.
+    static func showsGlass(glass: Bool, tint: Double, expanded: Bool, floatingPill: Bool) -> Bool {
+        glass && (tint * 100).rounded() < 100 && (expanded || floatingPill)
+    }
+
     var body: some View {
-        if glass && (expanded || floatingPill), #available(macOS 26, *) {
+        if Self.showsGlass(glass: glass, tint: tint, expanded: expanded, floatingPill: floatingPill), #available(macOS 26, *) {
             ZStack(alignment: .top) {
                 Color.clear.glassEffect(.regular.tint(.black.opacity(tint)), in: shape)
                 if expanded {
