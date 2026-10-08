@@ -99,11 +99,12 @@ struct NotchView: View {
                 } else if model.showsLiveActivity || model.showsSneakPeek || model.showsIdleEars {
                     VStack(spacing: 0) {
                         if model.showsLiveActivity {
-                            CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, recorder: model.recorder,
+                            CollapsedActivity(nowPlaying: nowPlaying, timer: model.timer, recorder: model.recorder, downloads: model.downloads,
                                               privacy: model.settings.privacyIndicator ? model.privacy : nil, call: model.calls.call,
                                               callMuted: model.callControls.state?.mic == .off,
                                               height: notchHeight, earWidth: model.earWidth,
-                                              showsMusic: model.settings.collapsedMusic, showsTimer: model.settings.collapsedTimer)
+                                              showsMusic: model.settings.collapsedMusic, showsTimer: model.settings.collapsedTimer,
+                                              showsDownloads: model.settings.collapsedDownloads)
                             .padding(.leading, earLead)
                         } else if model.showsIdleEars {
                             IdleEars(model: model, height: notchHeight)

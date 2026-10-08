@@ -162,6 +162,8 @@ final class NotchViewModel: ObservableObject {
             .map { $0 || $1 || $2 }
             .combineLatest(calls.$call.map { $0 != nil })
             .map { $0 || $1 }
+            .combineLatest(downloads.$status.map { $0 != nil }.combineLatest(settings.$collapsedDownloads).map { $0 && $1 })
+            .map { $0 || $1 }
             .removeDuplicates()
             .sink { [weak self] in self?.showsLiveActivity = $0 }
             .store(in: &cancellables)
@@ -173,6 +175,10 @@ final class NotchViewModel: ObservableObject {
             .store(in: &cancellables)
         recorder.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        // The ears widen for a download's percent even when another live activity already shows.
+        downloads.$status.map { $0 != nil }.removeDuplicates()
+            .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
         privacy.objectWillChange
             .sink { [weak self] in self?.objectWillChange.send() }
@@ -447,9 +453,10 @@ final class NotchViewModel: ObservableObject {
     var earWidth: CGFloat {
         let height = geometry.collapsedSize.height
         let base = settings.compactLiveActivity ? height * 0.7 : height + 6
-        // Room for "1:23:45" during a call, plus a mic-slash while muted, and "12:34" when a timer is running.
+        // Room for "1:23:45" during a call, plus a mic-slash while muted, and "12:34" when a timer is running or "100%" for a download.
         if calls.call != nil { return max(base, callControls.state?.mic == .off ? 74 : 60) }
         let needsText = (timer.isRunning && settings.collapsedTimer) || recorder.isRecording
+            || (downloads.status != nil && settings.collapsedDownloads)
         return needsText ? max(base, 50) : base
     }
 

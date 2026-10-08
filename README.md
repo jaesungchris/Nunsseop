@@ -90,6 +90,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 - **Calls.** During a call in Zoom, FaceTime, Teams, Slack, Discord, WhatsApp or Google Meet, the closed notch shows the app and how long you've been talking. It goes by which app uses the microphone, so no extra permissions are needed. For Zoom, FaceTime and Meet you can mute the mic or turn the camera off from the notch, without switching to the call.
 - **Your pick on each side.** When nothing is playing, show Claude Code or Codex usage left, agents at work, battery, weather or the date.
 - **Music and timers.** Tiny artwork and a visualizer while music plays, and the time left while a timer runs.
+- **Downloads.** How far along a Safari or Chrome download is, in percent, from the same progress the Finder shows on the file. Nothing polls for it.
 
 **🤖 For developers**
 - **AI usage.** Claude and Codex limits with reset times, and token use over the last 5 hours and 7 days, counted across Claude Code, Codex, gjc, omo and OpenCode. Read from files those tools already keep on your Mac, so there's nothing to sign in to.
