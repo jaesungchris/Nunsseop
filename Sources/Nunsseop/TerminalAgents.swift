@@ -386,8 +386,17 @@ final class HerdrWatcher {
     var onNotice: ((Herdr.Notice) -> Void)?
     /// Every pane's state, with since when, whenever one changes; empty when the server is gone or watching stops.
     var onStates: (([String: Herdr.PaneState]) -> Void)?
-    /// When each pane entered its current state, kept across reconnects.
+    /// When each pane entered its current state, kept across reconnects. It's when Nunsseop first saw that state:
+    /// after a relaunch a pane that was already done counts from then, for another `doneWindow`.
     private var since: [String: Herdr.PaneState] = [:]
+    /// Connections that waited in a row without reaching herdr, and since when it has been out of reach.
+    private var misses = 0
+    private var unreachableSince: Date?
+    /// How long herdr may stay out of reach, and how many waits in a row, before what it said is forgotten:
+    /// a socket left behind by a crashed server makes every connection wait, and its last states mustn't linger.
+    static let unreachableLimit: TimeInterval = 30
+    static let missLimit = 2
+    private let retryInterval: TimeInterval
     private let socketURL: URL
     private var connection: NWConnection?
     private var lines = JSONLines()
@@ -396,14 +405,17 @@ final class HerdrWatcher {
     private var running = false
     private let queue = DispatchQueue(label: "nunsseop.herdr")
 
-    init(socketURL: URL = Herdr.socketURL) { self.socketURL = socketURL }
+    init(socketURL: URL = Herdr.socketURL, retryInterval: TimeInterval = 10) {
+        self.socketURL = socketURL
+        self.retryInterval = retryInterval
+    }
 
     func start() {
         guard !running else { return }
         running = true
         connect()
         // herdr's server may start later or restart; a closed connection is opened again from here.
-        retry = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+        retry = Timer.scheduledTimer(withTimeInterval: retryInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { if self?.connection == nil { self?.connect() } }
         }
         retry?.tolerance = 2
@@ -421,7 +433,17 @@ final class HerdrWatcher {
     private func forget() {
         _ = states.reconcile([])
         since = [:]
+        misses = 0
+        unreachableSince = nil
         onStates?([:])
+    }
+
+    /// A connection that only waited: once it keeps happening, or has gone on too long, herdr counts as gone.
+    private func missed(now: Date = .now) {
+        misses += 1
+        let first = unreachableSince ?? now
+        unreachableSince = first
+        if misses >= Self.missLimit || now.timeIntervalSince(first) >= Self.unreachableLimit { forget() }
     }
 
     /// Hands every pane's state on, keeping the time a pane entered its state for as long as it stays in it.
@@ -452,6 +474,9 @@ final class HerdrWatcher {
             guard let self, frame["id"] as? String == "list" else { return }
             self.drop()
             guard let panes = Herdr.panes(in: frame) else { return }
+            // Reached herdr again.
+            self.misses = 0
+            self.unreachableSince = nil
             for pane in self.states.reconcile(panes) {
                 self.announce(Herdr.Notice(agent: pane.agent ?? "herdr", status: pane.status, title: pane.title, pane: pane.id))
             }
@@ -468,14 +493,15 @@ final class HerdrWatcher {
             // A socket left behind by a server that quit can leave the connection waiting for good.
             case .failed, .cancelled, .waiting:
                 // A connection only waiting (a hiccup) keeps what's known, so the list after reconnecting still
-                // announces what changed meanwhile; one that failed means the server is gone.
+                // announces what changed meanwhile, unless the waits repeat or last (`missed`); one that failed
+                // means the server is gone.
                 let gone = { if case .waiting = state { return false } else { return true } }()
                 DispatchQueue.main.async {
                     // Only a connection that failed on its own; replaced ones are cancelled on purpose.
                     MainActor.assumeIsolated {
                         if self?.connection === connection {
                             self?.drop()
-                            if gone { self?.forget() }
+                            if gone { self?.forget() } else { self?.missed() }
                         }
                     }
                 }
