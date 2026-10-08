@@ -190,6 +190,8 @@
   .tour-btn .bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: linear-gradient(90deg, var(--violet), var(--pink)); }
   .tour-btn[aria-selected="true"] .bar.run { animation: fill var(--dur, 5s) linear forwards; }
   @keyframes fill { to { width: 100%; } }
+  /* The bar drives the tour, so holding the bar holds the tour: while it's off screen, pointed at or focused. */
+  .tour:not(.onscreen) .tour-btn .bar.run, .tour:hover .tour-btn .bar.run, .tour:focus-within .tour-btn .bar.run { animation-play-state: paused; }
   .tour-stage { border-radius: var(--radius); border: 1px solid var(--card-border); overflow: hidden; display: flex; flex-direction: column;
     background: radial-gradient(90% 120% at 15% 120%, rgba(255,122,168,0.35) 0%, transparent 55%), radial-gradient(80% 100% at 90% 110%, rgba(106,92,255,0.4) 0%, transparent 60%), linear-gradient(160deg, #1d1534, #0c0a14); }
   .tour-screen { position: relative; aspect-ratio: 1286 / 470; }
@@ -855,12 +857,13 @@ open build/Nunsseop.app</pre></div>
   ];
   var list = document.getElementById('tourList'), screen = document.getElementById('tourScreen');
   var tTitle = document.getElementById('tourTitle'), tText = document.getElementById('tourText');
-  var current = 0, tourTimer = null, tourTouched = false, DUR = 5000;
+  var current = 0, tourTouched = false, DUR = 5000;
   tourData.forEach(function (d, i) {
     var b = document.createElement('button');
     b.className = 'tour-btn'; b.type = 'button'; b.setAttribute('role', 'tab');
     b.innerHTML = '<span class="e">' + d.e + '</span>' + LANGS.map(function (l) { return '<span class="' + l + '">' + d[l][0] + '</span>'; }).join('') + '<span class="bar"></span>';
     b.addEventListener('click', function () { tourTouched = true; show(i); });
+    b.querySelector('.bar').addEventListener('animationend', function () { show((i + 1) % tourData.length); });
     list.appendChild(b);
     var img = new Image(); img.src = 'images/' + d.img; img.alt = d.en[0]; img.loading = i ? 'lazy' : 'eager';
     screen.appendChild(img);
@@ -877,10 +880,14 @@ open build/Nunsseop.app</pre></div>
     var active = list.children[i];
     if (list.scrollWidth > list.clientWidth) list.scrollTo({ left: active.offsetLeft - 20, behavior: reduce ? 'auto' : 'smooth' });
     tTitle.textContent = tourData[i][lang][0]; tText.innerHTML = tourData[i][lang][1];
-    clearTimeout(tourTimer);
-    if (!tourTouched && !reduce) tourTimer = setTimeout(function () { show((current + 1) % tourData.length); }, DUR);
   }
   list.style.setProperty('--dur', DUR + 'ms');
+  var tourBox = document.getElementById('tourBox');
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) { tourBox.classList.toggle('onscreen', entries[0].isIntersecting); }, { rootMargin: '-20% 0px' }).observe(tourBox);
+  } else {
+    tourBox.classList.add('onscreen');
+  }
   langListeners.push(function () { show(current); });
   show(0);
 
