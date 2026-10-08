@@ -78,9 +78,10 @@ struct NotchGeometry: Equatable {
                       width: size.width, height: size.height)
     }
 
-    func shapeRect(size: CGSize) -> NSRect {
+    /// The expanded shape sits against the top edge even where the collapsed eyebrow floats, so it passes `inset: 0`.
+    func shapeRect(size: CGSize, inset: CGFloat? = nil) -> NSRect {
         NSRect(x: screenFrame.midX - size.width / 2,
-               y: screenFrame.maxY - topInset - size.height,
+               y: screenFrame.maxY - (inset ?? topInset) - size.height,
                width: size.width, height: size.height)
     }
 }
