@@ -33,7 +33,7 @@ struct NotchView: View {
                     EyebrowMark(lifted: model.pointerOverCollapsed)
                         .animation(motion.brow, value: model.pointerOverCollapsed)
                         .frame(width: model.geometry.collapsedSize.width, height: notchHeight)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: shift > 0 ? .topLeading : .top)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: shift > 0 ? .topLeading : shift < 0 ? .topTrailing : .top)
                 }
 
                 if model.isExpanded {
@@ -161,6 +161,7 @@ struct NotchView: View {
         .animation(model.isExpanded ? motion.open : motion.close, value: model.isExpanded)
         .animation(model.showsLiveActivity ? motion.earsGrow : motion.earsShrink, value: model.showsLiveActivity)
         .animation(model.showsSneakPeek ? motion.earsGrow : motion.earsShrink, value: model.showsSneakPeek)
+        .animation(model.showsIdleEars ? motion.earsGrow : motion.earsShrink, value: model.showsIdleEars)
         .animation(model.hud.event != nil ? motion.earsGrow : motion.earsShrink, value: model.hud.event)
         // The shape slides over when the left ear hides or shows, rather than jumping.
         .animation(motion.earsGrow, value: model.collapsedShift)
