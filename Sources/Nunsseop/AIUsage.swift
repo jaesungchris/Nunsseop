@@ -536,6 +536,7 @@ private struct TokenRow: View {
             Text(title).font(.system(size: 10)).foregroundStyle(.white.opacity(0.5))
             Text("\(tokens.formatted(.number.notation(.compactName))) tokens")
                 .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                .lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

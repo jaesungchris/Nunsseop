@@ -25,7 +25,8 @@ struct NotchView: View {
 
         VStack(spacing: 0) {
             ZStack(alignment: .top) {
-                NotchBackground(shape: shape, glass: model.settings.liquidGlass, tint: model.settings.glassTint / 100, expanded: model.isExpanded, notchHeight: notchHeight)
+                NotchBackground(shape: shape, glass: model.settings.liquidGlass, tint: model.settings.glassTint / 100, expanded: model.isExpanded, notchHeight: notchHeight,
+                                floatingPill: !model.geometry.hasNotch)
                     // Without this, content being removed is drawn under the black body and vanishes instead of fading.
                     .zIndex(-1)
 

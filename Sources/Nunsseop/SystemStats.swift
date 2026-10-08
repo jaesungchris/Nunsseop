@@ -167,13 +167,18 @@ private struct DeviceList: View {
             if monitor.devices.isEmpty {
                 Text("No battery devices connected").font(.system(size: 10)).foregroundStyle(.white.opacity(0.45))
             }
-            ForEach(monitor.devices) { device in
-                HStack(spacing: 6) {
-                    Image(systemName: device.symbol).font(.system(size: 10)).frame(width: 14)
-                    Text(device.name).font(.system(size: 10)).lineLimit(1)
-                    Spacer(minLength: 4)
-                    Text("\(device.percent)%").font(.system(size: 10, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(device.percent <= 15 ? .red : .white)
+            // Four or more devices scroll inside the card instead of running past the bottom of the notch.
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(monitor.devices) { device in
+                        HStack(spacing: 6) {
+                            Image(systemName: device.symbol).font(.system(size: 10)).frame(width: 14)
+                            Text(device.name).font(.system(size: 10)).lineLimit(1)
+                            Spacer(minLength: 4)
+                            Text("\(device.percent)%").font(.system(size: 10, weight: .semibold).monospacedDigit())
+                                .foregroundStyle(device.percent <= 15 ? .red : .white)
+                        }
+                    }
                 }
             }
         }
