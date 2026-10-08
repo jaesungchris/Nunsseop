@@ -7,7 +7,6 @@
 "Size" = "크기";
 "Expanded width" = "펼친 너비";
 "Expanded height" = "펼친 높이";
-"Collapsed width on screens without a notch" = "노치 없는 화면의 접힌 너비";
 "Compact artwork and visualizer while playing" = "재생 중 접힌 노치 양옆을 작게";
 "Reset sizes" = "크기 기본값으로";
 "Behavior" = "동작";
@@ -357,3 +356,8 @@
 "Remove" = "지우기";
 "Go to where it came from" = "보낸 곳으로 가기";
 "Agents at work" = "작업 중인 에이전트";
+
+/* Eyebrow auto-hide */
+"Hide the eyebrow when it sits unused on a screen without a notch" = "노치 없는 화면에서 눈썹을 쓰지 않으면 숨기기";
+"Hide after" = "숨기기까지 시간";
+"Move the pointer to the top edge to bring it back." = "마우스를 화면 맨 위로 가져가면 다시 나타납니다.";

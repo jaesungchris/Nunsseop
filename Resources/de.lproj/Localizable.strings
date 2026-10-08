@@ -6,7 +6,6 @@
 "Size" = "Größe";
 "Expanded width" = "Breite ausgeklappt";
 "Expanded height" = "Höhe ausgeklappt";
-"Collapsed width on screens without a notch" = "Breite eingeklappt auf Bildschirmen ohne Notch";
 "Compact artwork and visualizer while playing" = "Cover und Visualizer bei Wiedergabe kompakt";
 "Reset sizes" = "Größen zurücksetzen";
 "Behavior" = "Verhalten";
@@ -332,3 +331,8 @@
 "Remove" = "Entfernen";
 "Go to where it came from" = "Zur Quelle gehen";
 "Agents at work" = "Aktive Agenten";
+
+/* Eyebrow auto-hide */
+"Hide the eyebrow when it sits unused on a screen without a notch" = "Augenbraue ausblenden, wenn sie auf einem Bildschirm ohne Notch ungenutzt bleibt";
+"Hide after" = "Ausblenden nach";
+"Move the pointer to the top edge to bring it back." = "Bewege den Zeiger an den oberen Rand, um sie zurückzuholen.";

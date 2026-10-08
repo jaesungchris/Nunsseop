@@ -6,6 +6,9 @@ struct NotchGeometry: Equatable {
     var collapsedSize: CGSize
     var hasNotch: Bool
 
+    /// Without a camera housing the eyebrow floats this far below the top edge and stays inside the menu bar.
+    var topInset: CGFloat { hasNotch ? 0 : 3 }
+
     /// True while a MacBook's lid is closed (clamshell mode with an external display).
     static var lidIsClosed: Bool {
         let root = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
@@ -25,10 +28,13 @@ struct NotchGeometry: Equatable {
         return NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main ?? NSScreen.screens.first
     }
 
+    /// Width of the collapsed eyebrow on a display without a camera housing.
+    static let browWidth: CGFloat = 44
+
     /// Used only when no screen is attached at launch; the next screen change relayouts.
-    init(fallbackWidth: CGFloat) {
+    init() {
         screenFrame = NSRect(x: 0, y: 0, width: 1440, height: 900)
-        collapsedSize = CGSize(width: fallbackWidth, height: 24)
+        collapsedSize = CGSize(width: Self.browWidth, height: 18)
         hasNotch = false
     }
 
@@ -41,7 +47,7 @@ struct NotchGeometry: Equatable {
         return 0
     }()
 
-    init(screen: NSScreen, pillWidth: CGFloat) {
+    init(screen: NSScreen) {
         screenFrame = screen.frame
         if screen.safeAreaInsets.top > 0,
            let left = screen.auxiliaryTopLeftArea,
@@ -55,7 +61,7 @@ struct NotchGeometry: Equatable {
             hasNotch = true
         } else {
             let menuBarHeight = screen.frame.maxY - screen.visibleFrame.maxY
-            collapsedSize = CGSize(width: pillWidth, height: max(menuBarHeight, 24))
+            collapsedSize = CGSize(width: Self.browWidth, height: max((menuBarHeight > 0 ? menuBarHeight : 24) - 6, 16))
             hasNotch = false
         }
     }
@@ -72,9 +78,10 @@ struct NotchGeometry: Equatable {
                       width: size.width, height: size.height)
     }
 
-    func shapeRect(size: CGSize) -> NSRect {
+    /// The expanded shape sits against the top edge even where the collapsed eyebrow floats, so it passes `inset: 0`.
+    func shapeRect(size: CGSize, inset: CGFloat? = nil) -> NSRect {
         NSRect(x: screenFrame.midX - size.width / 2,
-               y: screenFrame.maxY - size.height,
+               y: screenFrame.maxY - (inset ?? topInset) - size.height,
                width: size.width, height: size.height)
     }
 }

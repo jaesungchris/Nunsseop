@@ -130,7 +130,7 @@ Right-click the notch → Settings → Notch, and switch off what you don't need
 <details>
 <summary><b>My Mac has no notch.</b></summary>
 
-You get a small pill at the top centre of the screen that works the same way. Pick which display it uses in Settings.
+On a display without a notch you get a small black tab with the eyebrow logo at the top centre of the screen; the eyebrow lifts when the pointer is over it, and it works the same way. Pick which display it uses in Settings.
 </details>
 
 <details>

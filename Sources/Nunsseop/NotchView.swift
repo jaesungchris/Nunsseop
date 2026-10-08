@@ -17,7 +17,8 @@ struct NotchView: View {
         let topRadius: CGFloat = model.isExpanded ? 18 : 6
         let bottomRadius: CGFloat = model.isExpanded ? 26 : 14
         let notchHeight = model.geometry.collapsedSize.height
-        let shape = NotchShape(topRadius: topRadius, bottomRadius: bottomRadius)
+        let shape = NotchShape(topRadius: model.geometry.hasNotch ? topRadius : (model.isExpanded ? 0 : 14), bottomRadius: bottomRadius, floating: !model.geometry.hasNotch,
+                              sideInset: !model.geometry.hasNotch && model.isExpanded ? 18 : 0)
         // With the left ear hidden, the collapsed shape grows right only and its top row starts past the camera.
         let shift = model.isExpanded ? 0 : model.collapsedShift
         let earLead = shift > 0 ? model.geometry.collapsedSize.width - 6 : 0
@@ -27,6 +28,13 @@ struct NotchView: View {
                 NotchBackground(shape: shape, glass: model.settings.liquidGlass, tint: model.settings.glassTint / 100, expanded: model.isExpanded, notchHeight: notchHeight)
                     // Without this, content being removed is drawn under the black body and vanishes instead of fading.
                     .zIndex(-1)
+
+                if !model.isExpanded && !model.geometry.hasNotch {
+                    EyebrowMark(lifted: model.pointerOverCollapsed)
+                        .animation(motion.brow, value: model.pointerOverCollapsed)
+                        .frame(width: model.geometry.collapsedSize.width, height: notchHeight)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: shift > 0 ? .topLeading : .top)
+                }
 
                 if model.isExpanded {
                     VStack(spacing: 0) {
@@ -138,6 +146,9 @@ struct NotchView: View {
                 airDropRect: airDropRect(in: size)
             ))
             .offset(x: shift)
+            .opacity(model.browFaded ? 0 : 1)
+            .animation(.easeInOut(duration: 0.4), value: model.browFaded)
+            .padding(.top, model.isExpanded ? 0 : model.geometry.topInset)
             // Ears appearing is when the app's menus matter, so they are read again then.
             .onChange(of: model.collapsedSize.width) { old, new in
                 if new > old { model.appMenus.refresh() }
@@ -172,6 +183,8 @@ private struct NotchMotion {
     var open: Animation { reduceMotion ? Self.ease : .spring(response: 0.4, dampingFraction: 0.75) }
     /// Critically damped and quicker; it waits a moment for the content to fade out first.
     var close: Animation { reduceMotion ? Self.ease : .spring(response: 0.3, dampingFraction: 1).delay(0.04) }
+    /// A quick spring with a little bounce, like a brow popping up.
+    var brow: Animation { reduceMotion ? Self.ease : .spring(response: 0.25, dampingFraction: 0.55) }
     var earsGrow: Animation { reduceMotion ? Self.ease : .spring(response: 0.34, dampingFraction: 0.75) }
     var earsShrink: Animation { reduceMotion ? Self.ease : .spring(response: 0.28, dampingFraction: 1) }
 

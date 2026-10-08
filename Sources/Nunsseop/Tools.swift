@@ -405,13 +405,18 @@ struct ToolsTab: View {
             if tools.drives.isEmpty {
                 Text("No external drives").font(.system(size: 11)).foregroundStyle(.white.opacity(0.45))
             }
-            ForEach(tools.drives) { drive in
-                HStack {
-                    Text(drive.name).font(.system(size: 11)).lineLimit(1)
-                    Spacer()
-                    Button { tools.eject(drive) } label: { Image(systemName: "eject.fill").font(.system(size: 10)) }
-                        .buttonStyle(.plain)
-                        .help(Text("Eject"))
+            // Many mounted volumes scroll inside the card instead of running past the notch.
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 6) {
+                    ForEach(tools.drives) { drive in
+                        HStack {
+                            Text(drive.name).font(.system(size: 11)).lineLimit(1)
+                            Spacer()
+                            Button { tools.eject(drive) } label: { Image(systemName: "eject.fill").font(.system(size: 10)) }
+                                .buttonStyle(.plain)
+                                .help(Text("Eject"))
+                        }
+                    }
                 }
             }
             if let error = tools.ejectError {
