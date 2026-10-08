@@ -331,3 +331,8 @@
 "Remove" = "移除";
 "Go to where it came from" = "前往来源";
 "Agents at work" = "工作中的代理";
+
+/* Eyebrow auto-hide */
+"Hide the eyebrow when it sits unused on a screen without a notch" = "在无刘海屏幕上闲置时隐藏眉毛";
+"Hide after" = "隐藏时间";
+"Move the pointer to the top edge to bring it back." = "将指针移到屏幕顶部即可重新显示。";

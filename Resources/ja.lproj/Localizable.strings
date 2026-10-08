@@ -331,3 +331,8 @@
 "Remove" = "削除";
 "Go to where it came from" = "送信元へ移動";
 "Agents at work" = "作業中のエージェント";
+
+/* Eyebrow auto-hide */
+"Hide the eyebrow when it sits unused on a screen without a notch" = "ノッチのない画面で使われていないときは眉を隠す";
+"Hide after" = "隠すまでの時間";
+"Move the pointer to the top edge to bring it back." = "ポインタを画面の上端に動かすと再び表示されます。";

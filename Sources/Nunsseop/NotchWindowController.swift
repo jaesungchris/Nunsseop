@@ -46,6 +46,7 @@ final class NotchWindowController {
     private var swipeIdleWork: DispatchWorkItem?
     private var screenObserver: NSObjectProtocol?
     private var displayObserver: AnyCancellable?
+    private var browHideObserver: AnyCancellable?
     private var updatesObserver: AnyCancellable?
     private var settingsObservers: [AnyCancellable] = []
     /// Keeps the AI limits fresh while an idle ear shows them.
@@ -360,6 +361,12 @@ final class NotchWindowController {
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.relayout() }
         }
+        browHideObserver = model.settings.$autoHideBrow.map { _ in () }
+            .merge(with: model.settings.$browHideDelay.map { _ in () })
+            .sink { [weak self] _ in
+                DispatchQueue.main.async { self?.model.resetBrowHide() }
+            }
+        model.resetBrowHide()
         displayObserver = model.settings.$displayName.map { _ in () }
             .merge(with: model.settings.$showInClamshell.map { _ in () })
             .dropFirst(2)
@@ -377,6 +384,7 @@ final class NotchWindowController {
         guard let screen = NotchGeometry.pickScreen(preferredName: model.settings.displayName) else { return }
         model.geometry = NotchGeometry(screen: screen)
         panel.setFrame(model.geometry.panelFrame, display: true)
+        model.resetBrowHide()
         updateVisibility()
     }
 
@@ -426,7 +434,7 @@ final class NotchWindowController {
     private func isWheelOverHeader(_ event: NSEvent) -> Bool {
         event.window === panel && model.isExpanded && !event.hasPreciseScrollingDeltas
             && event.scrollingDeltaX == 0 && event.scrollingDeltaY != 0
-            && panel.frame.height - event.locationInWindow.y < max(model.geometry.collapsedSize.height, 24) + 6
+            && panel.frame.height - event.locationInWindow.y < max(model.geometry.collapsedSize.height, 24) + model.geometry.topInset + 6
     }
 
     nonisolated private static func sideways(_ event: NSEvent) -> NSEvent? {
@@ -451,7 +459,7 @@ final class NotchWindowController {
         if TimeScrollTarget.isHovered { return }
         // The expanded header scrolls its tabs sideways, so swipes there are left to it.
         let fromTop = panel.frame.height - event.locationInWindow.y
-        if model.isExpanded && fromTop < max(model.geometry.collapsedSize.height, 24) + 6 { return }
+        if model.isExpanded && fromTop < max(model.geometry.collapsedSize.height, 24) + model.geometry.topInset + 6 { return }
         if event.phase == .began || event.phase == .mayBegin {
             swipe = .zero
             swipeFired = false

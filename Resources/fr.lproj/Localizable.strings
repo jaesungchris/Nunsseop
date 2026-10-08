@@ -331,3 +331,8 @@
 "Remove" = "Retirer";
 "Go to where it came from" = "Aller à la source";
 "Agents at work" = "Agents au travail";
+
+/* Eyebrow auto-hide */
+"Hide the eyebrow when it sits unused on a screen without a notch" = "Masquer le sourcil quand il reste inutilisé sur un écran sans encoche";
+"Hide after" = "Masquer après";
+"Move the pointer to the top edge to bring it back." = "Placez le pointeur en haut de l’écran pour le faire revenir.";

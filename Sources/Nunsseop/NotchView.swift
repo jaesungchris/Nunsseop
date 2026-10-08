@@ -17,8 +17,7 @@ struct NotchView: View {
         let topRadius: CGFloat = model.isExpanded ? 18 : 6
         let bottomRadius: CGFloat = model.isExpanded ? 26 : 14
         let notchHeight = model.geometry.collapsedSize.height
-        // Without a camera housing to blend into, the top corners stay square against the screen edge.
-        let shape = NotchShape(topRadius: model.geometry.hasNotch ? topRadius : 0, bottomRadius: bottomRadius)
+        let shape = NotchShape(topRadius: topRadius, bottomRadius: bottomRadius, floating: !model.geometry.hasNotch)
         // With the left ear hidden, the collapsed shape grows right only and its top row starts past the camera.
         let shift = model.isExpanded ? 0 : model.collapsedShift
         let earLead = shift > 0 ? model.geometry.collapsedSize.width - 6 : 0
@@ -146,6 +145,9 @@ struct NotchView: View {
                 airDropRect: airDropRect(in: size)
             ))
             .offset(x: shift)
+            .opacity(model.browFaded ? 0 : 1)
+            .animation(.easeInOut(duration: 0.4), value: model.browFaded)
+            .padding(.top, model.geometry.topInset)
             // Ears appearing is when the app's menus matter, so they are read again then.
             .onChange(of: model.collapsedSize.width) { old, new in
                 if new > old { model.appMenus.refresh() }

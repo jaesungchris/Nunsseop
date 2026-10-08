@@ -7,6 +7,7 @@ final class AppSettings: ObservableObject {
     /// Below these every tab no longer fits without clipping.
     nonisolated static let expandedWidthRange: ClosedRange<Double> = 540...780
     nonisolated static let expandedHeightRange: ClosedRange<Double> = 180...260
+    nonisolated static let browHideDelayRange: ClosedRange<Double> = 3...60
     nonisolated static let glassTintRange: ClosedRange<Double> = 20...90
 
     private let defaults = UserDefaults.standard
@@ -40,6 +41,9 @@ final class AppSettings: ObservableObject {
     @Published var displayName: String = AppSettings.load("displayName", default: "") { didSet { save(displayName, "displayName") } }
     /// Whether the notch shows on external displays while the MacBook lid is closed.
     @Published var showInClamshell: Bool = AppSettings.load("showInClamshell", default: true) { didSet { save(showInClamshell, "showInClamshell") } }
+    /// Fades the eyebrow out on displays without a notch after it sat unused; the pointer at the top edge brings it back.
+    @Published var autoHideBrow: Bool = AppSettings.load("autoHideBrow", default: true) { didSet { save(autoHideBrow, "autoHideBrow") } }
+    @Published var browHideDelay: Double = AppSettings.load("browHideDelay", default: 8.0) { didSet { save(browHideDelay, "browHideDelay") } }
     @Published var checkForUpdates: Bool = AppSettings.load("checkForUpdates", default: true) { didSet { save(checkForUpdates, "checkForUpdates") } }
     @Published var batteryAlerts: Bool = AppSettings.load("batteryAlerts", default: true) { didSet { save(batteryAlerts, "batteryAlerts") } }
     @Published var capsLockHUD: Bool = AppSettings.load("capsLockHUD", default: true) { didSet { save(capsLockHUD, "capsLockHUD") } }

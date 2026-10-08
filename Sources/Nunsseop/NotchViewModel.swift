@@ -126,7 +126,17 @@ final class NotchViewModel: ObservableObject {
     /// Set when opened by the hotkey; the notch then stays open until the pointer visits it or Escape is pressed.
     @Published var pinned = false
     /// The pointer is over the collapsed shape; the eyebrow on displays without a notch lifts.
-    @Published var pointerOverCollapsed = false
+    @Published var pointerOverCollapsed = false {
+        didSet { if pointerOverCollapsed != oldValue { resetBrowHide() } }
+    }
+    /// The eyebrow has faded out after sitting unused.
+    @Published private(set) var browHidden = false
+    private var browHideWork: DispatchWorkItem?
+
+    /// Whether the eyebrow is faded out right now: hidden, and nothing else showing in the collapsed shape.
+    var browFaded: Bool {
+        browHidden && !isExpanded && hud.event == nil && !showsLiveActivity && !showsSneakPeek && !showsIdleEars
+    }
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
     private var peekFilter = SneakPeekFilter(launchedAt: .now)
@@ -374,9 +384,30 @@ final class NotchViewModel: ObservableObject {
     /// The collapsed shape on screen.
     var collapsedRect: NSRect {
         var rect = geometry.shapeRect(size: collapsedSize).offsetBy(dx: collapsedShift, dy: 0)
+        // The gap above a floating eyebrow still counts, so flicking the pointer to the screen edge finds it.
+        rect.size.height += geometry.topInset
         // The bare eyebrow is small, so the pointer may be a little off to the side.
         if !geometry.hasNotch && collapsedSize.width == geometry.collapsedSize.width { rect = rect.insetBy(dx: -8, dy: 0) }
         return rect
+    }
+
+    /// Shows the eyebrow and starts counting down to hiding it again. It only hides while nothing else shows in the collapsed shape.
+    func resetBrowHide() {
+        browHidden = false
+        browHideWork?.cancel()
+        browHideWork = nil
+        guard settings.autoHideBrow, !geometry.hasNotch else { return }
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.browHideWork = nil
+                let idle = !self.isExpanded && !self.pointerOverCollapsed && self.hud.event == nil
+                    && !self.showsLiveActivity && !self.showsSneakPeek && !self.showsIdleEars
+                if idle { self.browHidden = true } else { self.resetBrowHide() }
+            }
+        }
+        browHideWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + settings.browHideDelay, execute: work)
     }
 
     private func triggerSneakPeek() {
@@ -419,11 +450,13 @@ final class NotchViewModel: ObservableObject {
     func expand() {
         guard !isExpanded else { return }
         isExpanded = true
+        resetBrowHide()
     }
 
     func collapse() {
         guard isExpanded else { return }
         isExpanded = false
+        resetBrowHide()
         pinned = false
         // The camera must only start from an explicit click on the Mirror tab.
         if tab == .mirror { tab = .home }

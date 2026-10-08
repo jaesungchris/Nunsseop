@@ -356,3 +356,8 @@
 "Remove" = "지우기";
 "Go to where it came from" = "보낸 곳으로 가기";
 "Agents at work" = "작업 중인 에이전트";
+
+/* Eyebrow auto-hide */
+"Hide the eyebrow when it sits unused on a screen without a notch" = "노치 없는 화면에서 눈썹을 쓰지 않으면 숨기기";
+"Hide after" = "숨기기까지 시간";
+"Move the pointer to the top edge to bring it back." = "마우스를 화면 맨 위로 가져가면 다시 나타납니다.";

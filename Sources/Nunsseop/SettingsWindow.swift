@@ -104,6 +104,13 @@ private struct GeneralPane: View {
                 Toggle("Show the notch when the MacBook lid is closed", isOn: $settings.showInClamshell)
                 Text("In clamshell mode the notch appears as a pill on your external display.")
                     .font(.caption).foregroundStyle(.secondary)
+                Toggle("Hide the eyebrow when it sits unused on a screen without a notch", isOn: $settings.autoHideBrow)
+                if settings.autoHideBrow {
+                    SliderRow(title: "Hide after", value: $settings.browHideDelay,
+                              range: AppSettings.browHideDelayRange, unit: "s")
+                    Text("Move the pointer to the top edge to bring it back.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
             Section("Size") {
                 SliderRow(title: "Expanded width", value: $settings.expandedWidth,

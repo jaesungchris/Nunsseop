@@ -331,3 +331,8 @@
 "Remove" = "Entfernen";
 "Go to where it came from" = "Zur Quelle gehen";
 "Agents at work" = "Aktive Agenten";
+
+/* Eyebrow auto-hide */
+"Hide the eyebrow when it sits unused on a screen without a notch" = "Augenbraue ausblenden, wenn sie auf einem Bildschirm ohne Notch ungenutzt bleibt";
+"Hide after" = "Ausblenden nach";
+"Move the pointer to the top edge to bring it back." = "Bewege den Zeiger an den oberen Rand, um sie zurückzuholen.";
