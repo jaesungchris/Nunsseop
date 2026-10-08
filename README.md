@@ -96,7 +96,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 - **Live Claude limits (opt-in).** The AI tab asks once whether to fetch your 5-hour and weekly Claude limits from Anthropic, about once an hour, with the sign-in Claude Code keeps in the Keychain. Off until you say yes; change it later in Settings › Services.
 - **Notifications from agents and terminals.** Claude Code, Codex, Gemini CLI and OpenCode hooks, agents in Muxy, cmux and herdr, and bells from tmux and WezTerm show in the notch. Click a notice to bring its terminal, pane or tab to the front ([setup below](#agent-and-terminal-notifications)).
 - **Notifications tab.** The last 30 notices from agents, terminals and your calendar, with a badge for unseen ones; click one to go back where it came from. Off by default (Settings › Notch), and kept in memory only.
-- **Agents at work.** A closed-notch item that counts working coding agents (a green bolt) and the ones waiting for you (a yellow hand). It follows herdr for now.
+- **Agents at work.** A closed-notch item that shows how many coding agents wait for you (a yellow hand), or, when none wait, how many are working (a green bolt). It follows herdr for now.
 
 **🧩 Make it yours**
 - Pick your tabs and their order, what the header and collapsed notch show, and which pop-ups you get. **Anything you turn off stops running.**
@@ -175,7 +175,7 @@ Terminals and agent apps need no hook:
 - **tmux:** bells from any window. Nunsseop adds a hook to the running tmux server only; `tmux.conf` isn't changed.
 - **WezTerm:** bells, through lines you copy from Settings › Alerts and paste into `~/.wezterm.lua`.
 
-Each has a toggle under Settings › Alerts, shown only when the tool is installed. Tools already connected through their own hook aren't shown twice.
+Each has a toggle under Settings › Alerts (WezTerm has a button that copies its config lines instead), shown only when the tool is installed. Tools already connected through their own hook aren't shown twice.
 
 Any script can send one too:
 
