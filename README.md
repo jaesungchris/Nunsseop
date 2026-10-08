@@ -4,7 +4,7 @@
 
 <p align="center">
   <b>Your MacBook notch, finally useful.</b><br>
-  Music, calls, files, a Spotlight-style launcher, AI usage, your calendar and system HUDs, one hover away.
+  Music, calls, files, a Spotlight-style launcher, AI usage, agent notifications, your calendar and system HUDs, one hover away.
 </p>
 
 <p align="center">
@@ -74,6 +74,7 @@ There's no Dock icon. Nunsseop lives in the notch.
 **🗂️ Get things done**
 - **Shelf.** Drag files onto the notch and back out later, with previews of images, PDFs and videos. Screenshots and finished downloads can land there automatically. Shake the pointer while dragging files anywhere and a small drop target appears right beside it.
 - **Calendar and reminders.** Today in large digits, your week with a dot on busy days, today's events, and reminders you can tick off. Every account added to macOS works (Google, iCloud, Exchange and more), and you choose which calendars show.
+- **Upcoming events.** Five minutes before a timed event starts, the notch shows its title and how soon it begins. Events with a Zoom, Google Meet, Teams, Webex, FaceTime, Whereby or Chime link get a green Join button on Home, and clicking the notice joins the meeting.
 - **Search that can replace Spotlight or Raycast.** Apps (even ones outside Applications), files, system commands and settings, clipboard history, emoji (start with `:`) and sums like `12*(3+4)`, ranked by what you open most. Initials work: `vsc` finds Visual Studio Code. Arrow keys pick, Return opens.
 - **Your shortcut.** <kbd>⇧⌘Space</kbd> by default, or record any combination in Settings. Nunsseop tells you when macOS or another app already uses it.
 - **Timer, clipboard history, notes and an emoji picker.** Clipboard history stays in memory and skips anything a password manager marks as secret. Tracking parameters like `utm_` and `fbclid` are stripped from links you copy.
@@ -87,16 +88,20 @@ There's no Dock icon. Nunsseop lives in the notch.
 
 **📞 Even when it's closed**
 - **Calls.** During a call in Zoom, FaceTime, Teams, Slack, Discord, WhatsApp or Google Meet, the closed notch shows the app and how long you've been talking. It goes by which app uses the microphone, so no extra permissions are needed. For Zoom, FaceTime and Meet you can mute the mic or turn the camera off from the notch, without switching to the call.
-- **Your pick on each side.** When nothing is playing, show Claude Code or Codex usage left, battery, weather or the date.
+- **Your pick on each side.** When nothing is playing, show Claude Code or Codex usage left, agents at work, battery, weather or the date.
 - **Music and timers.** Tiny artwork and a visualizer while music plays, and the time left while a timer runs.
 
 **🤖 For developers**
 - **AI usage.** Claude and Codex limits with reset times, and token use over the last 5 hours and 7 days, counted across Claude Code, Codex, gjc, omo and OpenCode. Read from files those tools already keep on your Mac, so there's nothing to sign in to.
-- **Claude Code notifications.** The notch tells you when Claude Code is waiting for you or when Codex, Gemini CLI or OpenCode finish ([setup below](#claude-code-notifications)).
+- **Live Claude limits (opt-in).** The AI tab asks once whether to fetch your 5-hour and weekly Claude limits from Anthropic, about once an hour, with the sign-in Claude Code keeps in the Keychain. Off until you say yes; change it later in Settings › Services.
+- **Notifications from agents and terminals.** Claude Code, Codex, Gemini CLI and OpenCode hooks, agents in Muxy, cmux and herdr, and bells from tmux and WezTerm show in the notch. Click a notice to bring its terminal, pane or tab to the front ([setup below](#agent-and-terminal-notifications)).
+- **Notifications tab.** The last 30 notices from agents, terminals and your calendar, with a badge for unseen ones; click one to go back where it came from. Off by default (Settings › Notch), and kept in memory only.
+- **Agents at work.** A closed-notch item that shows how many coding agents wait for you (a yellow hand), or, when none wait, how many are working (a green bolt). It follows herdr for now.
 
 **🧩 Make it yours**
 - Pick your tabs and their order, what the header and collapsed notch show, and which pop-ups you get. **Anything you turn off stops running.**
-- On macOS 26 the expanded notch and its cards use Liquid Glass, so what's behind shows through softly. You can set how dark the glass is, or switch back to solid black.
+- On macOS 26 the expanded notch and its cards use Liquid Glass, so what's behind shows through softly. You can set how dark the glass is, all the way to 100% for a solid black notch, or switch the glass off.
+- On displays without a notch, the closed notch is a small pill with the eyebrow logo inside the menu bar, in glass if you like. It fades out after it sits unused (3 to 60 seconds, or never) and comes back when the pointer reaches it; rest there for half a second and it opens.
 - Choose the display, size and hover delay, launch at login, and hide the notch while the lid is closed.
 - Swipe down to open, up to close, sideways on Home to skip tracks.
 - Speaks English, 한국어, 日本語, 简体中文, Español, Deutsch and Français, following your Mac.
@@ -130,13 +135,13 @@ Right-click the notch → Settings → Notch, and switch off what you don't need
 <details>
 <summary><b>My Mac has no notch.</b></summary>
 
-On a display without a notch you get a small black tab with the eyebrow logo at the top centre of the screen; the eyebrow lifts when the pointer is over it, and it works the same way. Pick which display it uses in Settings.
+On a display without a notch, such as an external monitor with the lid closed, the closed notch is a small pill with the eyebrow logo floating inside the menu bar. The eyebrow lifts when the pointer is over it, and opening it attaches the notch to the top edge at the usual size. It fades out when unused; turn that off or change the delay in Settings. Pick which display it uses there too.
 </details>
 
 <details>
 <summary><b>Why does AI usage show old Claude limits?</b></summary>
 
-Claude's 5-hour and weekly percentages come from the cache the [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) HUD writes while you use Claude Code in a terminal. The card shows when it was last updated. Token totals are always live.
+By default, Claude's 5-hour and weekly percentages come from caches other tools write: the [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) HUD while you use Claude Code in a terminal, or gjc. The card shows when they were last updated. For limits that stay current without them, turn on live Claude limits in the AI tab or Settings › Services. Token totals are always live.
 </details>
 
 <details>
@@ -145,7 +150,7 @@ Claude's 5-hour and weekly percentages come from the cache the [oh-my-claudecode
 Versions before 0.8.3 were signed in a way that made macOS forget the Accessibility permission on every update. Since 0.8.3 it's kept. If you came from an older version, remove Nunsseop from System Settings → Privacy & Security → Accessibility once and allow it again; it takes effect without a restart.
 </details>
 
-## Claude Code notifications
+## Agent and terminal notifications
 
 Nunsseop listens on `127.0.0.1:47750` for notifications from tools on your Mac. Requests must carry the secret token stored in `~/Library/Application Support/Nunsseop/notify-token`.
 
@@ -163,7 +168,16 @@ To set up Claude Code by hand, press **Copy Claude Code hook command** and add i
 }
 ```
 
-Any script can do the same:
+Terminals and agent apps need no hook:
+
+- **Muxy** and **cmux:** their own notifications are read from the app, and not shown while it's in front.
+- **herdr:** agents that finish or wait for input, in every session, read from herdr's socket.
+- **tmux:** bells from any window. Nunsseop adds a hook to the running tmux server only; `tmux.conf` isn't changed.
+- **WezTerm:** bells, through lines you copy from Settings › Alerts and paste into `~/.wezterm.lua`.
+
+Each has a toggle under Settings › Alerts (WezTerm has a button that copies its config lines instead), shown only when the tool is installed. Tools already connected through their own hook aren't shown twice.
+
+Any script can send one too:
 
 ```sh
 curl -X POST http://127.0.0.1:47750/notify \
@@ -194,9 +208,10 @@ Nunsseop doesn't collect or send personal data. It goes online only to:
 - check `api.github.com` for a newer release once a day (can be turned off);
 - look up synced lyrics on `lrclib.net` (can be turned off);
 - fetch weather from `open-meteo.com` for the city you enter (off until you enter one), asking Apple's geocoder for the city's location when Open-Meteo can't find it;
-- download artwork over HTTPS from known music services, only when the MediaRemote helper is unavailable.
+- download artwork over HTTPS from known music services, only when the MediaRemote helper is unavailable;
+- ask `api.anthropic.com` for your Claude limits about once an hour, using Claude Code's sign-in from the Keychain, only if you turn live Claude limits on.
 
-Everything else stays on your Mac. The notification server only accepts connections from this Mac. AI usage is read from local files. Recordings are saved next to your screenshots. The camera preview runs only while the Mirror tab is open and is never recorded. Clipboard history is cleared when Nunsseop quits.
+Everything else stays on your Mac. The notification server only accepts connections from this Mac. AI usage is read from local files unless you turn on live Claude limits. Notices in the Notifications tab are kept in memory only. Recordings are saved next to your screenshots. The camera preview runs only while the Mirror tab is open and is never recorded. Clipboard history is cleared when Nunsseop quits.
 
 ## How now playing works
 
