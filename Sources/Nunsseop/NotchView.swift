@@ -128,7 +128,7 @@ struct NotchView: View {
                                 .transition(.opacity)
                         }
                     }
-                    .padding(.horizontal, topRadius + 3)
+                    .padding(.horizontal, topRadius + 9)
                     .transition(motion.collapsedContent)
                 }
             }

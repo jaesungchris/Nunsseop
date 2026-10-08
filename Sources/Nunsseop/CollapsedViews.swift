@@ -118,7 +118,7 @@ struct CollapsedActivity: View {
     let showsDownloads: Bool
 
     var body: some View {
-        let art = min(height - 10, 32)
+        let art = min(height - 14, 32)
         let playing = showsMusic && nowPlaying.track?.isPlaying == true
         // A download takes the timer's place, after it: a timer someone set outranks a download.
         let download = showsDownloads && !(showsTimer && timer.isRunning) ? downloads.status : nil
