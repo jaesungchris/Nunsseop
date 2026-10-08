@@ -47,6 +47,7 @@ final class NotchWindowController {
     private var screenObserver: NSObjectProtocol?
     private var displayObserver: AnyCancellable?
     private var browHideObserver: AnyCancellable?
+    private var liftWork: DispatchWorkItem?
     private var updatesObserver: AnyCancellable?
     private var settingsObservers: [AnyCancellable] = []
     /// Keeps the AI limits fresh while an idle ear shows them.
@@ -491,6 +492,32 @@ final class NotchWindowController {
         }
     }
 
+    /// A faded eyebrow comes back when the pointer arrives and raises, then opens, only if the pointer stays.
+    private func pointerOverCollapsedChanged(_ over: Bool) {
+        let fromFaded = model.browFaded
+        liftWork?.cancel()
+        liftWork = nil
+        model.pointerOverCollapsed = over
+        model.browRevealing = over && fromFaded
+        guard over else {
+            model.browLifted = false
+            return
+        }
+        guard fromFaded else {
+            model.browLifted = true
+            return
+        }
+        model.browLifted = false
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, self.model.pointerOverCollapsed else { return }
+                self.model.browLifted = true
+            }
+        }
+        liftWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + NotchViewModel.browRevealDwell, execute: work)
+    }
+
     private func pointerMoved(_ type: NSEvent.EventType) {
         if type == .leftMouseUp { idleDragCount = NSPasteboard(name: .drag).changeCount }
         guard panel.isVisible else { return }
@@ -501,7 +528,7 @@ final class NotchWindowController {
         defer { wasExpanded = model.isExpanded }
 
         let overCollapsed = !model.isExpanded && nearPanel && model.collapsedRect.contains(point)
-        if model.pointerOverCollapsed != overCollapsed { model.pointerOverCollapsed = overCollapsed }
+        if model.pointerOverCollapsed != overCollapsed { pointerOverCollapsedChanged(overCollapsed) }
 
         if model.isExpanded {
             let inside = nearPanel && model.geometry.shapeRect(size: model.expandedSize, inset: 0).insetBy(dx: -6, dy: -6).contains(point)
@@ -548,7 +575,7 @@ final class NotchWindowController {
                     }
                 }
                 openWork = work
-                DispatchQueue.main.asyncAfter(deadline: .now() + model.settings.openDelay, execute: work)
+                DispatchQueue.main.asyncAfter(deadline: .now() + model.settings.openDelay + (model.browRevealing ? NotchViewModel.browRevealDwell + 0.15 : 0), execute: work)
             }
         }
     }

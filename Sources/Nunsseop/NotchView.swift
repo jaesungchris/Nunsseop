@@ -31,8 +31,8 @@ struct NotchView: View {
                     .zIndex(-1)
 
                 if !model.isExpanded && !model.geometry.hasNotch {
-                    EyebrowMark(lifted: model.pointerOverCollapsed)
-                        .animation(motion.brow, value: model.pointerOverCollapsed)
+                    EyebrowMark(lifted: model.browLifted)
+                        .animation(motion.brow, value: model.browLifted)
                         .frame(width: model.geometry.collapsedSize.width, height: notchHeight)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: shift > 0 ? .topLeading : shift < 0 ? .topTrailing : .top)
                 }
