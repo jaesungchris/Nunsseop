@@ -30,7 +30,8 @@ final class ShelfStore: ObservableObject {
             .filter { $0.isFileURL && !existing.contains($0.standardizedFileURL) }
             .map { ShelfItem(id: UUID(), url: $0) }
         guard !fresh.isEmpty else { return }
-        items.append(contentsOf: fresh)
+        // Newest first: the tiles scroll sideways from the left, so a new one at the end sat out of sight once the row was full.
+        items.insert(contentsOf: fresh, at: 0)
         save()
     }
 
