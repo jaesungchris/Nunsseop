@@ -133,9 +133,9 @@ final class NotchViewModel: ObservableObject {
     @Published private(set) var browHidden = false
     private var browHideWork: DispatchWorkItem?
 
-    /// Whether the eyebrow is faded out right now: hidden, and nothing else showing in the collapsed shape.
+    /// Whether the eyebrow is faded out right now: hidden, and no HUD, live activity or sneak peek showing. Idle ears do not keep it up.
     var browFaded: Bool {
-        browHidden && !isExpanded && hud.event == nil && !showsLiveActivity && !showsSneakPeek && !showsIdleEars
+        browHidden && !isExpanded && hud.event == nil && !showsLiveActivity && !showsSneakPeek
     }
     private var cancellables: Set<AnyCancellable> = []
     private var sneakPeekWork: DispatchWorkItem?
@@ -346,7 +346,7 @@ final class NotchViewModel: ObservableObject {
         if showsLiveActivity {
             size.width += 2 * earWidth
         } else if showsIdleEars {
-            size.width += 2 * Self.idleEarWidth
+            size.width += (idleOneSide == nil ? 2 : 1) * Self.idleEarWidth
         }
         if showsSneakPeek {
             size.width = max(size.width, 300)
@@ -376,9 +376,17 @@ final class NotchViewModel: ObservableObject {
         return covers(left - ear, left) && !covers(right, right + 2 * ear)
     }
 
+    /// On a display without a notch, a single idle side grows the shape on that side only: -1 left, 1 right.
+    private var idleOneSide: Int? {
+        guard !geometry.hasNotch, hud.event == nil, !showsLiveActivity, !showsSneakPeek, showsIdleEars else { return nil }
+        let left = idleValue(settings.idleLeft) != nil, right = idleValue(settings.idleRight) != nil
+        return left == right ? nil : (left ? -1 : 1)
+    }
+
     /// How far right the collapsed shape moves so its left edge stays at the camera's.
     var collapsedShift: CGFloat {
-        hidesLeftEar ? (collapsedSize.width - geometry.collapsedSize.width) / 2 : 0
+        if let side = idleOneSide { return CGFloat(side) * Self.idleEarWidth / 2 }
+        return hidesLeftEar ? (collapsedSize.width - geometry.collapsedSize.width) / 2 : 0
     }
 
     /// The collapsed shape on screen.
@@ -402,7 +410,7 @@ final class NotchViewModel: ObservableObject {
                 guard let self else { return }
                 self.browHideWork = nil
                 let idle = !self.isExpanded && !self.pointerOverCollapsed && self.hud.event == nil
-                    && !self.showsLiveActivity && !self.showsSneakPeek && !self.showsIdleEars
+                    && !self.showsLiveActivity && !self.showsSneakPeek
                 if idle { self.browHidden = true } else { self.resetBrowHide() }
             }
         }
