@@ -129,6 +129,12 @@ final class NotchViewModel: ObservableObject {
     @Published var pointerOverCollapsed = false {
         didSet { if pointerOverCollapsed != oldValue { resetBrowHide() } }
     }
+    /// The eyebrow is raised: at once on hover, but only after a short dwell when it had faded out, as the cue that it opens.
+    @Published var browLifted = false
+    /// How long the pointer rests on a faded eyebrow before it raises and opens.
+    static let browRevealDwell: TimeInterval = 0.5
+    /// The eyebrow had faded out when the pointer arrived.
+    var browRevealing = false
     /// The eyebrow has faded out after sitting unused.
     @Published private(set) var browHidden = false
     private var browHideWork: DispatchWorkItem?
