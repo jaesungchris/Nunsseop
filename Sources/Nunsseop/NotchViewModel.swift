@@ -341,7 +341,7 @@ final class NotchViewModel: ObservableObject {
     /// While music plays, the collapsed notch grows an "ear" on each side
     /// for the artwork and a playback indicator, plus a text line underneath
     /// while the sneak peek shows.
-    static let hudEarWidth: CGFloat = 96
+    static let hudEarWidth: CGFloat = 102
     /// Room for a short value such as "73%" or "16°" on each side while idle.
     static let idleEarWidth: CGFloat = 64
 
