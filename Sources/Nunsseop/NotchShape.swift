@@ -8,13 +8,17 @@ struct NotchShape: Shape {
     /// Rounds all four corners, the top ones by `topRadius`, for a shape that does not touch the top edge.
     var floating = false
 
-    var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { AnimatablePair(topRadius, bottomRadius) }
-        set { topRadius = newValue.first; bottomRadius = newValue.second }
+    /// With `floating`, how far the body is pulled in from each side, as the flared top corners do for the camera housing.
+    var sideInset: CGFloat = 0
+
+    var animatableData: AnimatablePair<CGFloat, AnimatablePair<CGFloat, CGFloat>> {
+        get { AnimatablePair(topRadius, AnimatablePair(bottomRadius, sideInset)) }
+        set { topRadius = newValue.first; bottomRadius = newValue.second.first; sideInset = newValue.second.second }
     }
 
     func path(in rect: CGRect) -> Path {
         if floating {
+            let rect = rect.insetBy(dx: sideInset, dy: 0)
             let limit = min(rect.height / 2, rect.width / 2)
             let top = min(topRadius, limit), bottom = min(bottomRadius, limit)
             return Path(roundedRect: rect, cornerRadii: RectangleCornerRadii(topLeading: top, bottomLeading: bottom, bottomTrailing: bottom, topTrailing: top), style: .continuous)

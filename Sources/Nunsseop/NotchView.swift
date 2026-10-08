@@ -17,7 +17,8 @@ struct NotchView: View {
         let topRadius: CGFloat = model.isExpanded ? 18 : 6
         let bottomRadius: CGFloat = model.isExpanded ? 26 : 14
         let notchHeight = model.geometry.collapsedSize.height
-        let shape = NotchShape(topRadius: model.geometry.hasNotch ? topRadius : (model.isExpanded ? 0 : 14), bottomRadius: bottomRadius, floating: !model.geometry.hasNotch)
+        let shape = NotchShape(topRadius: model.geometry.hasNotch ? topRadius : (model.isExpanded ? 0 : 14), bottomRadius: bottomRadius, floating: !model.geometry.hasNotch,
+                              sideInset: !model.geometry.hasNotch && model.isExpanded ? 18 : 0)
         // With the left ear hidden, the collapsed shape grows right only and its top row starts past the camera.
         let shift = model.isExpanded ? 0 : model.collapsedShift
         let earLead = shift > 0 ? model.geometry.collapsedSize.width - 6 : 0
