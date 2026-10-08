@@ -426,7 +426,7 @@ final class NotchWindowController {
     private func isWheelOverHeader(_ event: NSEvent) -> Bool {
         event.window === panel && model.isExpanded && !event.hasPreciseScrollingDeltas
             && event.scrollingDeltaX == 0 && event.scrollingDeltaY != 0
-            && panel.frame.height - event.locationInWindow.y < max(model.geometry.collapsedSize.height, 24) + model.geometry.topInset + 6
+            && panel.frame.height - event.locationInWindow.y < max(model.geometry.collapsedSize.height, 24) + 6
     }
 
     nonisolated private static func sideways(_ event: NSEvent) -> NSEvent? {
@@ -451,7 +451,7 @@ final class NotchWindowController {
         if TimeScrollTarget.isHovered { return }
         // The expanded header scrolls its tabs sideways, so swipes there are left to it.
         let fromTop = panel.frame.height - event.locationInWindow.y
-        if model.isExpanded && fromTop < max(model.geometry.collapsedSize.height, 24) + model.geometry.topInset + 6 { return }
+        if model.isExpanded && fromTop < max(model.geometry.collapsedSize.height, 24) + 6 { return }
         if event.phase == .began || event.phase == .mayBegin {
             swipe = .zero
             swipeFired = false

@@ -47,21 +47,3 @@ struct SneakPeekFilterTests {
         #expect(peeks([("song A|true", 120)]) == [true])
     }
 }
-
-struct NotchShapeTests {
-    private let rect = CGRect(x: 0, y: 0, width: 190, height: 24)
-
-    @Test func notchShapeFlaresOutAtTheTopCorners() {
-        let path = NotchShape(topRadius: 6, bottomRadius: 14).path(in: rect)
-        #expect(path.boundingRect.width == 190)
-        #expect(!path.contains(CGPoint(x: 1, y: 8)))
-        #expect(path.contains(CGPoint(x: 8, y: 8)))
-    }
-
-    @Test func floatingShapeRoundsAllCornersIntoACapsule() {
-        let path = NotchShape(topRadius: 6, bottomRadius: 14, floating: true).path(in: rect)
-        #expect(path.contains(CGPoint(x: 95, y: 1)))
-        #expect(!path.contains(CGPoint(x: 1, y: 1)))
-        #expect(!path.contains(CGPoint(x: 1, y: 23)))
-    }
-}

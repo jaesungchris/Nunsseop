@@ -371,10 +371,7 @@ final class NotchViewModel: ObservableObject {
 
     /// The collapsed shape on screen.
     var collapsedRect: NSRect {
-        var rect = geometry.shapeRect(size: collapsedSize).offsetBy(dx: collapsedShift, dy: 0)
-        // The gap above a floating capsule still counts, so flicking the pointer to the screen edge opens it.
-        rect.size.height += geometry.topInset
-        return rect
+        geometry.shapeRect(size: collapsedSize).offsetBy(dx: collapsedShift, dy: 0)
     }
 
     private func triggerSneakPeek() {
