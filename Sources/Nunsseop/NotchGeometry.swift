@@ -6,6 +6,9 @@ struct NotchGeometry: Equatable {
     var collapsedSize: CGSize
     var hasNotch: Bool
 
+    /// Without a camera housing to blend into, the shape floats this far below the top edge as a capsule.
+    var topInset: CGFloat { hasNotch ? 0 : 4 }
+
     /// True while a MacBook's lid is closed (clamshell mode with an external display).
     static var lidIsClosed: Bool {
         let root = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
@@ -74,7 +77,7 @@ struct NotchGeometry: Equatable {
 
     func shapeRect(size: CGSize) -> NSRect {
         NSRect(x: screenFrame.midX - size.width / 2,
-               y: screenFrame.maxY - size.height,
+               y: screenFrame.maxY - topInset - size.height,
                width: size.width, height: size.height)
     }
 }
