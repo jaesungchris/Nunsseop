@@ -59,7 +59,7 @@
   .nav-links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; color: var(--muted); }
   .nav-links a:hover { color: var(--text); }
   .lang { position: relative; }
-  .lang-btn { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 11px; border-radius: 999px; border: 1px solid var(--card-border); background: var(--card); color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: color .15s, background .15s, border-color .15s; }
+  .lang-btn { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 11px; border-radius: 999px; border: 1px solid var(--card-border); background: var(--card); color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: color .15s, background .15s, border-color .15s, transform .15s; }
   .lang-btn:hover, .lang.open .lang-btn { color: var(--text); background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.14); }
   .lang-btn svg { width: 15px; height: 15px; flex: none; }
   .lang-btn .chev { width: 11px; height: 11px; opacity: .7; transition: transform .2s; }
@@ -85,13 +85,13 @@
   .hero .lead { font-size: clamp(17px, 2.2vw, 21px); color: var(--muted); max-width: 640px; margin: 0 auto 32px; }
   .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; align-items: center; }
   .btn { display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 22px; border-radius: 999px; font-weight: 650; font-size: 15px; border: 1px solid var(--card-border); transition: transform .15s, background .15s; }
-  .btn:hover { transform: translateY(-1px); }
+  @media (hover: hover) { .btn:hover { transform: translateY(-1px); } }
   .btn.primary { background: #fff; color: #0b0a0f; border-color: #fff; }
   .btn.ghost { background: var(--card); }
   .btn svg { width: 18px; height: 18px; }
   .brew { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 8px 0 18px; border-radius: 999px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.35); font-size: 14px; color: var(--muted); max-width: 100%; }
   .brew code { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .copy { border: 0; background: rgba(255,255,255,0.08); color: var(--text); border-radius: 999px; height: 34px; padding: 0 14px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; flex: none; }
+  .copy { border: 0; background: rgba(255,255,255,0.08); color: var(--text); border-radius: 999px; height: 34px; padding: 0 14px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; flex: none; transition: transform .15s; }
   .copy:hover { background: rgba(255,255,255,0.16); }
 
   .device { position: relative; margin: 64px auto 0; max-width: 1000px; aspect-ratio: 1100 / 400; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); border-radius: 26px 26px 18px 18px; padding: 10px 10px 0; background: linear-gradient(#1b1a21, #111016); border: 1px solid rgba(255,255,255,0.09); box-shadow: 0 60px 140px -40px rgba(140, 70, 220, 0.45), 0 0 0 1px rgba(0,0,0,0.6) inset; }
@@ -101,16 +101,22 @@
   .menubar .l, .menubar .r { display: flex; gap: 1.6em; }
   .menubar .l b { font-weight: 700; }
   /* The demo notch uses the app's real geometry, shown on the middle 1100 pt of a 14-inch MacBook Pro screen:
-     collapsed while music plays 272 × 32 pt, expanded 739 × 196 pt, with the same flared top corners. */
+     collapsed while music plays 272 × 32 pt, expanded 739 × 196 pt, with the same flared top corners.
+     It moves on the app's springs too (NotchMotion): opening is spring(response 0.4, damping 0.75), about 3% overshoot;
+     closing is spring(response 0.3, damping 1), no overshoot, 40 ms late. The outline, body and corners share one curve. */
   .screen { container-type: inline-size; --pt: calc(100cqw / 1100); }
-  .live-notch { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: calc(272 * var(--pt)); height: calc(32 * var(--pt)); --tr: calc(6 * var(--pt)); cursor: pointer; transition: width .5s cubic-bezier(.3,1.22,.5,1), height .5s cubic-bezier(.3,1.22,.5,1); filter: drop-shadow(0 10px 30px rgba(0,0,0,0.35)); }
-  .live-notch .body { position: absolute; top: 0; bottom: 0; left: calc(6 * var(--pt)); right: calc(6 * var(--pt)); background: #000; border-radius: 0 0 calc(14 * var(--pt)) calc(14 * var(--pt)); transition: left .5s, right .5s, border-radius .5s; }
-  .live-notch::before, .live-notch::after { content: ""; position: absolute; top: 0; width: calc(6 * var(--pt)); height: calc(6 * var(--pt)); transition: width .5s, height .5s; }
+  .live-notch { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: calc(272 * var(--pt)); height: calc(32 * var(--pt)); --tr: calc(6 * var(--pt)); cursor: pointer; --ease: cubic-bezier(.25,1,.5,1); --dur: .45s; --delay: .04s; transition: width var(--dur) var(--ease) var(--delay), height var(--dur) var(--ease) var(--delay); filter: drop-shadow(0 10px 30px rgba(0,0,0,0.35)); }
+  .live-notch .body { position: absolute; top: 0; bottom: 0; left: calc(6 * var(--pt)); right: calc(6 * var(--pt)); background: #000; border-radius: 0 0 calc(14 * var(--pt)) calc(14 * var(--pt)); transition: left var(--dur) var(--ease) var(--delay), right var(--dur) var(--ease) var(--delay), border-radius var(--dur) var(--ease) var(--delay); }
+  .live-notch::before, .live-notch::after { content: ""; position: absolute; top: 0; width: calc(6 * var(--pt)); height: calc(6 * var(--pt)); transition: width var(--dur) var(--ease) var(--delay), height var(--dur) var(--ease) var(--delay); }
   .live-notch::before { left: 0; background: radial-gradient(circle at 0 100%, transparent 70.7%, #000 71%); }
   .live-notch::after { right: 0; background: radial-gradient(circle at 100% 100%, transparent 70.7%, #000 71%); }
   .live-notch img { position: absolute; left: 0; top: 0; width: 100%; height: auto; transition: opacity .25s; }
   .live-notch .full { opacity: 0; transition-delay: 0s; }
-  .live-notch.open { width: calc(739 * var(--pt)); height: calc(196 * var(--pt)); }
+  .live-notch.open { width: calc(739 * var(--pt)); height: calc(196 * var(--pt)); --ease: cubic-bezier(.3,1.22,.5,1); --dur: .51s; --delay: 0s; }
+  @supports (transition-timing-function: linear(0, 1)) {
+    .live-notch { --ease: linear(0, 0.064, 0.198, 0.348, 0.488, 0.607, 0.704, 0.78, 0.839, 0.883, 0.915, 0.939, 0.957, 0.969, 0.978, 0.985, 0.989, 0.992, 0.995, 0.996, 0.997, 0.998, 0.999, 1); }
+    .live-notch.open { --ease: linear(0, 0.041, 0.139, 0.265, 0.4, 0.531, 0.648, 0.749, 0.831, 0.896, 0.944, 0.979, 1.003, 1.017, 1.025, 1.028, 1.028, 1.026, 1.022, 1.019, 1.015, 1.011, 1.008, 1.006, 1.004, 1.002, 1); }
+  }
   .live-notch.open .body { left: calc(18 * var(--pt)); right: calc(18 * var(--pt)); border-radius: 0 0 calc(26 * var(--pt)) calc(26 * var(--pt)); }
   .live-notch.open::before, .live-notch.open::after { width: calc(18 * var(--pt)); height: calc(18 * var(--pt)); }
   .live-notch.open .mini { opacity: 0; }
@@ -132,7 +138,7 @@
 
   .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
   .tile { position: relative; border-radius: var(--radius); padding: 28px; overflow: hidden; background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)); border: 1px solid var(--card-border); transition: transform .25s, border-color .25s; }
-  .tile:hover { transform: translateY(-3px); border-color: rgba(200,107,250,0.35); }
+  @media (hover: hover) { .tile:hover { transform: translateY(-3px); border-color: rgba(200,107,250,0.35); } }
   .tile h3 { margin: 0 0 8px; font-size: 22px; letter-spacing: -0.02em; }
   .tile p { margin: 0; color: var(--muted); font-size: 15px; }
   .tile .ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; margin-bottom: 18px; background: rgba(255,255,255,0.06); }
@@ -149,7 +155,7 @@
 
   .install { max-width: 760px; margin: 0 auto; }
   .tabs { display: flex; gap: 6px; padding: 5px; border-radius: 999px; background: var(--card); border: 1px solid var(--card-border); width: max-content; margin: 0 auto 18px; }
-  .tabs button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; padding: 8px 18px; border-radius: 999px; cursor: pointer; }
+  .tabs button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; padding: 8px 18px; border-radius: 999px; cursor: pointer; transition: transform .15s; }
   .tabs button[aria-selected="true"] { background: #fff; color: #0b0a0f; }
   .panel { display: none; }
   .panel.active { display: block; }
@@ -182,7 +188,7 @@
   @media (max-width: 900px) { .tour { grid-template-columns: 1fr; } }
   .tour-list { display: flex; flex-direction: column; gap: 6px; }
   @media (max-width: 900px) { .tour-list { flex-direction: row; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; } .tour-list::-webkit-scrollbar { display: none; } }
-  .tour-btn { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 1px solid transparent; background: transparent; color: var(--muted); font: inherit; font-size: 15px; font-weight: 600; padding: 8px 12px; border-radius: 14px; cursor: pointer; overflow: hidden; flex: none; transition: background .2s, color .2s, border-color .2s; }
+  .tour-btn { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 1px solid transparent; background: transparent; color: var(--muted); font: inherit; font-size: 15px; font-weight: 600; padding: 8px 12px; border-radius: 14px; cursor: pointer; overflow: hidden; flex: none; transition: background .2s, color .2s, border-color .2s, transform .15s; }
   @media (max-width: 900px) { .tour-btn { width: auto; white-space: nowrap; } }
   .tour-btn .e { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,0.06); font-size: 16px; flex: none; }
   .tour-btn:hover { color: var(--text); }
@@ -225,11 +231,19 @@
 
   .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
   .reveal.in { opacity: 1; transform: none; }
+  /* Buttons give way the moment they're pressed, not when the click lands. */
+  .btn:active, .copy:active, .lang-btn:active, .tabs button:active, .tour-btn:active { transform: scale(.97); transition-duration: .1s; }
   body:not([data-lang="en"]) .en, body:not([data-lang="ko"]) .ko, body:not([data-lang="ja"]) .ja, body:not([data-lang="zh"]) .zh,
   body:not([data-lang="es"]) .es, body:not([data-lang="de"]) .de, body:not([data-lang="fr"]) .fr { display: none !important; }
   @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .reveal { opacity: 1; transform: none; }
+    /* Nothing slides or bounces, but swapped content still cross-fades and the notch eases in 0.2 s, as the app does with Reduce Motion. */
+    .tour-screen img { transform: translateX(-50%); }
+    .tour-screen img, .live-notch img { transition: opacity .2s ease !important; }
+    .live-notch, .live-notch::before, .live-notch::after { transition: width .2s ease-in-out, height .2s ease-in-out !important; }
+    .live-notch .body { transition: left .2s ease-in-out, right .2s ease-in-out, border-radius .2s ease-in-out !important; }
   }
 </style>
 </head>
@@ -803,6 +817,9 @@ open build/Nunsseop.app</pre></div>
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && langBox.classList.contains('open')) { openMenu(false); langBtn.focus(); }
   });
+
+  // iOS Safari applies :active only when the page listens for touches.
+  document.addEventListener('touchstart', function () {}, { passive: true });
 
   document.querySelectorAll('[data-copy]').forEach(function (btn) {
     btn.addEventListener('click', function () {
