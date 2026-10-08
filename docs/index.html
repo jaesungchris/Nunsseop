@@ -26,7 +26,7 @@
     --card-border: rgba(255,255,255,0.08);
     --text: #f4f3f7;
     --muted: #a19fae;
-    --faint: #6d6a7a;
+    --faint: #7e7b8c;
     --pink: #ff5f8f;
     --violet: #c86bfa;
     --radius: 22px;
@@ -38,6 +38,8 @@
     font: 16px/1.6 "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
   }
+  /* Korean wraps between words, not inside them. */
+  body[data-lang="ko"] { word-break: keep-all; }
   a { color: inherit; text-decoration: none; }
   img { max-width: 100%; display: block; }
   code, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
@@ -127,7 +129,7 @@
   section.block { padding: 110px 0 0; }
   .section-head { text-align: center; max-width: 720px; margin: 0 auto 44px; }
   .section-head .kicker { color: var(--violet); font-weight: 650; font-size: 14px; letter-spacing: .02em; }
-  .section-head h2 { font-size: clamp(32px, 5vw, 52px); line-height: 1.08; letter-spacing: -0.035em; margin: 10px 0 14px; font-weight: 800; }
+  .section-head h2 { font-size: clamp(32px, 5vw, 52px); line-height: 1.08; letter-spacing: -0.035em; margin: 10px 0 14px; font-weight: 800; text-wrap: balance; }
   .section-head p { color: var(--muted); margin: 0; font-size: 18px; }
 
   .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
@@ -170,7 +172,7 @@
 
   .final { margin: 120px 0 0; padding: 70px 28px; text-align: center; border-radius: 30px; border: 1px solid var(--card-border); background: radial-gradient(70% 120% at 50% 0%, rgba(200,107,250,0.25), transparent 70%), var(--bg-2); }
   .final img { width: 96px; height: 96px; margin: 0 auto 18px; }
-  .final h2 { font-size: clamp(30px, 4.6vw, 48px); letter-spacing: -0.035em; margin: 0 0 22px; font-weight: 800; }
+  .final h2 { font-size: clamp(30px, 4.6vw, 48px); letter-spacing: -0.035em; margin: 0 0 22px; font-weight: 800; text-wrap: balance; }
   footer { padding: 56px 0 48px; color: var(--faint); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   footer a:hover { color: var(--text); }
 
@@ -836,9 +838,10 @@ open build/Nunsseop.app</pre></div>
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reduce) timer = setTimeout(loop, 1400);
   function take() { touched = true; clearTimeout(timer); }
-  notch.addEventListener('mouseenter', function () { take(); open(true); });
-  notch.addEventListener('mouseleave', function () { open(false); });
-  notch.addEventListener('focus', function () { take(); open(true); });
+  // Only a mouse hovers, and only the keyboard focuses: a tap fires those too, and its click would close what they opened.
+  notch.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') { take(); open(true); } });
+  notch.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') open(false); });
+  notch.addEventListener('focus', function () { if (notch.matches(':focus-visible')) { take(); open(true); } });
   notch.addEventListener('blur', function () { open(false); });
   notch.addEventListener('click', function () { take(); open(!notch.classList.contains('open')); });
 
